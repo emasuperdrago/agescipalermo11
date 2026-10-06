@@ -1,0 +1,158 @@
+@use '../../../theme/variables' as *;
+
+.modifica-profilo {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+.modulo {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 16px calc(28px + env(safe-area-inset-bottom));
+}
+
+// ---------- Foto ----------
+
+.foto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+
+  &__riquadro {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 140px;
+    height: 140px;
+    overflow: hidden;
+    border: 5px solid $white;
+    border-radius: 30px;
+    background: $white;
+    box-shadow: 0 14px 34px rgba($dark, .14);
+    color: $slate-400;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    ion-icon { font-size: 4.6rem; }
+  }
+
+  &__azioni {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  &__nota {
+    margin: 0;
+    font-size: .75rem;
+    color: $slate-400;
+  }
+}
+
+.pulsante-foto,
+.rimuovi-foto {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: .88rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  ion-icon { font-size: 1.05rem; }
+}
+
+.pulsante-foto {
+  border: 1.5px solid rgba($viola-m, .4);
+  background: $white;
+  color: $viola;
+
+  input { display: none; }
+
+  &:hover { background: rgba($viola-l, .1); }
+}
+
+.rimuovi-foto {
+  border: 1.5px solid rgba($red, .3);
+  background: $white;
+  color: $red;
+
+  &:hover { background: rgba($red, .08); }
+}
+
+// ---------- Campi ----------
+
+.obbligatori {
+  margin: 4px 0 0;
+  font-size: .82rem;
+  color: $slate;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+
+  input {
+    width: 100%;
+    min-height: 50px;
+    padding: 12px 16px;
+    border: 1.5px solid $slate-200;
+    border-radius: 14px;
+    background: $white;
+    font-family: inherit;
+    font-size: 1rem;
+    color: $dark;
+    outline: none;
+
+    &:focus {
+      border-color: $viola-m;
+      box-shadow: 0 0 0 4px rgba($viola-l, .2);
+    }
+  }
+}
+
+.etichetta {
+  font-size: .82rem;
+  font-weight: 700;
+  color: $slate-600;
+}
+
+.errore {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba($red, .1);
+  font-size: .85rem;
+  font-weight: 600;
+  color: $red;
+}
+
+.salva {
+  min-height: 52px;
+  margin-top: 4px;
+  border: none;
+  border-radius: 16px;
+  background: $sfumatura-viola;
+  box-shadow: 0 10px 24px rgba($viola, .3);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  color: $white;
+  cursor: pointer;
+
+  &:disabled { opacity: .6; cursor: default; }
+}

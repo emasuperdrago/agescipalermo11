@@ -1,0 +1,84 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/home" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Home
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="profilo">
+  <section class="scheda-profilo" [class]="'tema--' + tema">
+
+    <!-- Fascia nel colore della branca, con la foto profilo sovrapposta. -->
+    <div class="copertina" aria-hidden="true"></div>
+
+    <!-- Si esce dall'account da qui. I capi non hanno altro modo (nella home al posto di
+         "Esci" hanno "Profilo"); i ragazzi ce l'hanno anche nel menu della home. -->
+    @if (!visitatore) {
+      <button type="button" class="logout" (click)="esci()">
+        <ion-icon [icon]="icone.esci" aria-hidden="true"></ion-icon>
+        Logout
+      </button>
+    }
+
+    <div class="intestazione">
+      <div class="avatar">
+        @if (urlFoto) {
+          <img [src]="urlFoto" alt="Foto profilo" />
+        } @else {
+          <ion-icon [icon]="icone.avatar" aria-hidden="true"></ion-icon>
+        }
+      </div>
+      <h1>{{ nomeCompleto }}</h1>
+
+      @if (!visitatore) {
+        <button type="button" class="modifica" (click)="modificaProfilo()">
+          <ion-icon [icon]="icone.modifica" aria-hidden="true"></ion-icon>
+          Modifica profilo
+        </button>
+      }
+    </div>
+
+    @if (visitatore) {
+      <div class="visitatore">
+        <p>Stai navigando come visitatore: non hai un profilo personale.</p>
+        <p>Capi e ragazzi accedono con il proprio codice censimento.</p>
+        <a class="accedi" routerLink="/login">Accedi</a>
+      </div>
+    } @else {
+      <ul class="campi">
+        @for (c of campi; track c.etichetta) {
+          <li class="campo">
+            <span class="campo__icona">
+              <ion-icon [icon]="c.icona" aria-hidden="true"></ion-icon>
+            </span>
+            <span class="campo__testo">
+              <span class="campo__etichetta">{{ c.etichetta }}</span>
+              <span class="campo__valore">
+                @if (c.pallino) {
+                  <span class="pallino pallino--{{ c.pallino }}" aria-hidden="true"></span>
+                }
+                {{ c.valore }}
+              </span>
+            </span>
+            @if (c.azione === 'email') {
+              <button type="button" class="campo__azione" (click)="cambiaEmail()">Cambia</button>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</ion-content>
+
+<app-barra-inferiore attiva="profilo" />

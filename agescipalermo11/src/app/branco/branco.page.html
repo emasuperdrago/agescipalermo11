@@ -1,0 +1,131 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/home" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Home
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="branco">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      <h1>Branco Venti Impetuosi</h1>
+      <p>Lupetti e lupette, dagli 8 ai 12 anni</p>
+    </div>
+  </header>
+
+  <div class="corpo">
+
+    <!-- Le due parti: si sceglie da qui, la pastiglia scivola sulla voce scelta. -->
+    <div class="scelta" role="tablist" aria-label="Le parti della pagina" [style.--voci]="sezioni.length">
+      <span class="scelta__pastiglia" aria-hidden="true"
+            [style.transform]="'translateX(' + posizionePastiglia * 100 + '%)'"></span>
+      @for (s of sezioni; track s.chiave) {
+        <button type="button" class="scelta__voce" role="tab"
+                [class.scelta__voce--attiva]="sezioneAttiva === s.chiave"
+                [attr.aria-selected]="sezioneAttiva === s.chiave"
+                [attr.aria-controls]="'parte-' + s.chiave"
+                (click)="apriSezione(s.chiave)">
+          <ion-icon [icon]="s.icona" aria-hidden="true"></ion-icon>
+          <span>{{ s.titolo }}</span>
+        </button>
+      }
+    </div>
+
+    <!-- ---------- Chi siamo ---------- -->
+    @if (sezioneAttiva === 'chi-siamo') {
+      <section class="scheda" id="parte-chi-siamo" role="tabpanel" aria-label="Chi siamo">
+        <p class="testo">
+          Il Branco è la prima tappa del cammino scout: lupetti e lupette dagli 8 ai 12 anni,
+          che si ritrovano ogni settimana per giocare, cantare e imparare a stare insieme.
+          È qui che si comincia, e quasi sempre è qui che ci si affeziona.
+        </p>
+        <p class="testo">
+          La vita del Branco corre dentro alle storie della <strong>Giungla</strong>: i capi
+          sono i Vecchi Lupi e prendono il nome da Akela, Baloo, Bagheera e Kaa; i lupetti si
+          dividono in sestiglie e si ritrovano tutti insieme sulla Rupe del Consiglio.
+          Il motto è semplice e dice già tutto: <strong>Lupi del nostro meglio!</strong>
+        </p>
+
+        <p class="invito">Tocca una parola per sapere cosa c'è dietro.</p>
+
+        <div class="pilastri">
+          @for (p of pilastri; track p.chiave) {
+            <article class="pilastro" [class.pilastro--aperto]="pilastroAperto === p.chiave">
+              <button type="button" class="pilastro__testa" (click)="alternaPilastro(p.chiave)"
+                      [attr.aria-expanded]="pilastroAperto === p.chiave">
+                <ion-icon class="pilastro__icona" [icon]="icone[p.chiave]" aria-hidden="true"></ion-icon>
+                <h3>{{ p.titolo }}</h3>
+                <ion-icon class="pilastro__freccia" [icon]="icone.apri" aria-hidden="true"></ion-icon>
+              </button>
+              @if (pilastroAperto === p.chiave) {
+                <p class="pilastro__testo">{{ p.testo }}</p>
+              }
+            </article>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- ---------- Specialità ---------- -->
+    @if (sezioneAttiva === 'specialita') {
+      <section class="scheda" id="parte-specialita" role="tabpanel" aria-label="Le specialità">
+        <p class="testo">
+          Ogni lupetto e ogni lupetta ha qualcosa che sa fare o che vuole imparare: cantare,
+          cucinare, riconoscere le stelle, costruire un giocattolo. La <strong>specialità</strong>
+          è il modo per diventarci bravi davvero: la si sceglie, ci si prepara con l'aiuto dei
+          Vecchi Lupi e poi si mostra al Branco quello che si è imparato. Chi la conquista riceve
+          il suo <strong>distintivo</strong>, da cucire sulla divisa.
+        </p>
+
+        <app-elenco-distintivi [voci]="specialita" cartella="assets/specialita-branco" />
+      </section>
+    }
+
+    <!-- ---------- Promessa e Legge ---------- -->
+    @if (sezioneAttiva === 'promessa') {
+      <section class="scheda" id="parte-promessa" role="tabpanel" aria-label="Promessa e Legge">
+        <article class="promessa">
+          <h3>La Promessa</h3>
+          <blockquote>
+            Prometto con l'aiuto e l'esempio di Gesù,<br />
+            di fare del mio meglio per migliorare me stesso,<br />
+            per aiutare gli altri,<br />
+            per osservare la legge del branco.
+          </blockquote>
+          <small>Si pronuncia davanti a tutto il Branco, il giorno in cui si entra davvero nella Giungla.</small>
+        </article>
+
+        <article class="legge">
+          <h3>La Legge del Branco</h3>
+          <p class="invito">Due righe sole, che i lupetti imparano subito a memoria.</p>
+          <ol>
+            @for (articolo of legge; track articolo) {
+              <li>{{ articolo }}</li>
+            }
+          </ol>
+        </article>
+
+        <article class="motto">
+          <small>Il motto</small>
+          <strong>Lupi del nostro meglio!</strong>
+        </article>
+      </section>
+    }
+
+  </div>
+
+</ion-content>
+
+<app-barra-inferiore />

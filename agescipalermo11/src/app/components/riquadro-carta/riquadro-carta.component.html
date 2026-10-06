@@ -1,0 +1,71 @@
+@if (carta) {
+
+  <div class="riquadro">
+    @if (intestazione) {
+    <div class="riquadro__intestazione">
+      <div class="riquadro__nome">
+        <strong>{{ carta.titolo }}</strong>
+        @if (firma) { <small>{{ firma }}</small> }
+      </div>
+      @if (carta.anno) { <span class="pastiglia">{{ carta.anno }}</span> }
+      @if (!carta.corrente) { <span class="pastiglia pastiglia--archivio">Archivio</span> }
+    </div>
+    }
+
+    <app-sfoglia-pdf [src]="url" [modo]="modo" />
+
+    <div class="riquadro__azioni">
+      <button type="button" class="tasto" (click)="scarica()">
+        <ion-icon [icon]="icone.scarica" aria-hidden="true"></ion-icon>
+        Scarica il PDF
+      </button>
+      <span class="riquadro__peso">{{ peso }}</span>
+
+      @if (puoGestire) {
+        @if (!carta.corrente) {
+          <button type="button" class="tasto tasto--vigore" (click)="mettiInVigore()">
+            <ion-icon [icon]="icone.inVigore" aria-hidden="true"></ion-icon>
+            Mettila in vigore
+          </button>
+        }
+        <button type="button" class="tasto" (click)="modifica()">
+          <ion-icon [icon]="icone.modifica" aria-hidden="true"></ion-icon>
+          Modifica
+        </button>
+        <button type="button" class="tasto tasto--rimuovi" (click)="rimuovi()">
+          <ion-icon [icon]="icone.rimuovi" aria-hidden="true"></ion-icon>
+          Rimuovi
+        </button>
+      }
+    </div>
+
+    @if (puoGestire && carta.corrente) {
+      <!-- La nuova Carta prende il posto di questa, che scende nell'archivio.
+           Sulle Carte dell'archivio il pulsante non serve: si carica da quella in vigore. -->
+      <label class="carica" [class.carica--spenta]="caricamento">
+        <input type="file" accept="application/pdf,.pdf" (change)="scegliFile($event)" [disabled]="caricamento" />
+        <ion-icon [icon]="icone.nuova" aria-hidden="true"></ion-icon>
+        <span>{{ caricamento ? 'Sto caricando…' : 'Carica una nuova Carta di Clan' }}</span>
+        <small>Un file PDF, max 20 MB. Questa finirà nell'archivio.</small>
+      </label>
+    }
+  </div>
+
+} @else {
+
+  <div class="vuoto">
+    <ion-icon [icon]="icone.carta" aria-hidden="true"></ion-icon>
+    <p>Ancora nessuna Carta di Clan caricata.</p>
+    @if (puoGestire) {
+      <label class="carica" [class.carica--spenta]="caricamento">
+        <input type="file" accept="application/pdf,.pdf" (change)="scegliFile($event)" [disabled]="caricamento" />
+        <ion-icon [icon]="icone.nuova" aria-hidden="true"></ion-icon>
+        <span>{{ caricamento ? 'Sto caricando…' : 'Carica la Carta di Clan' }}</span>
+        <small>Un file PDF, max 20 MB.</small>
+      </label>
+    } @else {
+      <small>La caricheranno i capi clan.</small>
+    }
+  </div>
+
+}

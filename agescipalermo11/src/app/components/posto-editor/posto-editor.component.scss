@@ -1,0 +1,444 @@
+@use '../../../theme/variables' as *;
+
+// Stessa impostazione del pop-up degli eventi.
+
+.posto-editor {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+.modulo {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 20px 16px calc(28px + env(safe-area-inset-bottom));
+}
+
+.obbligatori {
+  margin: 0;
+  font-size: .82rem;
+  color: $slate;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+
+  input,
+  textarea {
+    width: 100%;
+    min-height: 48px;
+    padding: 11px 14px;
+    border: 1.5px solid $slate-200;
+    border-radius: 12px;
+    background: $white;
+    font-family: inherit;
+    font-size: .95rem;
+    color: $dark;
+    outline: none;
+
+    &:focus {
+      border-color: $viola-m;
+      box-shadow: 0 0 0 4px rgba($viola-l, .2);
+    }
+  }
+
+  textarea { resize: vertical; }
+}
+
+.etichetta {
+  padding: 0;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $slate-600;
+}
+
+// Una riga per campo: date affiancate e pulsante per toglierla.
+.data-campo {
+  display: grid;
+  grid-template-columns: 1fr 1fr 44px;
+  align-items: end;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid $slate-200;
+  border-radius: 14px;
+  background: rgba($white, .6);
+
+  input {
+    min-height: 44px;
+    padding: 9px 10px;
+
+    &:disabled { opacity: .5; }
+  }
+
+  &__rimuovi {
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 12px;
+    background: rgba($red, .08);
+    color: $red;
+    cursor: pointer;
+
+    ion-icon { font-size: 1.1rem; }
+  }
+}
+
+.sottoetichetta {
+  font-size: .76rem;
+  font-weight: 600;
+  color: $slate;
+
+  small { font-weight: 500; }
+}
+
+.suggerimento {
+  margin: 0;
+  font-size: .78rem;
+  color: $slate;
+}
+
+// ---------- Branca ----------
+
+.scelte {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.scelta-branca {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 9px 16px;
+  border: 1.5px solid $slate-200;
+  border-radius: 999px;
+  background: $white;
+  font-size: .9rem;
+  font-weight: 700;
+  color: $slate-600;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+
+  // Piccola bandierina del colore della branca.
+  &__bandierina {
+    width: 14px;
+    height: 11px;
+    background: var(--colore-branca);
+    clip-path: polygon(0 0, 100% 0, 75% 50%, 100% 100%, 0 100%);
+  }
+
+  &:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba($viola-l, .4); }
+
+  // Sede del gruppo: la branca non si cambia.
+  fieldset:disabled & {
+    cursor: default;
+
+    &:not(.scelta-branca--scelta) { opacity: .45; }
+  }
+
+  &--scelta {
+    border-color: var(--colore-branca);
+    background: var(--colore-branca);
+    // Il lilla del gruppo è chiaro: sopra ci va la scritta scura.
+    color: var(--su-branca, #{$white});
+
+    .scelta-branca__bandierina { background: var(--su-branca, #{$white}); }
+  }
+}
+
+// ---------- Posizione ----------
+
+.ricerca {
+  display: flex;
+  gap: 8px;
+
+  input { flex: 1; }
+
+  &__pulsante {
+    flex-shrink: 0;
+    width: 48px;
+    border: none;
+    border-radius: 12px;
+    background: $sfumatura-viola;
+    color: $white;
+    cursor: pointer;
+
+    ion-icon { font-size: 1.25rem; }
+    &:disabled { opacity: .6; }
+  }
+}
+
+.risultati {
+  margin: 0;
+  padding: 4px;
+  border: 1px solid $slate-200;
+  border-radius: 12px;
+  background: $white;
+  list-style: none;
+
+  button {
+    width: 100%;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    font-family: inherit;
+    font-size: .85rem;
+    text-align: left;
+    color: $dark;
+    cursor: pointer;
+
+    &:hover { background: rgba($viola-l, .14); }
+  }
+}
+
+.mappa-scelta {
+  position: relative;
+  overflow: hidden;
+  border: 1.5px solid $slate-200;
+  border-radius: 16px;
+
+  &__mappa {
+    height: 280px;
+    background: $slate-100;
+
+    @media (min-width: 768px) { height: 340px; }
+  }
+
+  &__gps {
+    position: absolute;
+    right: 10px;
+    bottom: 22px;
+    z-index: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 999px;
+    background: $white;
+    box-shadow: 0 4px 14px rgba($dark, .2);
+    font-family: inherit;
+    font-size: .8rem;
+    font-weight: 700;
+    color: $viola;
+    cursor: pointer;
+
+    ion-icon { font-size: 1rem; }
+  }
+}
+
+// ---------- Contatti ----------
+
+.contatto {
+  display: grid;
+  grid-template-columns: 1fr 44px;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid $slate-200;
+  border-radius: 14px;
+  background: rgba($white, .6);
+
+  input { min-height: 44px; }
+
+  // Su telefono il pulsante sta accanto al nome, i campi uno sotto l'altro.
+  input:not(:first-child) { grid-column: 1; }
+
+  &__rimuovi {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 12px;
+    background: rgba($red, .08);
+    color: $red;
+    cursor: pointer;
+
+    ion-icon { font-size: 1.1rem; }
+  }
+
+  @media (min-width: 640px) {
+    grid-template-columns: 1.2fr 1fr 1.2fr 44px;
+    padding: 8px;
+
+    input:not(:first-child) { grid-column: auto; }
+    &__rimuovi { grid-column: 4; }
+  }
+}
+
+.aggiungi {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1.5px dashed rgba($viola-m, .5);
+  border-radius: 999px;
+  background: none;
+  font-family: inherit;
+  font-size: .85rem;
+  font-weight: 700;
+  color: $viola;
+  cursor: pointer;
+
+  ion-icon { font-size: 1rem; }
+  &:hover { background: rgba($viola-l, .1); }
+}
+
+// ---------- Foto e file ----------
+
+.allegati {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.allegato {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border: 1px solid $slate-200;
+  border-radius: 14px;
+  background: $white;
+
+  &__anteprima,
+  &__icona {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+  }
+
+  &__anteprima { object-fit: cover; }
+
+  &__icona {
+    display: grid;
+    place-items: center;
+    background: rgba($viola-l, .14);
+    color: $viola;
+
+    ion-icon { font-size: 1.5rem; }
+  }
+
+  &__testo {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+
+    strong {
+      overflow: hidden;
+      font-size: .85rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: $dark;
+    }
+
+    small {
+      font-size: .74rem;
+      color: $slate;
+    }
+  }
+
+  &__azione {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 10px;
+    background: $slate-100;
+    color: $slate-600;
+    cursor: pointer;
+
+    ion-icon { font-size: 1.1rem; }
+    &:hover { background: rgba($red, .1); color: $red; }
+  }
+
+  &--nuovo { border-style: dashed; border-color: rgba($viola-m, .45); }
+
+  &--rimosso {
+    opacity: .55;
+
+    .allegato__testo strong { text-decoration: line-through; }
+    .allegato__testo small { color: $red; }
+  }
+}
+
+.carica {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 56px;
+  border: 2px dashed rgba($viola-m, .45);
+  border-radius: 14px;
+  background: rgba($viola-l, .06);
+  font-size: .92rem;
+  font-weight: 700;
+  color: $viola;
+  cursor: pointer;
+
+  ion-icon { font-size: 1.3rem; }
+
+  input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  &:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba($viola-l, .4); }
+  &:hover { background: rgba($viola-l, .12); }
+}
+
+// ---------- Fondo ----------
+
+.errore {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba($red, .1);
+  font-size: .85rem;
+  font-weight: 600;
+  color: $red;
+}
+
+.salva {
+  min-height: 52px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 16px;
+  background: $sfumatura-viola;
+  box-shadow: 0 10px 24px rgba($viola, .3);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  color: $white;
+  cursor: pointer;
+
+  &:disabled { opacity: .7; cursor: default; }
+}

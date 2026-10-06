@@ -1,0 +1,41 @@
+<label class="cerca">
+  <ion-icon [icon]="icone.cerca" aria-hidden="true"></ion-icon>
+  <input type="search" [(ngModel)]="cerca" [placeholder]="'Cerca fra ' + voci.length + ' ' + plurale"
+         [attr.aria-label]="'Cerca ' + singolare" autocomplete="off" />
+</label>
+
+<p class="conta">{{ conta }}. Tocca un distintivo per sapere cosa si impara.</p>
+
+<div class="griglia" [class.griglia--quadrati]="forma === 'quadrato'">
+  @for (v of filtrate; track v.chiave) {
+    <button type="button" class="distintivo" (click)="apri(v)">
+      <img [src]="immagine(v)" alt="" loading="lazy" />
+      <span>{{ v.nome }}</span>
+    </button>
+  } @empty {
+    <p class="vuoto">Niente con questo nome.</p>
+  }
+</div>
+
+<!-- Il distintivo in grande, con cosa si impara. -->
+@if (aperta; as v) {
+  <div class="foglio" (click)="chiudi()">
+    <div class="foglio__riquadro" [class.foglio__riquadro--quadrato]="forma === 'quadrato'"
+         role="dialog" aria-modal="true" [attr.aria-label]="v.nome" (click)="$event.stopPropagation()">
+      <button type="button" class="foglio__chiudi" (click)="chiudi()" aria-label="Chiudi">
+        <ion-icon [icon]="icone.chiudi" aria-hidden="true"></ion-icon>
+      </button>
+      <img [src]="immagine(v)" [alt]="'Distintivo ' + v.nome" />
+      <h3>{{ v.nome }}</h3>
+      <p>{{ v.testo }}</p>
+      <div class="foglio__frecce">
+        <button type="button" (click)="scorri(-1)" aria-label="Distintivo precedente">
+          <ion-icon [icon]="icone.precedente" aria-hidden="true"></ion-icon>
+        </button>
+        <button type="button" (click)="scorri(1)" aria-label="Distintivo successivo">
+          <ion-icon [icon]="icone.successiva" aria-hidden="true"></ion-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+}

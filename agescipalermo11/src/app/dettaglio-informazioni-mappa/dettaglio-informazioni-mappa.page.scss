@@ -1,0 +1,565 @@
+@use '../../theme/variables' as *;
+@use '../../theme/testata' as *;
+
+@include testata-pagina;
+
+.dettaglio-posto {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+// ---------- Copertina ----------
+
+.copertina {
+  padding: 32px 20px 84px;
+  // Il lilla del gruppo è chiaro: sopra ci va la scritta scura (vedi stiliBranca in services/posti.ts).
+  color: var(--su-branca, #{$white});
+  // Colore della branca con la stessa trama a puntini del resto del sito.
+  background-color: var(--colore-branca);
+  background-image:
+    radial-gradient(rgba(255, 255, 255, .16) 1.5px, transparent 1.7px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, .2) 100%);
+  background-size: 20px 20px, 100% 100%;
+
+  @media (min-width: 768px) {
+    padding: 52px 32px 104px;
+  }
+
+  &__contenuto {
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    margin: 14px 0 6px;
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    font-weight: 800;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  &__indirizzo {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 0;
+    font-size: .95rem;
+    opacity: .92;
+
+    & + & { margin-top: 4px; }
+
+    ion-icon {
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+  }
+
+  &__azioni {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: var(--velo-branca, #{rgba($white, .22)});
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+
+  &__bandierina {
+    width: 14px;
+    height: 11px;
+    background: var(--su-branca, #{$white});
+    clip-path: polygon(0 0, 100% 0, 75% 50%, 100% 100%, 0 100%);
+  }
+}
+
+.pulsante {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: .9rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter .15s, background .15s;
+
+  ion-icon { font-size: 1.15rem; }
+
+  &:disabled { opacity: .6; cursor: default; }
+
+  // Sulla copertina: sfondo del colore della scritta e testo del colore della branca.
+  &--chiaro {
+    background: var(--su-branca, #{$white});
+    color: var(--colore-branca);
+
+    &:hover { filter: brightness(.96); }
+  }
+
+  &--vetro {
+    background: var(--velo-branca, #{rgba($white, .18)});
+    color: var(--su-branca, #{$white});
+
+    &:hover:not(:disabled) { filter: brightness(.94); }
+  }
+
+  &--pieno {
+    background: $sfumatura-viola;
+    box-shadow: 0 8px 20px rgba($viola, .25);
+    color: $white;
+
+    &:hover { filter: brightness(1.08); }
+  }
+}
+
+// ---------- Corpo ----------
+
+.corpo {
+  display: grid;
+  gap: 16px;
+  max-width: 1080px;
+  margin: -56px auto 0;
+  padding: 0 12px calc(32px + env(safe-area-inset-bottom));
+
+  @media (min-width: 768px) {
+    margin-top: -72px;
+    padding: 0 24px 48px;
+  }
+
+  @media (min-width: 992px) {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    align-items: start;
+  }
+}
+
+.colonna-principale,
+.colonna-laterale {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.colonna-laterale {
+  @media (min-width: 992px) {
+    position: sticky;
+    top: 16px;
+  }
+}
+
+.scheda {
+  padding: 18px;
+  border-radius: 20px;
+  background: $white;
+  box-shadow: 0 14px 40px rgba($dark, .08);
+
+  @media (min-width: 768px) {
+    padding: 22px;
+  }
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 14px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: $dark;
+
+    small {
+      padding: 1px 9px;
+      border-radius: 999px;
+      background: $slate-100;
+      font-size: .75rem;
+      color: $slate-600;
+    }
+  }
+
+  &--mappa .pulsante { width: 100%; }
+}
+
+.descrizione {
+  margin: 0;
+  font-size: .95rem;
+  line-height: 1.7;
+  color: $slate-600;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.campi {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: $slate-100;
+    font-size: .92rem;
+    font-weight: 600;
+    color: $slate-600;
+  }
+
+  ion-icon {
+    flex-shrink: 0;
+    // Su sfondo chiaro serve la versione più scura del colore.
+    color: var(--forte-branca, var(--colore-branca));
+  }
+}
+
+.nessuno {
+  margin: 0;
+  font-size: .9rem;
+  color: $slate-400;
+}
+
+// ---------- Galleria ----------
+
+.galleria {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  @media (min-width: 600px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  // La prima foto è più grande.
+  li:first-child {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+
+  &--una {
+    grid-template-columns: 1fr;
+
+    li:first-child {
+      grid-column: auto;
+      grid-row: auto;
+    }
+
+    .galleria__foto { aspect-ratio: 16 / 9; }
+  }
+
+  &__foto {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 1;
+    padding: 0;
+    overflow: hidden;
+    border: none;
+    border-radius: 14px;
+    background: $slate-100;
+    cursor: zoom-in;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform .3s;
+    }
+
+    &:hover img { transform: scale(1.04); }
+  }
+
+  &__ingrandisci {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba($dark, .5);
+    color: $white;
+    opacity: 0;
+    transition: opacity .2s;
+  }
+
+  &__foto:hover &__ingrandisci,
+  &__foto:focus-visible &__ingrandisci { opacity: 1; }
+}
+
+// ---------- File ----------
+
+.file {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &__voce {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border: 1px solid $slate-200;
+    border-radius: 14px;
+    color: inherit;
+    text-decoration: none;
+    transition: border-color .15s, background .15s;
+
+    &:hover {
+      border-color: var(--colore-branca);
+      background: $slate-100;
+    }
+  }
+
+  &__tipo {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--colore-branca);
+    font-size: .7rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    color: var(--su-branca, #{$white});
+  }
+
+  &__testo {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+
+    strong {
+      overflow: hidden;
+      font-size: .9rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: $dark;
+    }
+
+    small {
+      font-size: .76rem;
+      color: $slate;
+    }
+  }
+
+  &__scarica {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba($viola-l, .14);
+    font-size: .8rem;
+    font-weight: 700;
+    color: $viola;
+
+    ion-icon { font-size: 1.1rem; }
+
+    // Su telefono basta l'icona.
+    @media (max-width: 420px) {
+      span { display: none; }
+    }
+  }
+}
+
+// ---------- Mappa e contatti ----------
+
+.mini-mappa {
+  position: relative;
+  z-index: 0;
+  height: 220px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: $slate-100;
+}
+
+.coordinate {
+  margin: 8px 0 12px;
+  font-size: .76rem;
+  font-variant-numeric: tabular-nums;
+  color: $slate-400;
+}
+
+.contatti {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contatto {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 14px;
+  background: $slate-100;
+
+  &__nome {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .92rem;
+    font-weight: 700;
+    color: $dark;
+
+    ion-icon { color: var(--forte-branca, var(--colore-branca)); }
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 10px;
+    background: $white;
+    font-size: .88rem;
+    font-weight: 600;
+    color: $viola;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+
+    ion-icon { flex-shrink: 0; }
+
+    &:hover { background: rgba($viola-l, .14); }
+  }
+}
+
+// ---------- Foto a schermo intero ----------
+
+.visore {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 56px 12px;
+  background: rgba($dark, .92);
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 10px;
+    object-fit: contain;
+  }
+
+  &__chiudi,
+  &__freccia {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: rgba($white, .14);
+    color: $white;
+    cursor: pointer;
+
+    ion-icon { font-size: 1.4rem; }
+    &:hover { background: rgba($white, .26); }
+  }
+
+  &__chiudi {
+    top: calc(12px + env(safe-area-inset-top));
+    right: 12px;
+  }
+
+  &__freccia {
+    top: 50%;
+    transform: translateY(-50%);
+
+    &--sinistra { left: 12px; }
+    &--destra { right: 12px; }
+  }
+
+  &__contatore {
+    position: absolute;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    left: 50%;
+    margin: 0;
+    transform: translateX(-50%);
+    font-size: .85rem;
+    font-weight: 700;
+    color: $white;
+  }
+}
+
+// ---------- Stati ----------
+
+.stato {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 72px 24px;
+  text-align: center;
+
+  &__titolo {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: $dark;
+  }
+}
+
+.scheletro {
+  > div {
+    background: linear-gradient(90deg, $slate-100 25%, $slate-200 50%, $slate-100 75%);
+    background-size: 200% 100%;
+    animation: luccichio 1.4s ease-in-out infinite;
+  }
+
+  &__copertina { height: 220px; }
+
+  &__riga {
+    max-width: 700px;
+    height: 16px;
+    margin: 28px 16px 0;
+    border-radius: 8px;
+
+    @media (min-width: 768px) { margin: 28px auto 0; }
+
+    &--corta { max-width: 420px; }
+  }
+}
+
+@keyframes luccichio {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scheletro > div { animation: none; }
+  .galleria__foto img { transition: none; }
+}

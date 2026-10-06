@@ -1,0 +1,217 @@
+@use '../../../theme/variables' as *;
+
+.evento-editor {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+.modulo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 20px 16px calc(28px + env(safe-area-inset-bottom));
+}
+
+.obbligatori {
+  margin: 0;
+  font-size: .82rem;
+  color: $slate;
+}
+
+.riga {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+
+  input,
+  textarea {
+    width: 100%;
+    min-height: 48px;
+    padding: 11px 14px;
+    border: 1.5px solid $slate-200;
+    border-radius: 12px;
+    background: $white;
+    font-family: inherit;
+    font-size: .95rem;
+    color: $dark;
+    outline: none;
+
+    &:focus {
+      border-color: $viola-m;
+      box-shadow: 0 0 0 4px rgba($viola-l, .2);
+    }
+  }
+
+  textarea { resize: vertical; }
+}
+
+.etichetta {
+  padding: 0;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $slate-600;
+}
+
+// ---------- Interruttore "più giorni" ----------
+
+.interruttore {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: .9rem;
+  font-weight: 600;
+  color: $slate-600;
+  cursor: pointer;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+
+  &__pista {
+    position: relative;
+    flex-shrink: 0;
+    width: 44px;
+    height: 26px;
+    border-radius: 999px;
+    background: $slate-200;
+    transition: background .2s;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: $white;
+      box-shadow: 0 2px 6px rgba($dark, .2);
+      transition: transform .2s;
+    }
+  }
+
+  input:checked + &__pista { background: $viola-m; }
+  input:checked + &__pista::after { transform: translateX(18px); }
+  input:focus-visible + &__pista { box-shadow: 0 0 0 3px rgba($viola-l, .4); }
+}
+
+// ---------- Etichetta (branca) ----------
+
+.etichette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.scelta-etichetta {
+  --colore-etichetta: #{$slate};
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  font-family: inherit;
+  padding: 8px 16px;
+  border: 1.5px solid $slate-200;
+  border-radius: 999px;
+  background: $white;
+  font-size: .88rem;
+  font-weight: 700;
+  color: $slate-600;
+  cursor: pointer;
+
+  --su-etichetta: #{$white};
+
+  &--branco { --colore-etichetta: #{$green-d}; }
+  &--reparto { --colore-etichetta: #B98A00; }
+  &--clan { --colore-etichetta: #D8392F; }
+  // Lilla chiaro: sopra ci va la scritta scura.
+  &--gruppo { --colore-etichetta: #E3C0FF; --su-etichetta: #{$viola-d}; }
+  &--capi { --colore-etichetta: #{$viola-m}; }
+
+  input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+
+  &:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba($viola-l, .35); }
+
+  &--scelta {
+    border-color: var(--colore-etichetta);
+    background: var(--colore-etichetta);
+    color: var(--su-etichetta);
+  }
+}
+
+// ---------- Bandierina ----------
+
+.evidenza {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 1.5px solid rgba($viola-m, .4);
+  border-radius: 999px;
+  background: $white;
+  font-family: inherit;
+  font-size: .9rem;
+  font-weight: 700;
+  color: $viola;
+  cursor: pointer;
+
+  ion-icon { font-size: 1.1rem; }
+
+  &--attiva {
+    border-color: $viola-m;
+    background: $viola-m;
+    color: $white;
+  }
+}
+
+.errore {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba($red, .1);
+  font-size: .85rem;
+  font-weight: 600;
+  color: $red;
+}
+
+.salva {
+  min-height: 52px;
+  border: none;
+  border-radius: 16px;
+  background: $sfumatura-viola;
+  box-shadow: 0 10px 24px rgba($viola, .3);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  color: $white;
+  cursor: pointer;
+
+  &:disabled { opacity: .6; cursor: default; }
+}
+
+.nota-capi {
+  margin: 8px 0 0;
+  font-size: .78rem;
+  color: $slate;
+}

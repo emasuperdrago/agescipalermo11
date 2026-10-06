@@ -1,0 +1,79 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/home" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Home
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="marco">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      <h1>Marco Barbera</h1>
+      <p>
+        <ion-icon [icon]="icone.zampa" aria-hidden="true"></ion-icon>
+        Orso Giocoso · Gruppo Scout Palermo 11
+      </p>
+    </div>
+  </header>
+
+  <div class="corpo">
+
+    <!-- Il murales dedicato a Marco, con la sua frase sotto. -->
+    <figure class="murales">
+      <picture>
+        <source media="(max-width: 600px)" srcset="assets/sfondo/murales-marco-mobile.jpg" />
+        <img src="assets/sfondo/murales-marco.jpg" width="1360" height="1020"
+             alt="Il murales dedicato a Marco: il suo volto sorridente con il fazzolettone e un orso accanto, la targa con il suo nome e la scritta E fattilla una risata" />
+      </picture>
+      <figcaption>Il murales dedicato a Marco</figcaption>
+    </figure>
+
+    <blockquote class="motto">
+      <small>Le sue parole</small>
+      <strong>E fattilla una risata…</strong>
+    </blockquote>
+
+    @if (puoGestire) {
+      <button type="button" class="modifica-pagina" [class.modifica-pagina--accesa]="inModifica"
+              (click)="alternaModifica()">
+        <ion-icon [icon]="inModifica ? icone.fatto : icone.modifica" aria-hidden="true"></ion-icon>
+        {{ inModifica ? 'Fatto, esci dalla modifica' : 'Modifica la pagina' }}
+      </button>
+    }
+
+    @if (errore) {
+      <p class="avviso-errore">{{ errore }}</p>
+    } @else if (caricamento) {
+      <div class="scheletro" aria-busy="true"><div></div></div>
+    } @else {
+      @for (p of parti; track p.id; let primo = $first; let ultimo = $last) {
+        <app-parte-racconto [parte]="p" [inModifica]="inModifica" [primo]="primo" [ultimo]="ultimo"
+                            [occupato]="occupato" (modifica)="scrivi(p)"
+                            (sposta)="sposta(p, $event)" (togli)="togli(p)" />
+      }
+
+      @if (inModifica) {
+        <button type="button" class="aggiungi" (click)="scrivi()">
+          <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+          Aggiungi una parte
+        </button>
+      }
+    }
+
+  </div>
+
+</ion-content>
+
+<app-barra-inferiore />

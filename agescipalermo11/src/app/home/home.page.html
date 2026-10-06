@@ -1,0 +1,349 @@
+<ion-content [fullscreen]="true" class="home" [scrollEvents]="true" (ionScroll)="alloScorrimento()">
+
+  <!-- Barra che compare quando il logo della testata esce dallo schermo e segue lo scorrimento. -->
+  <header slot="fixed" class="barra-fissa" [class.barra-fissa--visibile]="barraFissaVisibile"
+          [attr.aria-hidden]="!barraFissaVisibile" [attr.inert]="barraFissaVisibile ? null : ''">
+    <a class="marchio" routerLink="/home" (click)="tornaSu()">
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+    </a>
+
+    <button type="button" class="hamburger" (click)="alternaMenuFisso($event)"
+            [attr.aria-expanded]="menuFissoAperto" aria-controls="menu-fisso"
+            [attr.aria-label]="menuFissoAperto ? 'Chiudi il menu' : 'Apri il menu'">
+      <ion-icon [icon]="menuFissoAperto ? icone.chiudi : icone.menu" aria-hidden="true"></ion-icon>
+    </button>
+
+    <nav id="menu-fisso" class="pannello-fisso" [class.pannello-fisso--aperto]="menuFissoAperto"
+         aria-label="Sezioni del gruppo">
+      <ng-container *ngTemplateOutlet="vociMenu; context: { $implicit: false }" />
+      <!-- I capi entrano nel profilo, dove c'è il pulsante per uscire; gli altri escono da qui. -->
+      @if (eCapo) {
+        <a class="esci esci--profilo" routerLink="/profilo" (click)="chiudiMenu()">
+          <ion-icon [icon]="icone.profilo" aria-hidden="true"></ion-icon>
+          Profilo
+        </a>
+      } @else {
+        <button type="button" class="esci" (click)="esci()">Esci</button>
+      }
+    </nav>
+  </header>
+
+  <section class="eroe">
+    <!-- Foto del gruppo che si alternano piano dietro all'apertura: le cambiano i capi. -->
+    @if (sfondi.length) {
+      <div class="eroe__foto" aria-hidden="true">
+        @for (foto of sfondi; track foto; let i = $index) {
+          <div class="eroe__scatto" [class.eroe__scatto--visibile]="i === sfondoAttuale"
+               [style.background-image]="'url(' + foto + ')'"></div>
+        }
+      </div>
+    }
+
+    <header class="testata">
+      <a class="marchio" routerLink="/home" (click)="chiudiMenu()">
+        <img #logo src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+        <span class="marchio__testo">
+          <strong>Palermo 11</strong>
+          <small>-Gruppo Scout-</small>
+        </span>
+      </a>
+
+      <button type="button" class="hamburger" (click)="alternaMenuMobile($event)"
+              [attr.aria-expanded]="menuMobileAperto" aria-controls="menu-principale"
+              [attr.aria-label]="menuMobileAperto ? 'Chiudi il menu' : 'Apri il menu'">
+        <ion-icon [icon]="menuMobileAperto ? icone.chiudi : icone.menu" aria-hidden="true"></ion-icon>
+      </button>
+
+      <nav id="menu-principale" class="menu-principale" [class.menu-principale--aperto]="menuMobileAperto"
+           aria-label="Sezioni del gruppo">
+        <ng-container *ngTemplateOutlet="vociMenu; context: { $implicit: true }" />
+        <!-- Le pagine del gruppo sui social, solo in questo menu (non in quello della barra
+             che segue lo scorrimento). -->
+        <a class="social social--instagram" [href]="instagram" target="_blank" rel="noopener"
+           (click)="chiudiMenu()" aria-label="Palermo 11 su Instagram (si apre in una nuova scheda)"
+           title="Seguici su Instagram">
+          <ion-icon [icon]="icone.instagram" aria-hidden="true"></ion-icon>
+          <span class="social__testo">Instagram</span>
+        </a>
+        <a class="social social--facebook" [href]="facebook" target="_blank" rel="noopener"
+           (click)="chiudiMenu()" aria-label="Palermo 11 su Facebook (si apre in una nuova scheda)"
+           title="Seguici su Facebook">
+          <ion-icon [icon]="icone.facebook" aria-hidden="true"></ion-icon>
+          <span class="social__testo">Facebook</span>
+        </a>
+        <!-- I capi entrano nel profilo, dove c'è il pulsante per uscire; gli altri escono da qui. -->
+        @if (eCapo) {
+          <a class="esci esci--profilo" routerLink="/profilo" (click)="chiudiMenu()">
+            <ion-icon [icon]="icone.profilo" aria-hidden="true"></ion-icon>
+            Profilo
+          </a>
+        } @else {
+          <button type="button" class="esci" (click)="esci()">Esci</button>
+        }
+      </nav>
+    </header>
+
+    <div class="eroe__contenuto">
+      <h1>Dal 1983 cresciamo insieme, all'aria aperta.</h1>
+      <p>Branco, Reparto e Clan: il Gruppo Scout AGESCI Palermo 11, tra avventure, servizio e amicizia.</p>
+      <a class="eroe__azione" routerLink="/storia">Scopri chi siamo</a>
+    </div>
+  </section>
+
+  <!-- Richiesta di iscrizione: la prima cosa che cerca chi arriva da fuori. -->
+  <section class="iscriviti">
+    <a class="iscriviti__scheda" routerLink="/richiesta-iscrizione">
+      <span class="iscriviti__icona" aria-hidden="true">
+        <ion-icon [icon]="icone.iscriviti"></ion-icon>
+      </span>
+      <span class="iscriviti__testo">
+        <strong>Vuoi iscriverti o iscrivere tuo/a figlio/a?</strong>
+        <small>Clicca qui: lasci i tuoi dati e ti ricontattano i capi della branca giusta.</small>
+      </span>
+      <ion-icon class="iscriviti__freccia" [icon]="icone.apri" aria-hidden="true"></ion-icon>
+    </a>
+  </section>
+
+  <!-- Post proposti dai ragazzi del clan: i capi clan dicono sì o no, gli autori li vedono in attesa. -->
+  @if (inAttesa.length) {
+    <section class="in-attesa">
+      <h2>
+        {{ puoApprovare ? 'Post da approvare' : 'In attesa del sì dei capi' }}
+        <span class="in-attesa__conta">{{ inAttesa.length }}</span>
+      </h2>
+
+      <div class="proposte">
+        @for (p of inAttesa; track p.id) {
+          <article class="proposta" [style.--colore-post]="p.colore">
+            <!-- Toccando il post si apre l'anteprima: si legge tutto prima di decidere. -->
+            <button type="button" class="proposta__apri" (click)="apriAnteprima(p)"
+                    [attr.aria-label]="'Guarda l\'anteprima di ' + p.didascalia">
+              <img class="proposta__foto" [src]="urlFoto(p)" alt="" loading="lazy" />
+              <span class="proposta__testo">
+                <strong>{{ p.didascalia }}</strong>
+                <small>
+                  <span class="pallino pallino--{{ p.etichetta }}" aria-hidden="true"></span>
+                  {{ nomeEtichetta(p.etichetta) }}
+                  @if (p.autore) { · {{ p.autore }} }
+                </small>
+              </span>
+            </button>
+            <div class="proposta__azioni">
+              @if (puoApprovare) {
+                <button type="button" class="proposta__si" (click)="decidi(p, true)">Pubblica</button>
+                <button type="button" class="proposta__no" (click)="decidi(p, false)">Rifiuta</button>
+              } @else {
+                <button type="button" class="proposta__modifica" (click)="apriEditor(p)">Modifica</button>
+                <button type="button" class="proposta__no" (click)="confermaRitira(p)">Ritira</button>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- Tutti i post di branco, reparto, clan e gruppo. -->
+  <section class="notizie">
+    <h2>Ultime dal gruppo</h2>
+
+    <div class="strumenti">
+      @if (puoScrivere) {
+        <button type="button" class="aggiungi-post" (click)="apriEditor()">
+          <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+          {{ puoPubblicare ? 'Aggiungi un post' : 'Proponi un post' }}
+        </button>
+      }
+
+      <!-- Filtro per branca -->
+      <div class="filtro">
+        <button type="button" class="filtro__pulsante" (click)="alternaFiltro($event)"
+                [attr.aria-expanded]="filtroAperto" aria-haspopup="menu">
+          <ion-icon [icon]="icone.filtro" aria-hidden="true"></ion-icon>
+          {{ filtroEtichetta ? nomeEtichetta(filtroEtichetta) : 'Tutte le branche' }}
+          <ion-icon class="filtro__freccia" [icon]="icone.freccia" aria-hidden="true"></ion-icon>
+        </button>
+        @if (filtroAperto) {
+          <ul class="filtro__menu" role="menu">
+            <li>
+              <button type="button" role="menuitemradio" [attr.aria-checked]="!filtroEtichetta"
+                      [class.scelto]="!filtroEtichetta" (click)="scegliFiltro(null)">
+                <span class="pallino pallino--tutte" aria-hidden="true"></span>
+                Tutte le branche
+              </button>
+            </li>
+            @for (e of etichette; track e.valore) {
+              <li>
+                <button type="button" role="menuitemradio" [attr.aria-checked]="filtroEtichetta === e.valore"
+                        [class.scelto]="filtroEtichetta === e.valore" (click)="scegliFiltro(e.valore)">
+                  <span class="pallino pallino--{{ e.valore }}" aria-hidden="true"></span>
+                  {{ e.nome }}
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
+
+    @if (erroreCaricamentoPost) {
+      <p class="vuoto vuoto--errore">{{ erroreCaricamentoPost }}</p>
+    } @else if (post.length) {
+      <div class="storie">
+        @for (p of post; track p.id) {
+          <article class="storia" [class.storia--evidenza]="p.in_evidenza" [style.--colore-post]="p.colore">
+            <a class="storia__link" [routerLink]="['/dettaglio-post', p.id]">
+              <div class="storia__media">
+                <img class="storia__foto" [src]="urlFoto(p)" alt="" loading="lazy" />
+                @if ((p.foto_urls && p.foto_urls.length > 1) || (p.video.length || p.video_link.length)) {
+                  <span class="storia__quante">
+                    @if (p.foto_urls && p.foto_urls.length > 1) {
+                      <ion-icon [icon]="icone.foto" aria-hidden="true"></ion-icon>
+                      <span [attr.aria-label]="p.foto_urls.length + ' foto'">{{ p.foto_urls.length }}</span>
+                    }
+                    @if (p.video.length || p.video_link.length) {
+                      <ion-icon [icon]="icone.video" aria-label="con video"></ion-icon>
+                    }
+                  </span>
+                }
+                <div class="storia__badge">
+                  @if (p.in_evidenza) {
+                    <span class="badge-evidenza">
+                      <ion-icon [icon]="icone.evidenza" aria-hidden="true"></ion-icon>
+                      In evidenza
+                    </span>
+                  }
+                  <span class="badge-etichetta">
+                    <span class="pallino pallino--{{ p.etichetta }}" aria-hidden="true"></span>
+                    {{ nomeEtichetta(p.etichetta) }}
+                  </span>
+                </div>
+              </div>
+              <div class="storia__corpo">
+                <h3>{{ p.didascalia }}</h3>
+              </div>
+            </a>
+
+            <!-- Azioni per capi e admin: fuori dal link, così non aprono il post. -->
+            @if (puoPubblicare) {
+              <div class="storia__azioni">
+                <button type="button" [class.attiva]="p.in_evidenza" (click)="alternaEvidenza(p)"
+                        [attr.aria-pressed]="p.in_evidenza"
+                        [attr.aria-label]="p.in_evidenza ? 'Togli dall’evidenza' : 'Metti in evidenza'"
+                        [attr.title]="p.in_evidenza ? 'Togli dall’evidenza' : 'Metti in evidenza'">
+                  <ion-icon [icon]="p.in_evidenza ? icone.evidenza : icone.evidenzaVuota" aria-hidden="true"></ion-icon>
+                </button>
+                <button type="button" (click)="apriEditor(p)" aria-label="Modifica il post" title="Modifica">
+                  <ion-icon [icon]="icone.modifica" aria-hidden="true"></ion-icon>
+                </button>
+                <button type="button" (click)="confermaArchivia(p)" aria-label="Metti il post in archivio"
+                        title="Archivia">
+                  <ion-icon [icon]="icone.archivia" aria-hidden="true"></ion-icon>
+                </button>
+                <button type="button" class="elimina" (click)="confermaElimina(p)" aria-label="Elimina il post" title="Elimina">
+                  <ion-icon [icon]="icone.elimina" aria-hidden="true"></ion-icon>
+                </button>
+              </div>
+            }
+          </article>
+        }
+      </div>
+
+      @if (altriPost) {
+        <button type="button" class="vedi-altro" (click)="vediAltro()" [disabled]="caricandoAltri">
+          {{ caricandoAltri ? 'Caricamento…' : 'Vedi altro' }}
+        </button>
+      }
+    } @else if (!caricamentoPost) {
+      <p class="vuoto">
+        @if (filtroEtichetta) {
+          Nessun post con l'etichetta {{ nomeEtichetta(filtroEtichetta) }}.
+        } @else {
+          Ancora nessun post: qui arriveranno le notizie di Branco, Reparto, Clan e Gruppo.
+        }
+      </p>
+    }
+  </section>
+
+  <!-- Piè di pagina: il gruppo, le sezioni del sito e i social. -->
+  <footer class="piede">
+    <div class="piede__corpo">
+
+      <div class="piede__gruppo">
+        <a class="piede__marchio" routerLink="/home">
+          <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+          <span>
+            <strong>Palermo 11</strong>
+            <small>Gruppo Scout AGESCI</small>
+          </span>
+        </a>
+        <p>Branco, Reparto e Clan: dal 1983 cresciamo insieme, all'aria aperta, a Palermo.</p>
+        <div class="piede__social">
+          <a [href]="instagram" target="_blank" rel="noopener"
+             aria-label="Palermo 11 su Instagram (si apre in una nuova scheda)" title="Seguici su Instagram">
+            <ion-icon [icon]="icone.instagram" aria-hidden="true"></ion-icon>
+          </a>
+          <a [href]="facebook" target="_blank" rel="noopener"
+             aria-label="Palermo 11 su Facebook (si apre in una nuova scheda)" title="Seguici su Facebook">
+            <ion-icon [icon]="icone.facebook" aria-hidden="true"></ion-icon>
+          </a>
+        </div>
+      </div>
+
+      @for (colonna of piedeColonne; track colonna.titolo) {
+        <nav class="piede__colonna" [attr.aria-label]="colonna.titolo">
+          <h2>{{ colonna.titolo }}</h2>
+          <ul>
+            @for (v of colonna.voci; track v.etichetta) {
+              <li><a [routerLink]="v.link">{{ v.etichetta }}</a></li>
+            }
+          </ul>
+        </nav>
+      }
+
+      <div class="piede__colonna piede__colonna--scrivici">
+        <h2>Vieni a trovarci</h2>
+        <p>Le iscrizioni si aprono a settembre, ma la richiesta si può mandare quando vuoi.</p>
+        <a class="piede__invito" routerLink="/richiesta-iscrizione">Richiesta di iscrizione</a>
+      </div>
+
+    </div>
+
+    <p class="piede__firma">
+      © {{ annoCorrente }} Gruppo Scout AGESCI Palermo 11 ·
+      Associazione Guide e Scouts Cattolici Italiani
+    </p>
+  </footer>
+
+</ion-content>
+
+<!-- Voci dei menu a tendina, usate sia nella testata sia nella barra che segue lo scorrimento.
+     conMouse = true: su computer le tendine si aprono anche passando col mouse. -->
+<ng-template #vociMenu let-conMouse>
+  <ul class="voci-menu">
+    @for (m of menu; track m.titolo) {
+      <li class="tendina" [class]="'tendina--' + m.chiave"
+          [class.tendina--aperta]="tendinaAperta === m.titolo"
+          (mouseenter)="conMouse && apriSuDesktop(m.titolo)" (mouseleave)="conMouse && chiudiSuDesktop(m.titolo)">
+        <button type="button" class="tendina__titolo" (click)="alternaTendina(m.titolo, $event)"
+                [attr.aria-expanded]="tendinaAperta === m.titolo">
+          <span class="tendina__testo">{{ m.titolo }}</span>
+          <ion-icon [icon]="icone.freccia" aria-hidden="true"></ion-icon>
+        </button>
+        <ul class="tendina__pannello">
+          @for (v of vociVisibili(m); track v.etichetta) {
+            <li>
+              <a [routerLink]="v.link" [fragment]="v.sezione" (click)="chiudiMenu()">{{ v.etichetta }}</a>
+            </li>
+          }
+        </ul>
+      </li>
+    }
+  </ul>
+</ng-template>
+
+<app-barra-inferiore attiva="home" />

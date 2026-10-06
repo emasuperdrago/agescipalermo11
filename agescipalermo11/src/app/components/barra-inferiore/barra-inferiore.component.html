@@ -1,0 +1,26 @@
+<ion-footer class="barra-inferiore">
+  <ion-toolbar>
+    <nav class="menu" [class.menu--sei-voci]="voci.length > 5" aria-label="Navigazione principale"
+         [style.--numero-voci]="voci.length">
+      @if (posizionePillola >= 0) {
+        <span class="pillola" [class.pillola--animata]="pillolaAnimata"
+              [style.transform]="'translateX(' + posizionePillola * 100 + '%)'" aria-hidden="true"></span>
+      }
+      @for (v of voci; track v.chiave) {
+        <a class="voce" [class.voce--attiva]="v.chiave === evidenziata" [href]="v.link"
+           (click)="vai($event, v.chiave, v.link)"
+           [attr.aria-current]="v.chiave === attiva ? 'page' : null">
+          <span class="voce__icona">
+            <ion-icon [icon]="v.icona" aria-hidden="true"></ion-icon>
+            @if (v.chiave === 'area-capi' && nuove() > 0) {
+              <b class="voce__avviso" [attr.aria-label]="nuove() + (nuove() === 1 ? ' richiesta nuova' : ' richieste nuove')">
+                {{ nuove() > 9 ? '9+' : nuove() }}
+              </b>
+            }
+          </span>
+          <span>{{ v.nome }}</span>
+        </a>
+      }
+    </nav>
+  </ion-toolbar>
+</ion-footer>

@@ -1,0 +1,93 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/clan" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Clan
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="carta">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      <h1>Carta di Clan</h1>
+      <p>Quella in vigore e quelle che l'hanno preceduta</p>
+    </div>
+  </header>
+
+  <div class="corpo">
+
+    @if (errore) {
+      <section class="scheda"><p class="avviso avviso--errore">{{ errore }}</p></section>
+    } @else {
+
+      <!-- La Carta in vigore, da sfogliare tutta. -->
+      <section class="scheda" aria-labelledby="titolo-vigore">
+        <h2 id="titolo-vigore">
+          <ion-icon [icon]="icone.carta" aria-hidden="true"></ion-icon>
+          In vigore
+        </h2>
+
+        @if (caricamento) {
+          <div class="scheletro" aria-busy="true"><div></div><div></div></div>
+        } @else {
+          <app-riquadro-carta [carta]="corrente" [puoGestire]="puoGestire" modo="pagina" (cambiate)="carica()" />
+        }
+      </section>
+
+      <!-- Le Carte degli anni passati: si apre una per volta. -->
+      <section class="scheda" aria-labelledby="titolo-archivio">
+        <h2 id="titolo-archivio">
+          <ion-icon [icon]="icone.archivio" aria-hidden="true"></ion-icon>
+          Archivio
+          <span class="conta">{{ archivio.length }}</span>
+        </h2>
+
+        @if (caricamento) {
+          <div class="scheletro" aria-busy="true"><div></div></div>
+        } @else if (!archivio.length) {
+          <p class="nota">
+            Nessuna Carta precedente. Quando i capi clan ne caricheranno una nuova,
+            quella di adesso finirà qui.
+          </p>
+        } @else {
+          <ul class="vecchie">
+            @for (c of archivio; track c.id) {
+              <li class="vecchia" [class.vecchia--aperta]="apertaInArchivio === c.id">
+                <button type="button" class="vecchia__riga" (click)="apriChiudi(c)"
+                        [attr.aria-expanded]="apertaInArchivio === c.id">
+                  <ion-icon [icon]="icone.carta" aria-hidden="true"></ion-icon>
+                  <span class="vecchia__testo">
+                    <strong>{{ c.titolo }}</strong>
+                    <small>{{ quando(c) }}</small>
+                  </span>
+                  <span class="vecchia__apri">{{ apertaInArchivio === c.id ? 'Chiudi' : 'Apri' }}</span>
+                </button>
+
+                @if (apertaInArchivio === c.id) {
+                  <div class="vecchia__dentro">
+                    <app-riquadro-carta [carta]="c" [puoGestire]="puoGestire" [intestazione]="false" (cambiate)="carica()" />
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+
+  </div>
+
+</ion-content>
+
+<app-barra-inferiore />

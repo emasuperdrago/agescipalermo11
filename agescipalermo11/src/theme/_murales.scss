@@ -1,0 +1,86 @@
+@use 'variables' as *;
+
+// Foto del murales di Marco "Orso Giocoso" come sfondo delle pagine di ingresso.
+// - Telefono e tablet: la foto occupa la parte alta e la scheda la sormonta.
+// - Computer (≥ 1024px): foto a tutta altezza a sinistra, scheda centrata a destra,
+//   così il murales non resta coperto dalla scheda.
+// Uso: nella pagina `.stage { @include pagina-murales; }` con dentro un `<div class="foto">`.
+
+$murales-mobile: url('/assets/sfondo/murales-marco-mobile.jpg');
+$murales-desktop: url('/assets/sfondo/murales-marco.jpg');
+// Versione piccola (200px): viene sfocata, quindi non serve la risoluzione piena.
+$murales-sfocato: url('/assets/sfondo/murales-marco-sfocato.jpg');
+
+// Tinte chiare che legano la foto all'interfaccia:
+// lavanda come i pulsanti viola, sabbia come il tufo del muro.
+$lavanda: #EEE6F7;
+$sabbia: #F5ECDF;
+$sfondo-pagina: $lavanda;
+
+@mixin pagina-murales {
+  position: relative;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 34vh 16px 32px;
+  overflow: hidden;
+  isolation: isolate;
+
+  // Sfondo di tutta la pagina: la stessa foto, leggermente sfocata e schiarita con toni pastello.
+  // La foto nitida (.foto) sfuma dentro questo sfondo, senza stacchi bianchi.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(160deg, rgba($lavanda, .72) 0%, rgba($sabbia, .62) 50%, rgba($viola-l, .5) 100%),
+      $murales-sfocato center / cover no-repeat;
+    filter: blur(14px) saturate(1.1);
+    // Ingrandito per nascondere i bordi chiari che la sfocatura crea ai margini.
+    transform: scale(1.15);
+  }
+
+  > .foto {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 44vh;
+    // 42% orizzontale: su telefono restano visibili targa, Marco e l'orso.
+    background: $murales-mobile 42% 40% / cover no-repeat;
+    pointer-events: none;
+    // La foto stessa sfuma verso il trasparente: nessuna linea dove finisce.
+    -webkit-mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+  }
+
+  // Tutto il contenuto sta sopra la foto.
+  > :not(.foto) {
+    position: relative;
+  }
+
+  @media (min-width: 768px) {
+    padding-top: 38vh;
+
+    > .foto { height: 50vh; }
+  }
+
+  @media (min-width: 1024px) {
+    justify-content: center;
+    padding: 40px 48px 40px calc(55% + 48px);
+
+    > .foto {
+      bottom: 0;
+      right: auto;
+      width: 55%;
+      height: auto;
+      background-image: $murales-desktop;
+      background-position: 45% center;
+      -webkit-mask-image: linear-gradient(90deg, #000 80%, transparent 100%);
+      mask-image: linear-gradient(90deg, #000 80%, transparent 100%);
+    }
+  }
+}

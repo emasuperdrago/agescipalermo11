@@ -1,0 +1,180 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/area-capi" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Area Capi
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ragazzi">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      <h1>I ragazzi</h1>
+      <p>
+        @if (branca) { {{ nomeBranca(branca) }} }
+        @if (anno) { · anno scout {{ anno.etichetta }} }
+      </p>
+    </div>
+  </header>
+
+  <div class="corpo">
+
+    @if (errore) {
+      <section class="scheda"><p class="avviso avviso--errore">{{ errore }}</p></section>
+    } @else if (!branca && !caricamento) {
+      <section class="scheda">
+        <div class="vuoto">
+          <span class="vuoto__icona" aria-hidden="true"><ion-icon [icon]="icone.ragazzi"></ion-icon></span>
+          <p class="vuoto__titolo">Non risulti in nessuna branca</p>
+          <p class="vuoto__testo">Ogni capo gestisce i ragazzi della branca che segue. Chiedi ai capigruppo di assegnartela.</p>
+        </div>
+      </section>
+    } @else {
+
+      <!-- Attività da pagare: le decide la branca, e valgono per l'anno scout in corso. -->
+      <section class="scheda" aria-labelledby="titolo-quote">
+        <h2 id="titolo-quote">
+          <ion-icon [icon]="icone.quote" aria-hidden="true"></ion-icon>
+          Attività e quote
+          <span class="conta">{{ attivita.length }}</span>
+        </h2>
+
+        @if (attivita.length) {
+          <ul class="attivita">
+            @for (a of attivita; track a.id) {
+              <li>
+                <span class="attivita__nome">{{ a.nome }}</span>
+                <span class="attivita__importo">{{ euro(a.importo) }} a testa</span>
+                <span class="attivita__raccolto">
+                  {{ partecipanti(a) }} {{ partecipanti(a) === 1 ? 'partecipa' : 'partecipano' }} ·
+                  {{ euro(raccolto(a)) }} su {{ euro(atteso(a)) }}
+                </span>
+                <button type="button" class="icona icona--elimina" (click)="confermaEliminaAttivita(a)"
+                        [attr.aria-label]="'Elimina ' + a.nome" title="Elimina">
+                  <ion-icon [icon]="icone.elimina"></ion-icon>
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="nota">Ancora nessuna attività: aggiungi la prima qui sotto (es. "Quota annuale", "Campo estivo").</p>
+        }
+
+        <form class="nuova" (ngSubmit)="aggiungiAttivita()">
+          <input name="nomeAttivita" [(ngModel)]="nuovaAttivita" maxlength="60" placeholder="Nome dell'attività" />
+          <input name="importoAttivita" [(ngModel)]="nuovoImporto" type="number" min="0" step="0.5"
+                 placeholder="Euro a testa" />
+          <button type="submit" class="aggiungi">
+            <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+            Aggiungi
+          </button>
+        </form>
+      </section>
+
+      <!-- Tabella dei ragazzi: una colonna per attività, si tocca la casella per segnare la quota. -->
+      <section class="scheda" aria-labelledby="titolo-ragazzi">
+        <h2 id="titolo-ragazzi">
+          <ion-icon [icon]="icone.ragazzi" aria-hidden="true"></ion-icon>
+          Elenco
+          <span class="conta">{{ ragazzi.length }}</span>
+          <button type="button" class="nuovo" (click)="nuovoRagazzo()">
+            <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+            Aggiungi
+          </button>
+          <button type="button" class="scarica" (click)="scaricaTabella()" [disabled]="!ragazzi.length">
+            <ion-icon [icon]="icone.scarica" aria-hidden="true"></ion-icon>
+            Scarica
+          </button>
+        </h2>
+
+        @if (caricamento) {
+          <div class="scheletro" aria-busy="true"><div></div><div></div></div>
+        } @else if (!ragazzi.length) {
+          <p class="nota">
+            Nessun ragazzo in questa branca. Si caricano dal file del censimento
+            ("Carica i ragazzi") oppure si aggiungono a mano con "Aggiungi".
+          </p>
+        } @else {
+          <div class="tabella">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ragazzo/a</th>
+                  <th>Anno</th>
+                  <th>Età</th>
+                  @for (a of attivita; track a.id) {
+                    <th class="colonna-quota">{{ a.nome }}<small>{{ euro(a.importo) }} a testa</small></th>
+                  }
+                  <th>Totale</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of ragazzi; track r.id) {
+                  <tr>
+                    <td class="chi">
+                      <strong>{{ r.cognome }} {{ r.nome }}</strong>
+                      <span class="riga-codice">
+                        @if (r.codice_censimento) {
+                          <small>{{ r.codice_censimento }}</small>
+                        } @else {
+                          <!-- Entrato prima del censimento: il codice arriverà. -->
+                          <small class="senza-codice">senza codice</small>
+                        }
+                        @if (r.tesoriere) {
+                          <small class="tesoriere">tesoriere</small>
+                        }
+                      </span>
+                    </td>
+                    <td>{{ r.tappa || '—' }}</td>
+                    <td>{{ r.eta ?? '—' }}</td>
+                    @for (a of attivita; track a.id) {
+                      <td>
+                        <button type="button" class="quota" [class]="'quota quota--' + statoQuota(r, a)"
+                                (click)="cambiaQuota(r, a)"
+                                [attr.aria-label]="a.nome + ': ' + testoQuota(r, a) + ' su ' + euro(quota(r, a).quota)">
+                          {{ testoQuota(r, a) }}
+                        </button>
+                      </td>
+                    }
+                    <td class="totale">
+                      {{ euro(totaleVersato(r)) }}<small>su {{ euro(totaleDovuto(r)) }}</small>
+                    </td>
+                    <td class="azioni">
+                      <button type="button" class="icona" (click)="modifica(r)" aria-label="Modifica" title="Modifica">
+                        <ion-icon [icon]="icone.modifica"></ion-icon>
+                      </button>
+                      <button type="button" class="icona icona--elimina" (click)="confermaElimina(r)"
+                              aria-label="Rimuovi dall'elenco" title="Rimuovi">
+                        <ion-icon [icon]="icone.elimina"></ion-icon>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="nota">
+            Tocca una casella per segnare quanto ha versato, per cambiare la quota solo a lui,
+            oppure per dire che non partecipa: chi non partecipa non deve niente e sparisce dai conti
+            di quell'attività. Quello che viene versato finisce da solo nella cassa della branca.
+          </p>
+        }
+      </section>
+    }
+  </div>
+
+</ion-content>
+
+<app-barra-inferiore attiva="area-capi" />

@@ -1,0 +1,477 @@
+@use '../../../theme/variables' as *;
+
+.nuovo-post {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+.modulo {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 20px 16px calc(28px + env(safe-area-inset-bottom));
+}
+
+.obbligatori {
+  margin: 0;
+  font-size: .82rem;
+  color: $slate;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+
+  textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid $slate-200;
+    border-radius: 12px;
+    background: $white;
+    font-family: inherit;
+    font-size: .95rem;
+    color: $dark;
+    resize: vertical;
+    outline: none;
+
+    &:focus {
+      border-color: $viola-m;
+      box-shadow: 0 0 0 4px rgba($viola-l, .2);
+    }
+  }
+}
+
+.etichetta {
+  padding: 0;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $slate-600;
+}
+
+.contatore {
+  align-self: flex-end;
+  font-size: .72rem;
+  color: $slate-400;
+}
+
+// ---------- Foto ----------
+
+.foto {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 170px;
+  margin: 0;
+  overflow: hidden;
+  border: 2px dashed rgba($viola-m, .5);
+  border-radius: 16px;
+  background: rgba($viola-l, .08);
+  font-weight: 700;
+  color: $viola;
+  cursor: pointer;
+
+  input { display: none; }
+  ion-icon { font-size: 2.2rem; }
+
+  &--piena {
+    border-style: solid;
+    background: $white;
+  }
+
+  img {
+    display: block;
+    width: 100%;
+    max-height: 320px;
+    object-fit: cover;
+  }
+
+  &__cambia {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba($white, .9);
+    font-size: .8rem;
+  }
+}
+
+// ---------- Etichetta (branca) ----------
+
+.etichette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.scelta-etichetta {
+  --colore-etichetta: #{$slate};
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 8px 16px;
+  border: 1.5px solid $slate-200;
+  border-radius: 999px;
+  background: $white;
+  font-size: .88rem;
+  font-weight: 700;
+  color: $slate-600;
+  cursor: pointer;
+
+  // Stessi colori delle sottolineature del menu.
+  &--branco { --colore-etichetta: #{$green-d}; }
+  &--reparto { --colore-etichetta: #B98A00; }
+  &--clan { --colore-etichetta: #D8392F; }
+  &--gruppo { --colore-etichetta: #{$viola-m}; }
+
+  input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+
+  &:focus-within { box-shadow: 0 0 0 3px rgba($viola-l, .35); }
+
+  &--scelta {
+    border-color: var(--colore-etichetta);
+    background: var(--colore-etichetta);
+    color: $white;
+  }
+}
+
+// ---------- Colori ----------
+
+.colori {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.colore {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1.5px solid $slate-200;
+  border-radius: 12px;
+  background: $white;
+  font-size: .85rem;
+  font-weight: 600;
+  color: $slate-600;
+  cursor: pointer;
+
+  // Il radio resta accessibile da tastiera ma non si vede.
+  input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+
+  &:focus-within { box-shadow: 0 0 0 3px rgba($viola-l, .35); }
+
+  &__campione {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--colore);
+  }
+
+  &--scelto {
+    border-color: var(--colore);
+    box-shadow: inset 0 0 0 1px var(--colore);
+    color: $dark;
+  }
+}
+
+// ---------- Anteprima della card ----------
+
+.anteprima {
+  max-width: 280px;
+  overflow: hidden;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba($dark, .1);
+
+  img,
+  &__vuota {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+
+  &__vuota {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: $slate-100;
+    color: $slate-400;
+  }
+
+  p {
+    margin: 0;
+    padding: 16px 18px 22px;
+    background: var(--colore-post);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.45;
+    color: $white;
+    overflow-wrap: anywhere;
+  }
+}
+
+.errore {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba($red, .1);
+  font-size: .85rem;
+  font-weight: 600;
+  color: $red;
+}
+
+.pubblica {
+  min-height: 52px;
+  border: none;
+  border-radius: 16px;
+  background: $sfumatura-viola;
+  box-shadow: 0 10px 24px rgba($viola, .3);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  color: $white;
+  cursor: pointer;
+
+  &:disabled { opacity: .6; cursor: default; }
+}
+
+// ---------- Più foto: la griglia del modulo ----------
+
+.galleria {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+
+  @media (min-width: 520px) { grid-template-columns: repeat(4, 1fr); }
+
+  &__foto {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 14px;
+    background: $slate-100;
+
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    &--copertina { box-shadow: 0 0 0 3px $viola-m; }
+  }
+
+  &__copertina {
+    position: absolute;
+    left: 6px;
+    top: 6px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: $viola-m;
+    font-size: .64rem;
+    font-weight: 800;
+    color: $white;
+  }
+
+  &__togli {
+    position: absolute;
+    right: 6px;
+    top: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 50%;
+    background: rgba($dark, .6);
+    color: $white;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+
+  &__frecce {
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    left: 6px;
+    display: flex;
+    justify-content: space-between;
+
+    button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 50%;
+      background: rgba($white, .92);
+      color: $viola;
+      font-size: 1rem;
+      cursor: pointer;
+
+      &:disabled { visibility: hidden; }
+    }
+  }
+
+  &__aggiungi {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    aspect-ratio: 1;
+    border: 2px dashed rgba($viola-m, .5);
+    border-radius: 14px;
+    background: rgba($viola-l, .08);
+    font-size: .8rem;
+    font-weight: 700;
+    color: $viola;
+    cursor: pointer;
+
+    input { display: none; }
+    ion-icon { font-size: 1.6rem; }
+  }
+}
+
+.aiuto-foto {
+  font-size: .76rem;
+  color: $slate;
+}
+
+// ---------- Video ----------
+
+.sottoetichetta {
+  font-size: .78rem;
+  font-weight: 600;
+  color: $slate-600;
+
+  small { font-weight: 500; color: $slate; }
+}
+
+.riga-link {
+  display: flex;
+  gap: 8px;
+
+  input {
+    flex: 1;
+    min-width: 0;
+    min-height: 46px;
+    padding: 10px 14px;
+    border: 1.5px solid $slate-200;
+    border-radius: 12px;
+    background: $white;
+    font-family: inherit;
+    font-size: .9rem;
+    color: $dark;
+    outline: none;
+
+    &:focus {
+      border-color: $viola-m;
+      box-shadow: 0 0 0 4px rgba($viola-l, .2);
+    }
+  }
+
+  &__aggiungi {
+    flex: none;
+    width: 48px;
+    border: none;
+    border-radius: 12px;
+    background: $sfumatura-viola;
+    color: $white;
+    font-size: 1.3rem;
+    cursor: pointer;
+
+    &:disabled { opacity: .5; }
+  }
+}
+
+.elenco-video {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid $slate-200;
+    border-radius: 12px;
+    background: $white;
+    font-size: .84rem;
+    color: $dark;
+
+    > ion-icon { flex: none; font-size: 1.1rem; color: $viola-m; }
+
+    span {
+      flex: 1;
+      min-width: 0;
+      overflow-wrap: anywhere;
+
+      small { display: block; font-size: .72rem; color: $slate; }
+    }
+
+    button {
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border: none;
+      border-radius: 50%;
+      background: $slate-100;
+      color: $slate-600;
+      cursor: pointer;
+    }
+  }
+
+  &__tolto { opacity: .5; text-decoration: line-through; }
+  &__nuovo { border-style: dashed !important; }
+}
+
+.carica-video {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border: 2px dashed rgba($viola-m, .5);
+  border-radius: 14px;
+  background: rgba($viola-l, .08);
+  font-size: .88rem;
+  font-weight: 700;
+  color: $viola;
+  cursor: pointer;
+
+  input { display: none; }
+  ion-icon { font-size: 1.2rem; }
+}

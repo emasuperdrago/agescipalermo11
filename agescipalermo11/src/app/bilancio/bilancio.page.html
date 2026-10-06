@@ -1,0 +1,206 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" [routerLink]="dentroIlClan ? '/clan' : '/area-capi'" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        {{ dentroIlClan ? 'Clan' : 'Area Capi' }}
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bilancio">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      <h1>{{ titolo }}</h1>
+      <p>@if (anno) { Anno scout {{ anno.etichetta }} } @else { Nessun anno scout aperto }</p>
+    </div>
+  </header>
+
+  <div class="corpo">
+
+    @if (errore) {
+      <section class="scheda"><p class="avviso avviso--errore">{{ errore }}</p></section>
+    } @else {
+
+      <!-- Il saldo di oggi, con entrate e uscite dell'anno. -->
+      <section class="riepilogo">
+        <div class="riepilogo__saldo" [class.riepilogo__saldo--rosso]="saldo < 0">
+          <span>Saldo</span>
+          <strong>{{ euro(saldo) }}</strong>
+        </div>
+        <div class="riepilogo__voce riepilogo__voce--entrate">
+          <ion-icon [icon]="icone.entrata" aria-hidden="true"></ion-icon>
+          <span>Entrate</span>
+          <strong>{{ euro(entrate) }}</strong>
+        </div>
+        <div class="riepilogo__voce riepilogo__voce--uscite">
+          <ion-icon [icon]="icone.uscita" aria-hidden="true"></ion-icon>
+          <span>Uscite</span>
+          <strong>{{ euro(uscite) }}</strong>
+        </div>
+      </section>
+
+      @if (!puoModificare) {
+        <p class="sola-lettura">
+          Questa cassa la puoi guardare: i movimenti li scrivono i capi clan e il tesoriere.
+        </p>
+      }
+
+      <!-- Nuovo movimento (o correzione di uno già scritto). -->
+      @if (puoModificare) {
+      <section class="scheda" aria-labelledby="titolo-nuovo">
+        <h2 id="titolo-nuovo">
+          <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+          {{ inModifica ? 'Correggi il movimento' : 'Nuovo movimento' }}
+        </h2>
+
+        <form class="modulo" (ngSubmit)="salva()">
+          <div class="tipi" role="group" aria-label="Entrata o uscita">
+            <button type="button" class="tipo tipo--entrata" [class.tipo--scelto]="nuovo.tipo === 'entrata'"
+                    [attr.aria-pressed]="nuovo.tipo === 'entrata'" (click)="nuovo.tipo = 'entrata'">
+              <ion-icon [icon]="icone.entrata" aria-hidden="true"></ion-icon>
+              Entrata
+            </button>
+            <button type="button" class="tipo tipo--uscita" [class.tipo--scelto]="nuovo.tipo === 'uscita'"
+                    [attr.aria-pressed]="nuovo.tipo === 'uscita'" (click)="nuovo.tipo = 'uscita'">
+              <ion-icon [icon]="icone.uscita" aria-hidden="true"></ion-icon>
+              Uscita
+            </button>
+          </div>
+
+          <div class="campi">
+            <label class="campo campo--data">
+              <span class="etichetta">Data</span>
+              <input type="date" name="data" [(ngModel)]="nuovo.data" />
+            </label>
+            <label class="campo campo--descrizione">
+              <span class="etichetta">A cosa si riferisce</span>
+              <input name="descrizione" [(ngModel)]="nuovo.descrizione" maxlength="120"
+                     placeholder="Es. Spesa per il campo" />
+            </label>
+            <label class="campo campo--importo">
+              <span class="etichetta">Euro</span>
+              <input type="number" name="importo" [(ngModel)]="nuovo.importo" min="0" step="0.5" />
+            </label>
+          </div>
+
+          <!-- Foto dello scontrino: si sceglie dalla galleria o si scatta col telefono. -->
+          <div class="scontrino">
+            @if (anteprimaScontrino) {
+              <img class="scontrino__anteprima" [src]="anteprimaScontrino" alt="Scontrino" />
+              <button type="button" class="pulsante pulsante--piccolo" (click)="rimuoviScontrino()">
+                Rimuovi la foto
+              </button>
+            } @else {
+              <label class="scontrino__scegli">
+                <input type="file" accept="image/*" (change)="scegliScontrino($event)" />
+                <ion-icon [icon]="icone.scontrino" aria-hidden="true"></ion-icon>
+                <span>Foto dello scontrino</span>
+                <small>Facoltativa, max 3 MB</small>
+              </label>
+            }
+          </div>
+
+          <div class="azioni-modulo">
+            @if (inModifica) {
+              <button type="button" class="pulsante" (click)="annullaModifica()">Annulla</button>
+            }
+            <button type="submit" class="pulsante pulsante--primario">
+              {{ inModifica ? 'Salva la correzione' : 'Aggiungi' }}
+            </button>
+          </div>
+        </form>
+      </section>
+      }
+
+      <!-- Tutti i movimenti dell'anno, dal più recente. -->
+      <section class="scheda" aria-labelledby="titolo-movimenti">
+        <h2 id="titolo-movimenti">
+          <ion-icon [icon]="icone.cassa" aria-hidden="true"></ion-icon>
+          Movimenti
+          <span class="conta">{{ movimenti.length }}</span>
+          <!-- Il bilancio in un file Excel: l'anno in corso o uno di quelli passati. -->
+          <button type="button" class="scarica" (click)="scarica()" [disabled]="!anni.length">
+            <ion-icon [icon]="icone.scarica" aria-hidden="true"></ion-icon>
+            Salva in Excel
+          </button>
+        </h2>
+
+        @if (caricamento) {
+          <div class="scheletro" aria-busy="true"><div></div><div></div></div>
+        } @else if (!movimenti.length) {
+          <p class="nota">Ancora nessun movimento in questo anno scout.</p>
+        } @else {
+          <ul class="movimenti">
+            @for (m of movimentiVisibili; track m.id) {
+              <li class="movimento" [class.movimento--uscita]="m.importo < 0">
+                <div class="movimento__testo">
+                  <strong>{{ m.descrizione }}</strong>
+                  <small>
+                    {{ dataItaliana(m.data) }}
+                    @if (m.automatico) { · da una quota }
+                    @else if (m.autore) { · {{ m.autore }} }
+                  </small>
+                </div>
+                @if (m.scontrino_url) {
+                  <button type="button" class="miniatura" (click)="apriScontrino(m)"
+                          [attr.aria-label]="'Guarda lo scontrino di ' + m.descrizione" title="Guarda lo scontrino">
+                    <img [src]="urlBackend(m.scontrino_url)" alt="" />
+                  </button>
+                }
+                <span class="movimento__importo">
+                  {{ m.importo > 0 ? '+' : '−' }}{{ euro(m.importo < 0 ? -m.importo : m.importo) }}
+                </span>
+                @if (!m.automatico && puoModificare) {
+                  <div class="movimento__azioni">
+                    <button type="button" class="icona" (click)="modifica(m)" aria-label="Correggi" title="Correggi">
+                      <ion-icon [icon]="icone.modifica"></ion-icon>
+                    </button>
+                    <button type="button" class="icona icona--elimina" (click)="confermaElimina(m)"
+                            aria-label="Elimina" title="Elimina">
+                      <ion-icon [icon]="icone.elimina"></ion-icon>
+                    </button>
+                  </div>
+                } @else {
+                  <span class="segno-automatico" title="Nato da una quota segnata pagata">auto</span>
+                }
+              </li>
+            }
+          </ul>
+
+          @if (altri) {
+            <button type="button" class="vedi-altro" (click)="vediAltro()">
+              Vedi altro ({{ altri }} {{ altri === 1 ? 'movimento' : 'movimenti' }})
+            </button>
+          }
+        }
+      </section>
+    }
+  </div>
+
+</ion-content>
+
+@if (scontrinoAperto) {
+  <div class="visore" role="dialog" aria-label="Scontrino" (click)="chiudiScontrino()">
+    <button type="button" class="visore__chiudi" (click)="chiudiScontrino()" aria-label="Chiudi">
+      <ion-icon [icon]="icone.chiudi"></ion-icon>
+    </button>
+    <img [src]="scontrinoAperto" alt="Scontrino" />
+  </div>
+}
+
+@if (dentroIlClan) {
+  <!-- La cassa di clan non appartiene alla zona capi: nessuna voce accesa in basso. -->
+  <app-barra-inferiore />
+} @else {
+  <app-barra-inferiore attiva="area-capi" />
+}

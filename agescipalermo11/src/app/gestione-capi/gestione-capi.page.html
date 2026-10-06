@@ -1,0 +1,172 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" [routerLink]="dentroAreaCapi ? '/area-capi' : '/home'"
+                  routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        {{ dentroAreaCapi ? 'Area Capi' : 'Home' }}
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="capi">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      <!-- "Comunità capi" è il nome della zona del capogruppo; per tutti gli altri
+           la pagina si chiama "I nostri capi". -->
+      <h1>{{ puoGestire ? 'Comunità capi' : 'I nostri capi' }}</h1>
+      <p>
+        @if (puoGestire) { Chi segue quale branca, e chi è a disposizione del gruppo. }
+        @else { I capi del Palermo 11, e la branca che segue ognuno. }
+      </p>
+    </div>
+  </header>
+
+  <div class="corpo">
+
+    @if (errore) {
+      <section class="scheda"><p class="avviso avviso--errore">{{ errore }}</p></section>
+    } @else {
+
+      <!-- Quanti capi per branca: si vede subito se una resta scoperta. -->
+      <section class="conteggi" role="group" aria-label="Guarda solo una branca">
+        @for (b of branche; track b.valore) {
+          <button type="button" class="conteggio" [style]="stiliBranca(b.valore)"
+                  [class.conteggio--scelto]="filtro === b.valore"
+                  [class.conteggio--spento]="filtro && filtro !== b.valore"
+                  [attr.aria-pressed]="filtro === b.valore" (click)="alternaFiltro(b.valore)">
+            <strong>{{ quantiIn(b.valore) }}</strong>
+            <span>{{ b.nome }}</span>
+          </button>
+        }
+        <button type="button" class="conteggio conteggio--liberi"
+                [class.conteggio--scelto]="filtro === 'liberi'"
+                [class.conteggio--spento]="filtro && filtro !== 'liberi'"
+                [attr.aria-pressed]="filtro === 'liberi'" (click)="alternaFiltro('liberi')">
+          <strong>{{ aDisposizione }}</strong>
+          <span>A disposizione</span>
+        </button>
+      </section>
+
+      <section class="scheda" aria-labelledby="titolo-capi">
+        <h2 id="titolo-capi">
+          <ion-icon [icon]="icone.capi" aria-hidden="true"></ion-icon>
+          {{ nomeFiltro }}
+          <span class="conta">{{ capiFiltrati.length }}</span>
+          @if (filtro) {
+            <button type="button" class="mostra-tutti" (click)="filtro = null">Mostra tutti</button>
+          }
+        </h2>
+
+        @if (capi.length) {
+          <label class="cerca">
+            <input type="search" name="ricerca" [(ngModel)]="ricerca" autocomplete="off"
+                   [placeholder]="puoGestire ? 'Cerca per nome, cognome o codice' : 'Cerca un capo per nome'"
+                   aria-label="Cerca un capo" />
+          </label>
+        }
+
+        @if (caricamento) {
+          <div class="scheletro" aria-busy="true"><div></div><div></div></div>
+        } @else if (!capiFiltrati.length) {
+          <p class="nota">
+            @if (!capi.length) { Ancora nessun capo caricato. }
+            @else if (filtro) { Nessun capo in questo gruppo. }
+            @else { Nessun risultato. }
+          </p>
+        } @else {
+          <ul class="elenco">
+            @for (c of capiFiltrati; track c.id) {
+              <li class="capo" [style]="c.branca ? stiliBranca(c.branca) : null"
+                  [class.capo--senza]="!c.branca">
+                <div class="capo__testa">
+                  <div class="capo__chi">
+                    <strong>
+                      {{ c.cognome }} {{ c.nome }}
+                      @if (c.ruolo === 'admin') { <span class="segno-capogruppo">capogruppo</span> }
+                      @if (c.id === ioSono) { <span class="segno-io">tu</span> }
+                    </strong>
+                    @if (puoGestire) {
+                      <small>
+                        {{ c.codice_censimento }}
+                        @if (c.eta !== null) { · {{ c.eta }} anni }
+                        @if (c.livello_foca) { · Fo.Ca. {{ c.livello_foca }} }
+                        @if (!c.attivato) { · non è ancora entrato }
+                      </small>
+                    } @else if (c.branca) {
+                      <small>{{ nomeBranca(c.branca) }}</small>
+                    } @else {
+                      <small>A disposizione del gruppo</small>
+                    }
+                  </div>
+                  @if (puoGestire) {
+                    <button type="button" class="icona icona--elimina" (click)="confermaElimina(c)"
+                            aria-label="Rimuovi dalla comunità capi" title="Rimuovi">
+                      <ion-icon [icon]="icone.elimina"></ion-icon>
+                    </button>
+                  }
+                </div>
+
+                @if (puoGestire && (c.telefono || c.email)) {
+                  <div class="capo__contatti">
+                    @if (c.telefono) {
+                      <a class="contatto" [href]="'tel:' + c.telefono">
+                        <ion-icon [icon]="icone.telefono" aria-hidden="true"></ion-icon>{{ c.telefono }}
+                      </a>
+                    }
+                    @if (c.email) {
+                      <a class="contatto" [href]="'mailto:' + c.email">
+                        <ion-icon [icon]="icone.email" aria-hidden="true"></ion-icon>{{ c.email }}
+                      </a>
+                    }
+                  </div>
+                }
+
+                <!-- Lo switch della branca: basta toccare quella nuova. Solo ai capigruppo. -->
+                @if (puoGestire) {
+                <div class="switch" role="group" [attr.aria-label]="'Branca di ' + c.nome">
+                  @for (b of branche; track b.valore) {
+                    <button type="button" class="pasticca" [style]="stiliBranca(b.valore)"
+                            [class.pasticca--scelta]="c.branca === b.valore"
+                            [attr.aria-pressed]="c.branca === b.valore" (click)="spostaIn(c, b.valore)">
+                      {{ b.nome }}
+                    </button>
+                  }
+                  <button type="button" class="pasticca pasticca--libero" [class.pasticca--scelta]="!c.branca"
+                          [attr.aria-pressed]="!c.branca" (click)="spostaIn(c, null)">
+                    A disposizione
+                  </button>
+                  <button type="button" class="ruolo" (click)="cambiaRuolo(c)">
+                    {{ c.ruolo === 'admin' ? 'Rimuovi capogruppo' : 'Fai capogruppo' }}
+                  </button>
+                </div>
+                }
+              </li>
+            }
+          </ul>
+          @if (puoGestire) {
+            <p class="nota">
+              La branca di un capo decide cosa vede: i ragazzi, le quote, la cassa e le notizie di quella branca.
+            </p>
+          }
+        }
+      </section>
+    }
+  </div>
+
+</ion-content>
+
+@if (dentroAreaCapi) {
+  <app-barra-inferiore attiva="area-capi" />
+} @else {
+  <app-barra-inferiore />
+}

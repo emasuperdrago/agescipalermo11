@@ -1,0 +1,361 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/home" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Home
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="area-capi">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      <h1>Area Capi</h1>
+      <p>Lo spazio riservato alla comunità capi.</p>
+    </div>
+  </header>
+
+  <div class="corpo">
+    <!-- Da qui si arriva a tutto quello che serve ai capi. Ognuno vede quello che gli tocca. -->
+    <section class="scheda" aria-labelledby="titolo-zona">
+      <h2 id="titolo-zona">
+        <ion-icon [icon]="icone.ragazzi" aria-hidden="true"></ion-icon>
+        La tua branca
+        @if (branca) { <span class="branca" [style]="stiliBranca(branca)">{{ nomeBranca(branca) }}</span> }
+      </h2>
+
+      <div class="scorciatoie">
+        <a class="scorciatoia" routerLink="/gestione-ragazzi">
+          <span class="scorciatoia__icona" aria-hidden="true"><ion-icon [icon]="icone.ragazzi"></ion-icon></span>
+          <span class="scorciatoia__testo">
+            <strong>Ragazzi e quote</strong>
+            <small>Dati, quote delle attività e tabella da scaricare</small>
+          </span>
+          <ion-icon class="scorciatoia__freccia" [icon]="icone.apri" aria-hidden="true"></ion-icon>
+        </a>
+
+        @if (miaCassa) {
+          <a class="scorciatoia" [routerLink]="['/bilancio', miaCassa]">
+            <span class="scorciatoia__icona" aria-hidden="true"><ion-icon [icon]="icone.cassa"></ion-icon></span>
+            <span class="scorciatoia__testo">
+              <strong>Bilancio del {{ nomeBranca(miaCassa).toLowerCase() }}</strong>
+              <small>Entrate, uscite e saldo dell'anno</small>
+            </span>
+            <ion-icon class="scorciatoia__freccia" [icon]="icone.apri" aria-hidden="true"></ion-icon>
+          </a>
+        }
+
+        <!-- Il clan non ha un bilancio qui: la sua cassa sta nella sezione Clan, la stessa
+             che vedono rover, scolte e tesoriere. Questa è solo una scorciatoia per arrivarci. -->
+        @if (branca === 'clan') {
+          <a class="scorciatoia" routerLink="/clan/cassa" [queryParams]="{ da: 'area-capi' }">
+            <span class="scorciatoia__icona" aria-hidden="true"><ion-icon [icon]="icone.cassa"></ion-icon></span>
+            <span class="scorciatoia__testo">
+              <strong>Cassa di clan</strong>
+              <small>Entrate, uscite e saldo, con il tesoriere</small>
+            </span>
+            <ion-icon class="scorciatoia__freccia" [icon]="icone.apri" aria-hidden="true"></ion-icon>
+          </a>
+        }
+
+        <a class="scorciatoia" routerLink="/sfondi-home">
+          <span class="scorciatoia__icona" aria-hidden="true"><ion-icon [icon]="icone.foto"></ion-icon></span>
+          <span class="scorciatoia__testo">
+            <strong>Foto della home</strong>
+            <small>Le foto che scorrono nell'apertura del sito</small>
+          </span>
+          <ion-icon class="scorciatoia__freccia" [icon]="icone.apri" aria-hidden="true"></ion-icon>
+        </a>
+
+        <a class="scorciatoia" routerLink="/gestione-censiti/ragazzi">
+          <span class="scorciatoia__icona" aria-hidden="true"><ion-icon [icon]="icone.carica"></ion-icon></span>
+          <span class="scorciatoia__testo">
+            <strong>Carica i ragazzi</strong>
+            <small>
+              @if (branca) { I codici censimento del {{ nomeBranca(branca).toLowerCase() }}, dal file }
+              @else { I codici censimento dei ragazzi della tua branca }
+            </small>
+          </span>
+          <ion-icon class="scorciatoia__freccia" [icon]="icone.apri" aria-hidden="true"></ion-icon>
+        </a>
+      </div>
+    </section>
+
+    <!-- Zona riservata ai capigruppo. -->
+    @if (capogruppo) {
+      <section class="scheda" aria-labelledby="titolo-capogruppo">
+        <h2 id="titolo-capogruppo">
+          <ion-icon [icon]="icone.comunita" aria-hidden="true"></ion-icon>
+          Zona capogruppo
+          @if (anno) { <span class="anno">{{ anno.etichetta }}</span> }
+        </h2>
+
+        <div class="scorciatoie">
+          <a class="scorciatoia" routerLink="/gestione-capi">
+            <span class="scorciatoia__icona" aria-hidden="true"><ion-icon [icon]="icone.comunita"></ion-icon></span>
+            <span class="scorciatoia__testo">
+              <strong>Comunità capi</strong>
+              <small>Chi segue quale branca, e chi è a disposizione</small>
+            </span>
+            <ion-icon class="scorciatoia__freccia" [icon]="icone.apri" aria-hidden="true"></ion-icon>
+          </a>
+
+          <a class="scorciatoia" routerLink="/gestione-censiti/capi">
+            <span class="scorciatoia__icona" aria-hidden="true"><ion-icon [icon]="icone.carica"></ion-icon></span>
+            <span class="scorciatoia__testo">
+              <strong>Carica i capi</strong>
+              <small>I codici censimento della comunità capi, dal file</small>
+            </span>
+            <ion-icon class="scorciatoia__freccia" [icon]="icone.apri" aria-hidden="true"></ion-icon>
+          </a>
+
+          <a class="scorciatoia" [routerLink]="['/bilancio', 'gruppo']">
+            <span class="scorciatoia__icona" aria-hidden="true"><ion-icon [icon]="icone.cassa"></ion-icon></span>
+            <span class="scorciatoia__testo">
+              <strong>Bilancio del gruppo</strong>
+              <small>La cassa del gruppo, anno per anno</small>
+            </span>
+            <ion-icon class="scorciatoia__freccia" [icon]="icone.apri" aria-hidden="true"></ion-icon>
+          </a>
+        </div>
+
+        <button type="button" class="apri-anno" (click)="confermaApriAnno()" [disabled]="apertura">
+          <ion-icon [icon]="icone.anno" aria-hidden="true"></ion-icon>
+          {{ apertura ? 'Apertura in corso…' : "Apri l'anno scout" }}
+        </button>
+        <p class="nota">
+          I ragazzi avanzano di un anno, chi ha finito la branca passa a quella dopo,
+          le quote ripartono da zero e in cassa resta il riporto.
+        </p>
+      </section>
+    }
+
+    <!-- Avvisi sui contenuti: cosa hanno toccato i ragazzi della branca. -->
+    @if (contenuti.length) {
+      <section class="scheda" aria-labelledby="titolo-contenuti">
+        <h2 id="titolo-contenuti">
+          <ion-icon [icon]="icone.notifiche" aria-hidden="true"></ion-icon>
+          Dai ragazzi
+          <span class="conta">{{ contenuti.length }}</span>
+        </h2>
+        <ul class="avvisi scorrevole">
+          @for (n of contenuti; track n.id) {
+            <li class="avviso-riga">
+              <span class="avviso-riga__icona" aria-hidden="true">
+                <ion-icon [icon]="iconaContenuto(n.tipo)"></ion-icon>
+              </span>
+              <div class="avviso-riga__testo">
+                <strong>{{ n.titolo }}</strong>
+                <small>{{ n.autore }} ha {{ n.azione }} un {{ n.tipo }}</small>
+              </div>
+              <button type="button" class="azione" (click)="segnaContenutoLetto(n)">Visto</button>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    <!-- Richieste di iscrizione: ogni capo vede quelle della sua branca. -->
+    <section class="scheda" aria-labelledby="titolo-notifiche">
+      <h2 id="titolo-notifiche">
+        <ion-icon [icon]="icone.notifiche" aria-hidden="true"></ion-icon>
+        Notifiche
+        @if (nuove) {
+          <span class="conta" [attr.aria-label]="nuove + ' richieste nuove'">{{ nuove }}</span>
+        }
+      </h2>
+
+      <!-- I compleanni di oggi: solo questa striscia, niente email e niente salvato. -->
+      @if (compleanni.length) {
+        <div class="compleanni" role="status">
+          <span class="compleanni__torta" aria-hidden="true">🎂</span>
+          <p>
+            @if (compleanni.length === 1) {
+              Oggi <strong>{{ compleanni[0].nome }} {{ compleanni[0].cognome }}</strong>
+              compie {{ compleanni[0].anni }} anni!
+            } @else {
+              Oggi compiono gli anni:
+              @for (c of compleanni; track $index; let ultimo = $last) {
+                <strong>{{ c.nome }} {{ c.cognome }}</strong> ({{ c.anni }})@if (!ultimo) {, }
+              }
+            }
+          </p>
+        </div>
+      }
+
+      @if (branca) {
+        <p class="sottotitolo">
+          Richieste di iscrizione
+          <strong [style]="stiliBranca(branca)" class="branca">{{ nomeBranca(branca) }}</strong>
+        </p>
+      }
+
+      <div class="strumenti">
+        <button type="button" class="strumento" (click)="carica()" [disabled]="caricamento">
+          <ion-icon [icon]="icone.aggiorna" aria-hidden="true"></ion-icon>
+          Aggiorna
+        </button>
+        <button type="button" class="strumento" [class.strumento--attivo]="mostraArchiviate"
+                [attr.aria-pressed]="mostraArchiviate" (click)="alternaArchiviate()">
+          <ion-icon [icon]="icone.archivia" aria-hidden="true"></ion-icon>
+          {{ mostraArchiviate ? 'Nascondi archiviate' : 'Mostra archiviate' }}
+        </button>
+        @if (accettate) {
+          <!-- Stesso formato del file dei codici censimento: si scarica e si ricarica di là. -->
+          <button type="button" class="strumento strumento--excel" (click)="scaricaAccettate()">
+            <ion-icon [icon]="icone.excel" aria-hidden="true"></ion-icon>
+            Scarica le accettate ({{ accettate }})
+          </button>
+        }
+      </div>
+
+      <!-- Dopo 10 mesi le richieste si cancellano da sole: sono dati di ragazzi,
+           e all'anno nuovo il file delle accettate deve portare solo i nuovi arrivi. -->
+      <p class="durata">
+        Ogni richiesta resta qui 10 mesi da quando è arrivata, poi si cancella da sola:
+        scarica il file delle accettate prima di allora.
+      </p>
+
+      @if (errore) {
+        <p class="avviso avviso--errore">{{ errore }}</p>
+      } @else if (caricamento) {
+        <div class="scheletro" aria-busy="true" aria-label="Caricamento delle notifiche">
+          <div></div><div></div>
+        </div>
+      } @else if (!branca) {
+        <!-- Le richieste si smistano per branca: senza branca non arriva niente. -->
+        <div class="vuoto">
+          <span class="vuoto__icona" aria-hidden="true">
+            <ion-icon [icon]="icone.notifiche"></ion-icon>
+          </span>
+          <p class="vuoto__titolo">Non risulti in nessuna branca</p>
+          <p class="vuoto__testo">
+            Le richieste di iscrizione arrivano ai capi della branca a cui si riferiscono.
+            Chiedi ai capigruppo di assegnarti branco, reparto o clan.
+          </p>
+        </div>
+      } @else if (!richieste.length) {
+        <div class="vuoto">
+          <span class="vuoto__icona" aria-hidden="true">
+            <ion-icon [icon]="icone.notifiche"></ion-icon>
+          </span>
+          <p class="vuoto__titolo">Nessuna richiesta</p>
+          <p class="vuoto__testo">Qui arrivano le richieste di iscrizione {{ nomeBranca(branca) }} mandate dal sito.</p>
+        </div>
+      } @else {
+        <ul class="richieste scorrevole">
+          @for (r of richieste; track r.id) {
+            <li class="richiesta" [class.richiesta--nuova]="r.stato === 'nuova'"
+                [class.richiesta--archiviata]="r.stato === 'archiviata'">
+
+              <div class="richiesta__testa">
+                <span class="richiesta__icona" aria-hidden="true">
+                  <ion-icon [icon]="icone.iscrizione"></ion-icon>
+                </span>
+                <div class="richiesta__chi">
+                  <strong>{{ r.nome }} {{ r.cognome }}</strong>
+                  <small>
+                    {{ dataPerEsteso(r.data_nascita) }}
+                    @if (etaDa(r.data_nascita) !== null) { · {{ etaDa(r.data_nascita) }} anni }
+                  </small>
+                </div>
+                @if (r.esito === 'accettata') {
+                  <span class="segno segno--accettata">Accettata</span>
+                } @else if (r.esito === 'rifiutata') {
+                  <span class="segno segno--rifiutata">Rifiutata</span>
+                } @else if (r.stato === 'nuova') {
+                  <span class="segno segno--nuova">Nuova</span>
+                } @else if (r.stato === 'letta') {
+                  <span class="segno segno--letta">In carico</span>
+                } @else {
+                  <span class="segno">Archiviata</span>
+                }
+              </div>
+
+              <p class="richiesta__scuola">
+                <ion-icon [icon]="icone.scuola" aria-hidden="true"></ion-icon>
+                {{ nomeAnnoScolastico(r.anno_scolastico) }}
+              </p>
+
+              @if (r.genitori.length) {
+                <p class="richiesta__genitori">
+                  <ion-icon [icon]="icone.genitori" aria-hidden="true"></ion-icon>
+                  {{ r.genitori.length === 1 ? 'Genitore' : 'Genitori' }}: {{ r.genitori.join(' e ') }}
+                </p>
+              }
+
+              <div class="contatti">
+                @if (r.telefono) {
+                  <a class="contatto" [href]="'tel:' + r.telefono">
+                    <ion-icon [icon]="icone.telefono" aria-hidden="true"></ion-icon>
+                    {{ r.telefono }}
+                  </a>
+                }
+                @if (r.email) {
+                  <a class="contatto" [href]="'mailto:' + r.email">
+                    <ion-icon [icon]="icone.email" aria-hidden="true"></ion-icon>
+                    {{ r.email }}
+                  </a>
+                }
+              </div>
+
+              @if (r.note) {
+                <p class="richiesta__note">{{ r.note }}</p>
+              }
+
+              @if (r.capo && r.stato !== 'nuova') {
+                <p class="richiesta__capo">Se ne sta occupando {{ r.capo }}.</p>
+              }
+
+              <div class="richiesta__azioni">
+                <button type="button" class="azione azione--accetta" [class.azione--scelta]="r.esito === 'accettata'"
+                        [attr.aria-pressed]="r.esito === 'accettata'" (click)="decidi(r, 'accettata')">
+                  <ion-icon [icon]="icone.accetta" aria-hidden="true"></ion-icon>
+                  Accetta
+                </button>
+                <button type="button" class="azione azione--rifiuta" [class.azione--scelta]="r.esito === 'rifiutata'"
+                        [attr.aria-pressed]="r.esito === 'rifiutata'" (click)="decidi(r, 'rifiutata')">
+                  <ion-icon [icon]="icone.rifiuta" aria-hidden="true"></ion-icon>
+                  Rifiuta
+                </button>
+                @if (r.stato === 'nuova') {
+                  <button type="button" class="azione azione--principale" (click)="cambiaStato(r, 'letta')">
+                    Me ne occupo io
+                  </button>
+                } @else {
+                  <button type="button" class="azione" (click)="cambiaStato(r, 'nuova')">
+                    <ion-icon [icon]="icone.ripristina" aria-hidden="true"></ion-icon>
+                    Rimetti tra le nuove
+                  </button>
+                }
+                @if (r.stato !== 'archiviata') {
+                  <button type="button" class="azione" (click)="cambiaStato(r, 'archiviata')">
+                    <ion-icon [icon]="icone.archivia" aria-hidden="true"></ion-icon>
+                    Archivia
+                  </button>
+                }
+                <button type="button" class="azione azione--elimina" (click)="confermaElimina(r)"
+                        aria-label="Elimina la richiesta" title="Elimina">
+                  <ion-icon [icon]="icone.elimina" aria-hidden="true"></ion-icon>
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  </div>
+
+</ion-content>
+
+<app-barra-inferiore attiva="area-capi" />

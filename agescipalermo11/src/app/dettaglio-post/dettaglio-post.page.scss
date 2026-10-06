@@ -1,0 +1,485 @@
+@use '../../theme/variables' as *;
+
+// Stessi colori delle etichette nella home.
+$colori-etichetta: (
+  branco: $green-d,
+  reparto: #B98A00,
+  clan: #D8392F,
+  gruppo: $viola-m,
+);
+
+.dettaglio {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+// ---------- Barra in alto ----------
+
+.testata-post ion-toolbar {
+  --background: rgba(255, 255, 255, .94);
+  --border-width: 0;
+  --padding-start: 8px;
+  --padding-end: 16px;
+  --min-height: 64px;
+}
+
+.indietro {
+  --color: #{$viola};
+  --border-radius: 999px;
+  --padding-start: 12px;
+  --padding-end: 14px;
+  --background-hover: #{rgba($viola-l, .12)};
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.marchio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: $dark;
+  text-decoration: none;
+
+  img {
+    width: 38px;
+    height: 38px;
+    padding: 2px;
+    border: 1px solid $slate-200;
+    border-radius: 50%;
+    background: $white;
+  }
+
+  &__testo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.15;
+
+    strong {
+      font-size: .95rem;
+      font-weight: 800;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    small {
+      font-size: .62rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: $slate;
+    }
+  }
+}
+
+// ---------- Copertina ----------
+
+.copertina {
+  position: relative;
+  overflow: hidden;
+  padding: 48px 20px 130px;
+  color: $white;
+  // Colore del post con una trama leggera di puntini.
+  background-color: var(--colore-post);
+  background-image:
+    radial-gradient(rgba(255, 255, 255, .16) 1.5px, transparent 1.7px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, .18) 100%);
+  background-size: 20px 20px, 100% 100%;
+
+  // Righe diagonali decorative negli angoli, come nelle card di World Scouting.
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    width: 140px;
+    height: 22px;
+    background: repeating-linear-gradient(-60deg, rgba(255, 255, 255, .35) 0 4px, transparent 4px 12px);
+    pointer-events: none;
+  }
+
+  &::before {
+    top: 22px;
+    right: 6%;
+  }
+
+  &::after {
+    bottom: 104px;
+    left: 5%;
+  }
+
+  @media (min-width: 768px) {
+    padding: 72px 32px 160px;
+
+    &::after { bottom: 132px; }
+  }
+
+  &__contenuto {
+    position: relative;
+    max-width: 880px;
+    margin: 0 auto;
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  &__data {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 4px;
+    font-size: .85rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+
+    ion-icon { font-size: 1rem; }
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.9rem, 5.5vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -.5px;
+    text-shadow: 0 2px 16px rgba(0, 0, 0, .18);
+    overflow-wrap: anywhere;
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .95);
+  font-size: .78rem;
+  font-weight: 700;
+  color: $dark;
+
+  &--evidenza {
+    background: $viola-m;
+    color: $white;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, .6);
+
+    ion-icon { font-size: .9rem; }
+  }
+}
+
+.pallino {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: $slate-400;
+
+  @each $nome, $colore in $colori-etichetta {
+    &--#{$nome} { background: $colore; }
+  }
+}
+
+// ---------- Foto e testo ----------
+
+// Spazio tra la fine del post e la fine della pagina.
+.articolo {
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+
+  @media (min-width: 768px) {
+    padding-bottom: 96px;
+  }
+}
+
+.articolo__figura,
+.articolo__testo {
+  // La copertina ha una posizione propria: senza questo la disegnerebbe sopra foto e testo.
+  position: relative;
+  z-index: 1;
+}
+
+.articolo__figura {
+  max-width: 960px;
+  margin: -100px auto 0;
+  padding: 0 16px;
+
+  @media (min-width: 768px) {
+    margin-top: -120px;
+    padding: 0 32px;
+  }
+}
+
+.articolo__foto {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 180px;
+  max-height: 72vh;
+  object-fit: cover;
+  border: 6px solid $white;
+  border-radius: 22px;
+  background: $slate-100;
+  box-shadow: 0 24px 60px rgba($dark, .18);
+}
+
+.articolo__testo {
+  max-width: 760px;
+  margin: 32px auto 0;
+  margin-inline: max(16px, calc((100% - 760px) / 2));
+  padding: 30px 26px;
+  border-radius: 20px;
+  background: $white;
+  box-shadow: 0 10px 30px rgba($dark, .06);
+  border-top: 5px solid var(--colore-post);
+  font-size: 1.06rem;
+  line-height: 1.85;
+  color: #334155;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  // Contiene il capolettera anche quando il testo è di una sola riga.
+  display: flow-root;
+
+  @media (min-width: 768px) {
+    padding: 40px 48px;
+    font-size: 1.1rem;
+  }
+
+  // Capolettera: prima lettera grande, maiuscola, nel colore del post.
+  &::first-letter {
+    float: left;
+    margin: 6px 10px 0 0;
+    font-size: 3.4em;
+    font-weight: 800;
+    line-height: .85;
+    text-transform: uppercase;
+    color: var(--colore-post);
+  }
+}
+
+
+.torna {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 26px;
+  border: 2px solid $viola-m;
+  border-radius: 999px;
+  background: $white;
+  font-weight: 700;
+  color: $viola;
+  text-decoration: none;
+  transition: background .15s, color .15s;
+
+  ion-icon { font-size: 1.1rem; }
+
+  &:hover {
+    background: $viola-m;
+    color: $white;
+  }
+}
+
+// ---------- Errore e caricamento ----------
+
+.stato {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: calc(100% - 32px);
+  max-width: 440px;
+  margin: 64px auto;
+  padding: 36px 28px;
+  border-radius: 20px;
+  background: $white;
+  box-shadow: 0 10px 30px rgba($dark, .06);
+  text-align: center;
+
+  &__titolo {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: $dark;
+  }
+
+  &__testo {
+    margin: 0 0 16px;
+    color: $slate;
+  }
+}
+
+@keyframes luccichio {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.scheletro {
+  > div {
+    background: linear-gradient(90deg, $slate-100 25%, $slate-200 50%, $slate-100 75%);
+    background-size: 200% 100%;
+    animation: luccichio 1.4s ease-in-out infinite;
+  }
+
+  &__copertina {
+    height: 240px;
+  }
+
+  &__foto {
+    max-width: 928px;
+    height: 320px;
+    margin: -100px 16px 0;
+    border-radius: 22px;
+
+    @media (min-width: 992px) {
+      margin: -100px auto 0;
+    }
+  }
+
+  &__riga {
+    max-width: 700px;
+    height: 16px;
+    margin: 28px 16px 0;
+    border-radius: 8px;
+
+    @media (min-width: 760px) {
+      margin: 28px auto 0;
+    }
+
+    &--corta {
+      max-width: 420px;
+      margin-top: 12px;
+    }
+  }
+}
+
+// ---------- Più foto: si sfogliano ----------
+
+.articolo__figura {
+  // Lo spazio ai lati della foto (vedi sopra): frecce e contatore stanno dentro la foto.
+  --bordo-figura: 16px;
+
+  @media (min-width: 768px) { --bordo-figura: 32px; }
+}
+
+.sfoglia {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: rgba($white, .9);
+  box-shadow: 0 6px 18px rgba($dark, .25);
+  color: $viola;
+  font-size: 1.3rem;
+  transform: translateY(-50%);
+  cursor: pointer;
+
+  &--prima { left: calc(var(--bordo-figura) + 14px); }
+  &--dopo { right: calc(var(--bordo-figura) + 14px); }
+}
+
+.contafoto {
+  position: absolute;
+  right: calc(var(--bordo-figura) + 18px);
+  bottom: 18px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba($dark, .6);
+  font-size: .78rem;
+  font-weight: 700;
+  color: $white;
+}
+
+.miniature {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 8px;
+  max-width: 960px;
+  margin: 12px auto 0;
+  padding: 0 16px 4px;
+  overflow-x: auto;
+
+  @media (min-width: 768px) { padding: 0 32px 4px; }
+}
+
+.miniatura {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  overflow: hidden;
+  border: 3px solid transparent;
+  border-radius: 12px;
+  background: $slate-100;
+  opacity: .65;
+  cursor: pointer;
+  transition: opacity .15s, border-color .15s;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &--attiva {
+    border-color: $viola-m;
+    opacity: 1;
+  }
+}
+
+// ---------- Video ----------
+
+.articolo__video {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 960px;
+  margin: 16px auto 0;
+  padding: 0 16px;
+
+  @media (min-width: 768px) { padding: 0 32px; }
+}
+
+.video {
+  display: block;
+  width: 100%;
+  max-height: 72vh;
+  border-radius: 18px;
+  background: $dark;
+  box-shadow: 0 16px 40px rgba($dark, .16);
+}
+
+.video-esterno {
+  overflow: hidden;
+  border-radius: 18px;
+  background: $slate-100;
+  box-shadow: 0 16px 40px rgba($dark, .12);
+  aspect-ratio: 16 / 9;
+
+  // I reel e i post di Instagram sono verticali, con la didascalia sotto.
+  &--instagram {
+    aspect-ratio: auto;
+    width: min(100%, 480px);
+    height: 640px;
+    margin: 0 auto;
+    background: $white;
+  }
+
+  iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+}

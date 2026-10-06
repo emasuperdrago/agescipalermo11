@@ -1,0 +1,22 @@
+# Dipendenze e file generati: si ricreano con npm install / npm run build.
+node_modules/
+agescipalermo11/.angular/
+agescipalermo11/www/
+.DS_Store
+
+# Chiavi e dati del gruppo: non vanno mai nel repository.
+.env
+.env.*
+!.env.esempio
+agescipalermo11-Backend/certificati/
+agescipalermo11-Backend/uploads/
+agescipalermo11-Backend/archivio-sqlite/
+*.sqlite
+*.sql
+*.xlsx
+*.xls
+*.csv
+*.pem
+
+# Pagine di prova per l'hosting: solo sul Mac.
+hosting/

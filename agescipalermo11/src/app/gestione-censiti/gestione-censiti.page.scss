@@ -1,0 +1,423 @@
+@use '../../theme/variables' as *;
+@use '../../theme/testata' as *;
+
+@include testata-pagina;
+
+.censiti {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+// ---------- Copertina ----------
+
+.copertina {
+  padding: 18px 20px 62px;
+  color: $white;
+  background-color: $viola-m;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, .16) 1.5px, transparent 1.7px),
+    $sfumatura-viola;
+  background-size: 20px 20px, 100% 100%;
+
+  @media (min-width: 768px) {
+    padding: 26px 32px 78px;
+  }
+
+  &__contenuto {
+    max-width: 980px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    margin: 0 0 2px;
+    font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0;
+    font-size: .85rem;
+    opacity: .9;
+  }
+}
+
+.corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 980px;
+  margin: -44px auto 0;
+  padding: 0 12px 32px;
+
+  @media (min-width: 768px) {
+    margin-top: -56px;
+    padding: 0 24px 48px;
+  }
+}
+
+.scheda {
+  padding: 18px 16px 20px;
+  border-radius: 22px;
+  background: $white;
+  box-shadow: 0 20px 50px rgba($dark, .1);
+
+  @media (min-width: 768px) {
+    padding: 22px 24px;
+  }
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 10px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: $dark;
+
+    ion-icon {
+      font-size: 1.3rem;
+      color: $viola-m;
+    }
+  }
+}
+
+.conta {
+  min-width: 24px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba($viola-l, .18);
+  font-size: .78rem;
+  font-weight: 800;
+  color: $viola;
+}
+
+.descrizione {
+  margin: 0 0 12px;
+  font-size: .86rem;
+  line-height: 1.5;
+  color: $slate-600;
+}
+
+.nota {
+  margin: 0 0 12px;
+  font-size: .82rem;
+  color: $slate;
+
+  &--branca {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+.branca {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--colore-branca);
+  font-size: .78rem;
+  font-weight: 800;
+  color: var(--su-branca);
+}
+
+// ---------- Chi si sta caricando ----------
+
+// Pasticca viola dei capigruppo, gemella di quella della branca.
+.ruolo-carico {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba($viola-l, .2);
+  font-size: .78rem;
+  font-weight: 800;
+  color: $viola;
+
+  ion-icon { font-size: 1rem; }
+}
+
+// ---------- File ----------
+
+.file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border: 1.5px dashed rgba($viola-m, .5);
+  border-radius: 16px;
+  background: rgba($viola-l, .07);
+  cursor: pointer;
+
+  &:hover {
+    border-color: $viola-m;
+    background: rgba($viola-l, .12);
+  }
+
+  input { display: none; }
+
+  &__icona {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: $white;
+    color: $viola;
+
+    ion-icon { font-size: 1.2rem; }
+  }
+
+  &__testo {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: .9rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: $viola;
+  }
+}
+
+// ---------- Messaggi ----------
+
+.messaggio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 11px 14px;
+  border-radius: 14px;
+  font-size: .86rem;
+  font-weight: 600;
+
+  ion-icon { font-size: 1.2rem; }
+
+  &--errore {
+    background: rgba($red, .1);
+    color: $red;
+  }
+
+  &--ok {
+    background: rgba($green-d, .12);
+    color: $green-d;
+  }
+}
+
+.scartate {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: $slate-100;
+  font-size: .82rem;
+  color: $slate-600;
+
+  summary {
+    font-weight: 700;
+    color: $slate-600;
+    cursor: pointer;
+  }
+
+  ul {
+    margin: 8px 0 0;
+    padding-left: 18px;
+  }
+
+  li { margin-bottom: 2px; }
+}
+
+// ---------- Anteprima del file ----------
+
+.anteprima {
+  margin-top: 14px;
+
+  &__titolo {
+    margin: 0 0 8px;
+    font-size: .86rem;
+    color: $slate-600;
+  }
+}
+
+.tabella {
+  overflow-x: auto;
+  border: 1px solid $slate-200;
+  border-radius: 14px;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .85rem;
+  }
+
+  th,
+  td {
+    padding: 9px 12px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background: $slate-100;
+    font-size: .74rem;
+    font-weight: 800;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    color: $slate-600;
+  }
+
+  tbody tr + tr td { border-top: 1px solid $slate-200; }
+
+  tbody tr:hover { background: rgba($viola-l, .06); }
+
+  .muto { color: $slate-400; }
+}
+
+.azioni {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.pulsante {
+  min-height: 44px;
+  padding: 10px 20px;
+  border: 1.5px solid $slate-200;
+  border-radius: 14px;
+  background: $white;
+  font-family: inherit;
+  font-size: .9rem;
+  font-weight: 700;
+  color: $slate-600;
+  cursor: pointer;
+
+  &:hover { border-color: $viola-m; color: $viola; }
+
+  &--primario {
+    border-color: transparent;
+    background: $sfumatura-viola;
+    box-shadow: 0 10px 24px rgba($viola, .28);
+    color: $white;
+
+    &:hover { color: $white; filter: brightness(1.08); }
+
+    &:disabled {
+      opacity: .6;
+      box-shadow: none;
+      cursor: default;
+      filter: none;
+    }
+  }
+}
+
+// ---------- Elenco ----------
+
+.cerca {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 0 14px;
+  border: 1.5px solid $slate-200;
+  border-radius: 14px;
+  background: $white;
+
+  &:focus-within {
+    border-color: $viola-m;
+    box-shadow: 0 0 0 4px rgba($viola-l, .2);
+  }
+
+  ion-icon {
+    flex-shrink: 0;
+    font-size: 1.1rem;
+    color: $slate-400;
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    min-height: 46px;
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: .92rem;
+    color: $dark;
+    outline: none;
+
+    &::-webkit-search-cancel-button { display: none; }
+  }
+}
+
+// Chi è stato aggiunto a mano e aspetta il censimento.
+.senza-codice {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba($amber, .18);
+  font-size: .72rem;
+  font-weight: 800;
+  color: #92610A;
+}
+
+.stato {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: $slate-100;
+  font-size: .74rem;
+  font-weight: 700;
+  color: $slate-600;
+
+  &--attivo {
+    background: rgba($green-d, .14);
+    color: $green-d;
+  }
+}
+
+.vuoto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 28px 16px;
+  border: 1px dashed $slate-200;
+  border-radius: 16px;
+  text-align: center;
+
+  &__icona {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    margin-bottom: 8px;
+    border-radius: 50%;
+    background: rgba($viola-l, .14);
+    color: $viola;
+
+    ion-icon { font-size: 1.6rem; }
+  }
+
+  &__titolo {
+    margin: 0;
+    font-weight: 700;
+    color: $dark;
+  }
+
+  &__testo {
+    margin: 0;
+    max-width: 420px;
+    font-size: .85rem;
+    color: $slate;
+  }
+
+  &--riga {
+    margin: 0;
+    font-size: .88rem;
+    color: $slate;
+  }
+}
+

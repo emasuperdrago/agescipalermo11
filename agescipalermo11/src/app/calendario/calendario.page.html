@@ -1,0 +1,239 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/home" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Home
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="calendario">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      <h1>Calendario</h1>
+      <p>Riunioni, uscite ed eventi di Branco, Reparto, Clan e Gruppo.</p>
+    </div>
+  </header>
+
+  <!-- Su computer calendario ed eventi del giorno stanno affiancati. -->
+  <div class="corpo">
+
+  <!-- Calendario: i mesi scorrono in orizzontale -->
+  <section class="scheda-calendario" aria-label="Calendario degli eventi">
+    <!-- Filtri: i pallini colorati fanno anche da legenda -->
+    <div class="filtri" role="group" aria-label="Filtra gli eventi">
+      <div class="filtri__intestazione">
+        <span class="filtri__titolo">
+          <ion-icon [icon]="icone.filtro" aria-hidden="true"></ion-icon>
+          Filtra
+        </span>
+        <span class="filtri__conteggio" aria-live="polite">
+          {{ numeroEventiMese }} {{ numeroEventiMese === 1 ? 'evento' : 'eventi' }} nel mese
+        </span>
+      </div>
+      <div class="filtri__scelte">
+        <button type="button" class="filtro filtro--tutti" [class.filtro--attivo]="tuttiVisibili"
+                [attr.aria-pressed]="tuttiVisibili" (click)="mostraTutti()">
+          Tutti
+        </button>
+        @for (e of etichette; track e.valore) {
+          <button type="button" class="filtro filtro--{{ e.valore }}"
+                  [class.filtro--attivo]="etichettaAttiva(e.valore)"
+                  [class.filtro--spento]="!filtroEtichette.has(e.valore)"
+                  [attr.aria-pressed]="etichettaAttiva(e.valore)"
+                  (click)="alternaEtichetta(e.valore)">
+            <span class="pallino pallino--{{ e.valore }}" aria-hidden="true"></span>
+            {{ e.nome }}
+          </button>
+        }
+        <button type="button" class="filtro filtro--evidenza" [class.filtro--attivo]="soloEvidenza"
+                [attr.aria-pressed]="soloEvidenza" (click)="alternaSoloEvidenza()">
+          <ion-icon [icon]="soloEvidenza ? icone.evidenza : icone.evidenzaVuota" aria-hidden="true"></ion-icon>
+          In evidenza
+        </button>
+      </div>
+    </div>
+
+    <div class="navigazione">
+      <button type="button" class="freccia" (click)="vaiAlMese(indiceMese - 1)" [disabled]="indiceMese === 0"
+              aria-label="Mese precedente">
+        <ion-icon [icon]="icone.precedente" aria-hidden="true"></ion-icon>
+      </button>
+      <h2 aria-live="polite">{{ meseVisibile.titolo }}</h2>
+      <button type="button" class="freccia" (click)="vaiAlMese(indiceMese + 1)"
+              [disabled]="indiceMese === mesi.length - 1" aria-label="Mese successivo">
+        <ion-icon [icon]="icone.successivo" aria-hidden="true"></ion-icon>
+      </button>
+      <button type="button" class="oggi" (click)="tornaAOggi()">
+        <ion-icon [icon]="icone.oggi" aria-hidden="true"></ion-icon>
+        Oggi
+      </button>
+    </div>
+
+    <div class="settimana" aria-hidden="true">
+      @for (g of giorniSettimana; track g) {
+        <span>{{ g }}</span>
+      }
+    </div>
+
+    <div class="mesi" #scorrimento (scroll)="alloScorrimento()">
+      @for (m of mesi; track m.chiave; let im = $index) {
+        <div class="mese" [attr.aria-label]="m.titolo" [attr.aria-hidden]="im !== indiceMese">
+          @if (vicino(im)) {
+          @for (g of giorniDi(m); track g.chiave) {
+            <button type="button" class="giorno"
+                    [class.giorno--fuori]="!g.delMese"
+                    [class.giorno--oggi]="g.chiave === oggi"
+                    [class.giorno--selezionato]="g.delMese && g.chiave === giornoSelezionato"
+                    [class.giorno--evidenza]="infoGiorni.get(g.chiave)?.inEvidenza"
+                    [attr.tabindex]="im === indiceMese && g.delMese ? null : -1"
+                    [attr.aria-pressed]="g.delMese && g.chiave === giornoSelezionato"
+                    [attr.aria-label]="descriviGiorno(g)"
+                    (click)="seleziona(g, im)">
+              <span class="giorno__numero">{{ g.numero }}</span>
+              @if (infoGiorni.get(g.chiave); as info) {
+                <span class="giorno__puntini" aria-hidden="true">
+                  @for (e of info.etichette; track e) {
+                    <span class="pallino pallino--{{ e }}"></span>
+                  }
+                </span>
+                @if (info.inEvidenza) {
+                  <ion-icon class="giorno__bandiera" [icon]="icone.evidenza" aria-hidden="true"></ion-icon>
+                }
+              }
+            </button>
+          }
+          }
+        </div>
+      }
+    </div>
+  </section>
+
+  <div class="colonna-eventi">
+  <!-- Eventi del giorno selezionato -->
+  <section class="giornata">
+    <div class="giornata__intestazione">
+      <h3>{{ titoloGiorno }}</h3>
+      @if (puoModificare) {
+        <button type="button" class="aggiungi" (click)="apriEditor()">
+          <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+          Aggiungi evento
+        </button>
+      }
+    </div>
+
+    @if (errore) {
+      <p class="vuoto vuoto--errore">{{ errore }}</p>
+    } @else if (eventiSelezionati.length) {
+      <div class="eventi">
+        @for (e of eventiSelezionati; track e.id) {
+          <article class="evento evento--{{ e.etichette[0] }}" [class.evento--evidenza]="e.in_evidenza"
+                   [style.--striscia]="sfondoEtichette(e.etichette)">
+            <div class="evento__corpo">
+              <div class="evento__meta">
+                @for (x of e.etichette; track x) {
+                  <span class="badge">
+                    <span class="pallino pallino--{{ x }}" aria-hidden="true"></span>
+                    {{ nomeEtichetta(x) }}
+                  </span>
+                }
+                @if (e.in_evidenza) {
+                  <span class="badge badge--evidenza">
+                    <ion-icon [icon]="icone.evidenza" aria-hidden="true"></ion-icon>
+                    In evidenza
+                  </span>
+                }
+              </div>
+              <h4>{{ e.titolo }}</h4>
+              <p class="evento__dettaglio">
+                <ion-icon [icon]="icone.orario" aria-hidden="true"></ion-icon>
+                {{ orario(e) }}
+              </p>
+              @if (e.luogo) {
+                <p class="evento__dettaglio">
+                  <ion-icon [icon]="icone.luogo" aria-hidden="true"></ion-icon>
+                  {{ e.luogo }}
+                </p>
+              }
+              @if (e.descrizione) {
+                <p class="evento__descrizione">{{ e.descrizione }}</p>
+              }
+
+              <!-- Salva l'evento nel calendario del dispositivo (file .ics su Apple, Google Calendar altrove). -->
+              <button type="button" class="esporta" (click)="esportaEvento(e)">
+                <ion-icon [icon]="icone.esporta" aria-hidden="true"></ion-icon>
+                {{ testoEsporta }}
+              </button>
+            </div>
+
+            @if (puoModificare) {
+              <div class="evento__azioni">
+                <button type="button" [class.attiva]="e.in_evidenza" (click)="alternaEvidenza(e)"
+                        [attr.aria-pressed]="e.in_evidenza"
+                        [attr.aria-label]="e.in_evidenza ? 'Togli dall’evidenza' : 'Metti in evidenza'"
+                        [attr.title]="e.in_evidenza ? 'Togli dall’evidenza' : 'Metti in evidenza'">
+                  <ion-icon [icon]="e.in_evidenza ? icone.evidenza : icone.evidenzaVuota" aria-hidden="true"></ion-icon>
+                </button>
+                <button type="button" (click)="apriEditor(e)" aria-label="Modifica l’evento" title="Modifica">
+                  <ion-icon [icon]="icone.modifica" aria-hidden="true"></ion-icon>
+                </button>
+                <button type="button" class="elimina" (click)="confermaElimina(e)" aria-label="Elimina l’evento" title="Elimina">
+                  <ion-icon [icon]="icone.elimina" aria-hidden="true"></ion-icon>
+                </button>
+              </div>
+            }
+          </article>
+        }
+      </div>
+    } @else if (giornoNascostoDaiFiltri) {
+      <p class="vuoto">
+        Gli eventi di questo giorno sono nascosti dai filtri.
+        <button type="button" class="vuoto__azione" (click)="mostraTutti()">Mostra tutti</button>
+      </p>
+    } @else if (!caricamento) {
+      <p class="vuoto">Nessun evento in questo giorno.</p>
+    }
+  </section>
+
+  <!-- Prossimi eventi con la bandierina -->
+  @if (prossimiInEvidenza.length) {
+    <section class="in-evidenza">
+      <h3>
+        <ion-icon [icon]="icone.evidenza" aria-hidden="true"></ion-icon>
+        In evidenza
+      </h3>
+      <ul>
+        @for (e of prossimiInEvidenza; track e.id) {
+          <li>
+            <button type="button" class="prossimo evento--{{ e.etichette[0] }}" (click)="vaiAlGiorno(e.data_inizio)"
+                    [style.--striscia]="sfondoEtichette(e.etichette, 'to right')">
+              <span class="prossimo__data">
+                <strong>{{ dataBreve(e).giorno }}</strong>
+                <small>{{ dataBreve(e).mese }}</small>
+              </span>
+              <span class="prossimo__testo">
+                <strong>{{ e.titolo }}</strong>
+                <small>{{ nomiEtichette(e.etichette) }} · {{ orario(e) }}</small>
+              </span>
+            </button>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+  </div>
+
+  </div>
+</ion-content>
+
+<app-barra-inferiore attiva="calendario" />

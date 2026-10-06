@@ -1,0 +1,184 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/home" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Home
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="iscrizione">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      <h1>Vuoi entrare nel Palermo 11?</h1>
+      <p>Lascia i tuoi dati: i capi della branca giusta ti ricontattano per conoscervi e spiegarvi tutto.</p>
+    </div>
+  </header>
+
+  <div class="corpo">
+
+    @if (inviata) {
+      <!-- Ringraziamento: il modulo sparisce, così non si manda due volte per sbaglio. -->
+      <section class="scheda scheda--fatto">
+        <span class="fatto__icona" aria-hidden="true">
+          <ion-icon [icon]="icone.fatto"></ion-icon>
+        </span>
+        <h2>Richiesta inviata!</h2>
+        <p>{{ destinatario }}: ti ricontattano loro ai recapiti che hai lasciato.</p>
+        <div class="fatto__azioni">
+          <a class="invia" routerLink="/home">
+            <ion-icon [icon]="icone.home" aria-hidden="true"></ion-icon>
+            Torna alla home
+          </a>
+          <button type="button" class="altra" (click)="nuovaRichiesta()">Manda un'altra richiesta</button>
+        </div>
+      </section>
+    } @else {
+
+      <!-- (input): appena si corregge qualcosa l'avviso rosso sparisce, invece di restare lì
+           a dire una cosa che non è più vera. -->
+      <form class="scheda" (ngSubmit)="invia()" (input)="errore = ''">
+        <p class="obbligatori">I campi con <strong>*</strong> sono obbligatori.</p>
+
+        <div class="coppia">
+          <label class="campo">
+            <span class="etichetta">Nome *</span>
+            <input name="nome" [(ngModel)]="dati.nome" maxlength="60" autocomplete="given-name"
+                   placeholder="Es. Marco" />
+          </label>
+          <label class="campo">
+            <span class="etichetta">Cognome *</span>
+            <input name="cognome" [(ngModel)]="dati.cognome" maxlength="60" autocomplete="family-name"
+                   placeholder="Es. Rossi" />
+          </label>
+        </div>
+
+        <fieldset class="campo">
+          <legend class="etichetta">Data di nascita *</legend>
+          <div class="nascita">
+            <select name="giorno" [(ngModel)]="giorno" (ngModelChange)="aggiornaNascita()"
+                    aria-label="Giorno di nascita">
+              <option value="">Giorno</option>
+              @for (g of giorniDelMese; track g) {
+                <option [value]="g">{{ g }}</option>
+              }
+            </select>
+            <select name="mese" [(ngModel)]="mese" (ngModelChange)="aggiornaNascita()"
+                    aria-label="Mese di nascita">
+              <option value="">Mese</option>
+              @for (m of mesi; track m; let i = $index) {
+                <option [value]="i + 1">{{ m }}</option>
+              }
+            </select>
+            <select name="annoNascita" [(ngModel)]="annoNascita" (ngModelChange)="aggiornaNascita()"
+                    aria-label="Anno di nascita">
+              <option value="">Anno</option>
+              @for (a of anniDiNascita; track a) {
+                <option [value]="a">{{ a }}</option>
+              }
+            </select>
+          </div>
+        </fieldset>
+
+        <fieldset class="campo">
+          <legend class="etichetta">Anno scolastico che sta facendo adesso *</legend>
+          <p class="aiuto">Serve per capire la branca: accogliamo dalla 3ª elementare alla 5ª superiore.</p>
+          <div class="scelte">
+            @for (a of anni; track a.valore) {
+              <button type="button" class="anno" [style]="stiliBranca(a.branca)"
+                      [class.anno--scelto]="dati.anno_scolastico === a.valore"
+                      [attr.aria-pressed]="dati.anno_scolastico === a.valore" (click)="scegliAnno(a.valore)">
+                {{ a.nome }}
+              </button>
+            }
+          </div>
+          @if (tappaScelta) {
+            <p class="tappa" aria-live="polite">{{ tappaScelta }}</p>
+          }
+        </fieldset>
+
+        <!-- Almeno un genitore; il secondo si aggiunge se si vuole. -->
+        <fieldset class="campo">
+          <legend class="etichetta">Un genitore *</legend>
+          <div class="coppia">
+            <label class="campo">
+              <span class="sottoetichetta">Nome</span>
+              <input name="genitore1Nome" [(ngModel)]="dati.genitore1_nome" maxlength="60" autocomplete="off"
+                     placeholder="Es. Laura" />
+            </label>
+            <label class="campo">
+              <span class="sottoetichetta">Cognome</span>
+              <input name="genitore1Cognome" [(ngModel)]="dati.genitore1_cognome" maxlength="60" autocomplete="off"
+                     placeholder="Es. Bianchi" />
+            </label>
+          </div>
+        </fieldset>
+
+        @if (secondoGenitore) {
+          <fieldset class="campo">
+            <legend class="etichetta">L'altro genitore</legend>
+            <div class="coppia">
+              <label class="campo">
+                <span class="sottoetichetta">Nome</span>
+                <input name="genitore2Nome" [(ngModel)]="dati.genitore2_nome" maxlength="60" autocomplete="off"
+                       placeholder="Es. Paolo" />
+              </label>
+              <label class="campo">
+                <span class="sottoetichetta">Cognome</span>
+                <input name="genitore2Cognome" [(ngModel)]="dati.genitore2_cognome" maxlength="60" autocomplete="off"
+                       placeholder="Es. Rossi" />
+              </label>
+            </div>
+            <button type="button" class="link-piccolo" (click)="togliSecondoGenitore()">Togli l'altro genitore</button>
+          </fieldset>
+        } @else {
+          <button type="button" class="link-piccolo" (click)="secondoGenitore = true">+ Aggiungi anche l'altro genitore</button>
+        }
+
+        <div class="coppia">
+          <label class="campo">
+            <span class="etichetta">Telefono</span>
+            <input type="tel" name="telefono" [(ngModel)]="dati.telefono" maxlength="20" autocomplete="tel"
+                   placeholder="Es. 333 1234567" />
+          </label>
+          <label class="campo">
+            <span class="etichetta">Email</span>
+            <input type="email" name="email" [(ngModel)]="dati.email" maxlength="120" autocomplete="email"
+                   placeholder="Es. nome@email.it" />
+          </label>
+        </div>
+        <p class="aiuto aiuto--contatti">Basta uno dei due, ma serve almeno un modo per richiamarti.</p>
+
+        <label class="campo">
+          <span class="etichetta">Note</span>
+          <textarea name="note" [(ngModel)]="dati.note" rows="4" maxlength="1000"
+                    placeholder="Scrivi quello che vuoi farci sapere: allergie, fratelli già nel gruppo, orari…"></textarea>
+        </label>
+
+        @if (errore) {
+          <p class="errore" role="alert">{{ errore }}</p>
+        }
+
+        <button type="submit" class="invia" [disabled]="inviando">
+          <ion-icon [icon]="icone.invia" aria-hidden="true"></ion-icon>
+          {{ inviando ? 'Invio in corso…' : 'Manda la richiesta' }}
+        </button>
+
+        <p class="privacy">
+          I dati servono solo ai capi per ricontattarti: non finiscono da nessun'altra parte.
+        </p>
+      </form>
+    }
+  </div>
+
+</ion-content>

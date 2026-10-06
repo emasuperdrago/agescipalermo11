@@ -1,0 +1,131 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/home" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Home
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<!-- Su telefono la mappa sta sopra e l'elenco sotto; su computer l'elenco è a sinistra. -->
+<ion-content class="pagina-mappa" [scrollY]="true">
+  <div class="disposizione">
+
+    <section class="riquadro-mappa" aria-label="Mappa dei posti">
+      <div class="mappa" #mappa></div>
+
+      <!-- Filtro sul colore della bandierina, sopra la mappa -->
+      <div class="filtri" role="group" aria-label="Filtra le bandierine per branca">
+        <button type="button" class="filtro filtro--tutte" [class.filtro--attivo]="tutteVisibili"
+                [attr.aria-pressed]="tutteVisibili" (click)="mostraTutte()">
+          Tutte
+          <span class="filtro__numero">{{ posti.length }}</span>
+        </button>
+        @for (b of branche; track b.valore) {
+          <button type="button" class="filtro" [style]="stiliBranca(b.valore)"
+                  [class.filtro--attivo]="brancaAttiva(b.valore)"
+                  [class.filtro--spento]="!filtroBranche.has(b.valore)"
+                  [attr.aria-pressed]="brancaAttiva(b.valore)"
+                  (click)="alternaBranca(b.valore)">
+            <span class="filtro__bandierina" aria-hidden="true"></span>
+            {{ b.nome }}
+            <span class="filtro__numero">{{ numeroPer(b.valore) }}</span>
+          </button>
+        }
+      </div>
+
+      @if (puoModificare) {
+        <button type="button" class="nuovo-posto" (click)="aggiungiPosto()">
+          <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+          Aggiungi posto
+        </button>
+      }
+    </section>
+
+    <!-- Elenco dei posti -->
+    <section class="elenco" aria-labelledby="titolo-elenco">
+      <header class="elenco__intestazione">
+        <h1 id="titolo-elenco">Mappa dei posti</h1>
+        <p>Basi, case e terreni per uscite e campi. Tocca una bandierina per vedere tutte le informazioni.</p>
+      </header>
+
+      <label class="cerca">
+        <ion-icon [icon]="icone.cerca" aria-hidden="true"></ion-icon>
+        <input type="search" name="ricerca" [(ngModel)]="ricerca" placeholder="Cerca per nome o indirizzo"
+               aria-label="Cerca un posto" autocomplete="off" />
+        @if (ricerca) {
+          <button type="button" class="cerca__cancella" (click)="ricerca = ''" aria-label="Cancella la ricerca">
+            <ion-icon [icon]="icone.cancella" aria-hidden="true"></ion-icon>
+          </button>
+        }
+      </label>
+
+      @if (errore) {
+        <p class="vuoto vuoto--errore">{{ errore }}</p>
+      } @else if (caricamento) {
+        <div class="scheletro" aria-busy="true" aria-label="Caricamento dei posti">
+          <div></div><div></div><div></div>
+        </div>
+      } @else if (!posti.length) {
+        <div class="vuoto">
+          <p>Sulla mappa non c'è ancora nessun posto.</p>
+          @if (puoModificare) {
+            <button type="button" class="vuoto__azione" (click)="aggiungiPosto()">Aggiungi il primo</button>
+          }
+        </div>
+      } @else if (!postiElenco.length) {
+        <div class="vuoto">
+          <p>Nessun posto corrisponde {{ ricerca ? 'alla ricerca' : 'al filtro' }}.</p>
+          <button type="button" class="vuoto__azione" (click)="ricerca = ''; mostraTutte()">Mostra tutti</button>
+        </div>
+      } @else {
+        <p class="elenco__conteggio" aria-live="polite">
+          {{ postiElenco.length }} {{ postiElenco.length === 1 ? 'posto' : 'posti' }}
+        </p>
+        <ul class="posti">
+          @for (p of postiElenco; track p.id) {
+            <li>
+              <a class="posto" [routerLink]="['/mappa', p.id]" [style]="stiliBranca(p.branca)">
+                <span class="posto__bandierina" aria-hidden="true"></span>
+                <span class="posto__testo">
+                  <strong>
+                    {{ p.nome }}
+                    @if (p.sede) {
+                      <span class="posto__sede">Sede</span>
+                    }
+                  </strong>
+                  <small>
+                    {{ nomeBranca(p.branca) }}@if (testoCampi(p); as campi) { · {{ campi }}}@if (p.indirizzo) { · {{ p.indirizzo }}}
+                  </small>
+                  @if (numeroFoto(p) || numeroFile(p)) {
+                    <span class="posto__allegati">
+                      @if (numeroFoto(p)) {
+                        <span><ion-icon [icon]="icone.foto" aria-hidden="true"></ion-icon>{{ numeroFoto(p) }} foto</span>
+                      }
+                      @if (numeroFile(p)) {
+                        <span><ion-icon [icon]="icone.file" aria-hidden="true"></ion-icon>{{ numeroFile(p) }} file</span>
+                      }
+                    </span>
+                  }
+                </span>
+                <ion-icon class="posto__freccia" [icon]="icone.apri" aria-hidden="true"></ion-icon>
+              </a>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+  </div>
+</ion-content>
+
+<app-barra-inferiore attiva="mappa" />

@@ -1,0 +1,207 @@
+@use '../../theme/variables' as *;
+@use '../../theme/murales' as *;
+
+.accesso {
+  --background: #{$sfondo-pagina};
+  font-family: 'Poppins', sans-serif;
+}
+
+.stage {
+  @include pagina-murales;
+}
+
+.barra {
+  width: 100%;
+  max-width: 480px;
+  margin-bottom: 14px;
+}
+
+// Pillola di vetro chiaro: leggibile sia sopra la foto sia sopra lo sfondo.
+.indietro {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba($white, .75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 14px rgba($viola, .12);
+  font-size: .9rem;
+  font-weight: 700;
+  color: $viola;
+  text-decoration: none;
+
+  &:hover { background: $white; }
+}
+
+.scheda {
+  width: 100%;
+  max-width: 480px;
+  padding: 32px 24px 24px;
+  background: $white;
+  border: 1px solid $brd-light;
+  border-radius: 28px;
+  box-shadow: 0 24px 60px rgba($blue-dk, .12);
+}
+
+.titolo {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: $blue-dk;
+}
+
+.sottotitolo {
+  margin: 6px 0 20px;
+  font-size: .9rem;
+  color: $slate-600;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 20px;
+  background: $slate-100;
+  border-radius: 14px;
+
+  button {
+    min-height: 40px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    font-family: inherit;
+    font-size: .9rem;
+    font-weight: 700;
+    color: $slate;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+
+    &.attivo {
+      background: $white;
+      color: $blue-dk;
+      box-shadow: 0 2px 8px rgba($dark, .08);
+    }
+  }
+}
+
+.messaggio {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: .85rem;
+  font-weight: 600;
+
+  &--errore { background: rgba($red, .1); color: $red; }
+  &--ok { background: rgba($green, .16); color: $green-d; }
+
+  // "Rimanda l'email" sotto l'errore.
+  .link {
+    display: block;
+    margin-top: 6px;
+    color: inherit;
+    text-decoration: underline;
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.riga {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+
+  @media (max-width: 420px) { grid-template-columns: 1fr; }
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+
+  span {
+    font-size: .8rem;
+    font-weight: 700;
+    color: $slate-600;
+  }
+
+  input,
+  select {
+    width: 100%;
+    min-height: 48px;
+    padding: 10px 14px;
+    border: 1.5px solid $slate-200;
+    border-radius: 12px;
+    background: $white;
+    font-family: inherit;
+    font-size: .95rem;
+    color: $dark;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+
+    &:focus {
+      border-color: $blue;
+      box-shadow: 0 0 0 4px rgba($blue, .15);
+    }
+  }
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .85rem;
+  color: $slate-600;
+  cursor: pointer;
+
+  input { width: 16px; height: 16px; accent-color: $blue; }
+}
+
+.pulsante {
+  width: 100%;
+  min-height: 52px;
+  margin-top: 6px;
+  border-radius: 16px;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+
+  &:active:not(:disabled) { transform: scale(.98); }
+  &:disabled { opacity: .6; cursor: default; }
+
+  &--primario {
+    border: none;
+    color: $white;
+    background: $sfumatura-viola;
+    box-shadow: 0 10px 24px rgba($viola, .3);
+
+    &:hover:not(:disabled) { box-shadow: 0 14px 30px rgba($viola, .4); }
+  }
+}
+
+.nota {
+  margin: 18px 0 0;
+  text-align: center;
+  font-size: .85rem;
+  color: $slate;
+}
+
+.link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  color: $blue-d;
+  cursor: pointer;
+
+  &:hover { text-decoration: underline; }
+}

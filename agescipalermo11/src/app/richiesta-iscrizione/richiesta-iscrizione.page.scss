@@ -1,0 +1,335 @@
+@use '../../theme/variables' as *;
+@use '../../theme/testata' as *;
+
+@include testata-pagina;
+
+.iscrizione {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+// ---------- Copertina ----------
+
+.copertina {
+  padding: 18px 20px 62px;
+  color: $white;
+  background-color: $viola-m;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, .16) 1.5px, transparent 1.7px),
+    $sfumatura-viola;
+  background-size: 20px 20px, 100% 100%;
+
+  @media (min-width: 768px) {
+    padding: 26px 32px 78px;
+  }
+
+  &__contenuto {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    margin: 0 0 2px;
+    font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0;
+    font-size: .85rem;
+    opacity: .9;
+  }
+}
+
+.corpo {
+  max-width: 720px;
+  margin: -44px auto 0;
+  padding: 0 12px 32px;
+
+  @media (min-width: 768px) {
+    margin-top: -56px;
+    padding: 0 24px 48px;
+  }
+}
+
+// ---------- Modulo ----------
+
+.scheda {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px 16px 20px;
+  border-radius: 20px;
+  background: $white;
+  box-shadow: 0 14px 34px rgba($dark, .1);
+
+  @media (min-width: 768px) {
+    padding: 24px;
+  }
+}
+
+.obbligatori {
+  margin: 0;
+  font-size: .82rem;
+  color: $slate;
+}
+
+// Nome e cognome (e telefono ed email) affiancati dove c'è spazio.
+.coppia {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  @media (min-width: 600px) {
+    flex-direction: row;
+
+    > .campo { flex: 1; }
+  }
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+
+  input,
+  textarea {
+    width: 100%;
+    min-height: 48px;
+    padding: 11px 14px;
+    border: 1.5px solid $slate-200;
+    border-radius: 12px;
+    background: $white;
+    font-family: inherit;
+    font-size: .95rem;
+    color: $dark;
+    outline: none;
+
+    &:focus {
+      border-color: $viola-m;
+      box-shadow: 0 0 0 4px rgba($viola-l, .2);
+    }
+  }
+
+  textarea {
+    line-height: 1.5;
+    resize: vertical;
+  }
+}
+
+// ---------- Data di nascita ----------
+
+// Tre tendine al posto del calendario: giorno, mese e anno, uguali su tutti i dispositivi.
+.nascita {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr;
+  gap: 8px;
+
+  select {
+    width: 100%;
+    min-height: 48px;
+    padding: 11px 32px 11px 12px;
+    border: 1.5px solid $slate-200;
+    border-radius: 12px;
+    background-color: $white;
+    // Freccetta disegnata a mano: quella di serie cambia da browser a browser.
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+    appearance: none;
+    -webkit-appearance: none;
+    font-family: inherit;
+    font-size: .95rem;
+    color: $dark;
+    outline: none;
+    cursor: pointer;
+
+    &:focus {
+      border-color: $viola-m;
+      box-shadow: 0 0 0 4px rgba($viola-l, .2);
+    }
+
+    // Finché non si sceglie, la scritta è chiara come un segnaposto.
+    &:invalid,
+    &:has(option[value=""]:checked) { color: $slate-400; }
+  }
+}
+
+.etichetta {
+  padding: 0;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $slate-600;
+}
+
+.aiuto {
+  margin: 0;
+  font-size: .78rem;
+  color: $slate;
+
+  &--contatti { margin-top: -8px; }
+}
+
+// "Nome" e "Cognome" sotto la voce "Un genitore".
+.sottoetichetta {
+  font-size: .76rem;
+  font-weight: 600;
+  color: $slate;
+}
+
+// "+ Aggiungi anche l'altro genitore" e "Togli l'altro genitore".
+.link-piccolo {
+  align-self: flex-start;
+  margin-top: -6px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $viola-m;
+  cursor: pointer;
+
+  &:hover { text-decoration: underline; }
+}
+
+// ---------- Anno scolastico ----------
+
+.scelte {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.anno {
+  --colore-branca: #{$viola-m};
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1.5px solid $slate-200;
+  border-radius: 999px;
+  background: $white;
+  font-family: inherit;
+  font-size: .85rem;
+  font-weight: 700;
+  color: $slate-600;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+
+  &:hover { border-color: var(--colore-branca); }
+
+  &--scelto {
+    border-color: var(--colore-branca);
+    background: var(--colore-branca);
+    color: var(--su-branca, #{$white});
+  }
+}
+
+// Branca e anno di percorso dell'anno scelto.
+.tappa {
+  margin: 10px 0 0;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $viola;
+}
+
+.errore {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba($red, .1);
+  font-size: .85rem;
+  font-weight: 600;
+  color: $red;
+}
+
+.invia {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  border: none;
+  border-radius: 16px;
+  background: $sfumatura-viola;
+  box-shadow: 0 10px 24px rgba($viola, .3);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  color: $white;
+  text-decoration: none;
+  cursor: pointer;
+
+  ion-icon { font-size: 1.2rem; }
+
+  &:disabled { opacity: .7; cursor: default; }
+}
+
+.privacy {
+  margin: 0;
+  font-size: .75rem;
+  color: $slate-400;
+  text-align: center;
+}
+
+// ---------- Ringraziamento ----------
+
+.scheda--fatto {
+  align-items: center;
+  text-align: center;
+
+  h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: $dark;
+  }
+
+  p {
+    margin: 0;
+    font-size: .92rem;
+    color: $slate-600;
+  }
+}
+
+.fatto__icona {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba($green-d, .12);
+  color: $green-d;
+
+  ion-icon { font-size: 2rem; }
+}
+
+.fatto__azioni {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.altra {
+  min-height: 46px;
+  border: 1.5px solid $slate-200;
+  border-radius: 14px;
+  background: $white;
+  font-family: inherit;
+  font-size: .9rem;
+  font-weight: 700;
+  color: $slate-600;
+  cursor: pointer;
+
+  &:hover { border-color: $viola-m; color: $viola; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anno { transition: none; }
+}

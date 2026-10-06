@@ -1,0 +1,71 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/canzoniere" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Canzoniere
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="dettaglio-canto">
+  @if (canto) {
+    <article class="canto" [style.--colore-sezione]="coloreSezione(canto.sezione)">
+
+      <header class="copertina">
+        <div class="copertina__contenuto">
+          <span class="badge">{{ nomeSezione(canto.sezione) }}</span>
+          <h1>{{ canto.titolo }}</h1>
+          <div class="copertina__azioni">
+            <button type="button" class="pulsante pulsante--chiaro" (click)="accordiVisibili = !accordiVisibili"
+                    [attr.aria-pressed]="!accordiVisibili">
+              {{ accordiVisibili ? 'Nascondi accordi' : 'Mostra accordi' }}
+            </button>
+            @if (puoModificare) {
+              <button type="button" class="pulsante pulsante--vetro" (click)="modifica()" [disabled]="eliminando">
+                <ion-icon [icon]="icone.modifica" aria-hidden="true"></ion-icon>
+                Modifica
+              </button>
+              <button type="button" class="pulsante pulsante--vetro" (click)="confermaElimina()" [disabled]="eliminando">
+                <ion-icon [icon]="icone.elimina" aria-hidden="true"></ion-icon>
+                {{ eliminando ? 'Eliminazione…' : 'Elimina' }}
+              </button>
+            }
+          </div>
+        </div>
+      </header>
+
+      <!-- Il testo com'è sul foglio: solo le righe degli accordi si distinguono. -->
+      <div class="foglio">
+        <div class="testo">
+          @for (r of righe; track $index) {
+            <pre class="riga" [class.riga--accordi]="r.accordi">@for (p of r.pezzi; track $index) {<span
+              [class.grassetto]="p.grassetto">{{ p.testo }}</span>}</pre>
+          }
+        </div>
+      </div>
+    </article>
+  } @else if (errore) {
+    <div class="stato">
+      <p class="stato__titolo">{{ errore }}</p>
+      <a class="pulsante pulsante--pieno" routerLink="/canzoniere" routerDirection="back">
+        <ion-icon [icon]="icone.indietro" aria-hidden="true"></ion-icon>
+        Torna al canzoniere
+      </a>
+    </div>
+  } @else if (caricamento) {
+    <div class="scheletro" aria-busy="true" aria-label="Caricamento del canto">
+      <div class="scheletro__copertina"></div>
+      <div class="scheletro__riga"></div>
+      <div class="scheletro__riga scheletro__riga--corta"></div>
+    </div>
+  }
+</ion-content>

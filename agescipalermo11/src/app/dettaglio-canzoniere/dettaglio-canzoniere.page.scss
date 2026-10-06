@@ -1,0 +1,206 @@
+@use '../../theme/variables' as *;
+@use '../../theme/testata' as *;
+
+@include testata-pagina;
+
+.dettaglio-canto {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+// ---------- Copertina ----------
+
+.copertina {
+  padding: 28px 20px 74px;
+  color: $white;
+  background-color: var(--colore-sezione);
+  background-image:
+    radial-gradient(rgba(255, 255, 255, .16) 1.5px, transparent 1.7px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, .2) 100%);
+  background-size: 20px 20px, 100% 100%;
+
+  @media (min-width: 768px) {
+    padding: 44px 32px 92px;
+  }
+
+  &__contenuto {
+    max-width: 820px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    margin: 12px 0 0;
+    font-size: clamp(1.5rem, 5vw, 2.2rem);
+    font-weight: 800;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  &__azioni {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 18px;
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba($white, .22);
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.pulsante {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: .88rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter .15s, background .15s;
+
+  ion-icon { font-size: 1.1rem; }
+
+  &:disabled { opacity: .6; cursor: default; }
+
+  &--chiaro {
+    background: $white;
+    color: var(--colore-sezione);
+
+    &:hover { filter: brightness(.96); }
+  }
+
+  &--vetro {
+    background: rgba($white, .18);
+    color: $white;
+
+    &:hover:not(:disabled) { background: rgba($white, .28); }
+  }
+
+  &--pieno {
+    background: $sfumatura-viola;
+    box-shadow: 0 8px 20px rgba($viola, .25);
+    color: $white;
+
+    &:hover { filter: brightness(1.08); }
+  }
+}
+
+// ---------- Testo del canto ----------
+
+.foglio {
+  max-width: 820px;
+  margin: -48px auto 0;
+  padding: 0 12px calc(32px + env(safe-area-inset-bottom));
+
+  @media (min-width: 768px) {
+    margin-top: -60px;
+    padding: 0 24px 48px;
+  }
+}
+
+// Gli accordi stanno sopra le parole: servono spazi e a capo così come sono,
+// e un carattere a larghezza fissa perché le colonne restino allineate.
+.testo {
+  padding: 18px 14px;
+  border-radius: 20px;
+  background: $white;
+  box-shadow: 0 16px 44px rgba($dark, .1);
+  font-family: 'SFMono-Regular', ui-monospace, 'Menlo', 'Consolas', monospace;
+  font-size: .78rem;
+  line-height: 1.6;
+  color: $dark;
+  // Le righe non vanno a capo, altrimenti gli accordi non stanno più sopra le parole:
+  // sui telefoni stretti il testo si fa scorrere di lato.
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  @media (min-width: 480px) { font-size: .84rem; }
+
+  @media (min-width: 768px) {
+    padding: 26px 28px;
+    font-size: .92rem;
+  }
+}
+
+// Parti scritte tra **asterischi** nel testo del canto.
+.grassetto {
+  font-weight: 700;
+}
+
+.riga {
+  // Una riga vuota separa le strofe: deve restare alta come le altre.
+  min-height: 1.6em;
+  margin: 0;
+  font: inherit;
+  white-space: pre;
+  tab-size: 4;
+
+  // Accordi: in grassetto e nel colore della sezione, così si distinguono dalle parole.
+  &--accordi {
+    font-weight: 700;
+    color: var(--colore-sezione);
+    letter-spacing: .02em;
+  }
+}
+
+// ---------- Stati ----------
+
+.stato {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 72px 24px;
+  text-align: center;
+
+  &__titolo {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: $dark;
+  }
+}
+
+.scheletro {
+  > div {
+    background: linear-gradient(90deg, $slate-100 25%, $slate-200 50%, $slate-100 75%);
+    background-size: 200% 100%;
+    animation: luccichio 1.4s ease-in-out infinite;
+  }
+
+  &__copertina { height: 180px; }
+
+  &__riga {
+    max-width: 700px;
+    height: 16px;
+    margin: 28px 16px 0;
+    border-radius: 8px;
+
+    @media (min-width: 768px) { margin: 28px auto 0; }
+
+    &--corta { max-width: 420px; }
+  }
+}
+
+@keyframes luccichio {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scheletro > div { animation: none; }
+}

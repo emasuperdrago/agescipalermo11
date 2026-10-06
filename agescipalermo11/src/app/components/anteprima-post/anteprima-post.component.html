@@ -1,0 +1,63 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Anteprima</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="chiudi()" aria-label="Chiudi">
+        <ion-icon slot="icon-only" [icon]="icone.chiudi"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="anteprima">
+  <article class="post" [style.--colore-post]="post.colore">
+    <img class="post__foto" [src]="foto" alt="" />
+
+    <div class="post__corpo">
+      <div class="post__segni">
+        <span class="etichetta">
+          <span class="pallino pallino--{{ post.etichetta }}" aria-hidden="true"></span>
+          {{ nomeEtichetta(post.etichetta) }}
+        </span>
+        <span class="attesa">In attesa del sì</span>
+      </div>
+
+      <h1>{{ post.didascalia }}</h1>
+      <p class="firma">
+        @if (post.autore) { {{ post.autore }} · }
+        {{ quando }}
+      </p>
+
+      @if (post.testo) {
+        <p class="testo">{{ post.testo }}</p>
+      } @else {
+        <p class="testo testo--vuoto">Nessun testo: c'è solo la foto e la didascalia.</p>
+      }
+    </div>
+  </article>
+
+  <p class="nota">Così comparirà nella home, una volta pubblicato.</p>
+</ion-content>
+
+<!-- Le decisioni stanno in fondo, sempre a portata di pollice. -->
+@if (puoApprovare || eMio) {
+  <div class="azioni">
+    @if (puoApprovare) {
+      <button type="button" class="pulsante pulsante--si" (click)="decidi('pubblica')">
+        <ion-icon [icon]="icone.pubblica" aria-hidden="true"></ion-icon>
+        Pubblica
+      </button>
+      <button type="button" class="pulsante pulsante--no" (click)="decidi('rifiuta')">
+        Rifiuta
+      </button>
+    } @else {
+      <button type="button" class="pulsante pulsante--si" (click)="decidi('modifica')">
+        <ion-icon [icon]="icone.modifica" aria-hidden="true"></ion-icon>
+        Modifica
+      </button>
+      <button type="button" class="pulsante pulsante--no" (click)="decidi('ritira')">
+        Ritira
+      </button>
+    }
+  </div>
+}

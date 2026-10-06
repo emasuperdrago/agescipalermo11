@@ -1,0 +1,100 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>{{ modifica ? 'Modifica evento' : 'Nuovo evento' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="chiudi()" aria-label="Chiudi">
+        <ion-icon slot="icon-only" [icon]="icone.chiudi"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="evento-editor">
+  <form class="modulo" (ngSubmit)="salva()">
+    <p class="obbligatori">I campi con <strong>*</strong> sono obbligatori.</p>
+
+    <label class="campo">
+      <span class="etichetta">Titolo *</span>
+      <input name="titolo" [(ngModel)]="titolo" maxlength="120" placeholder="Es. Riunione di Reparto" />
+    </label>
+
+    <div class="riga">
+      <label class="campo">
+        <span class="etichetta">{{ piuGiorni ? 'Dal *' : 'Data *' }}</span>
+        <input type="date" name="dataInizio" [(ngModel)]="dataInizio" />
+      </label>
+      @if (piuGiorni) {
+        <label class="campo">
+          <span class="etichetta">Al *</span>
+          <input type="date" name="dataFine" [(ngModel)]="dataFine" [min]="dataInizio" />
+        </label>
+      }
+    </div>
+
+    <label class="interruttore">
+      <input type="checkbox" name="piuGiorni" [(ngModel)]="piuGiorni" (ngModelChange)="alternaPiuGiorni()" />
+      <span class="interruttore__pista" aria-hidden="true"></span>
+      Dura più giorni (campo, uscita, route…)
+    </label>
+
+    <div class="riga">
+      <label class="campo">
+        <span class="etichetta">Ora di inizio</span>
+        <input type="time" name="oraInizio" [(ngModel)]="oraInizio" />
+      </label>
+      <label class="campo">
+        <span class="etichetta">Ora di fine</span>
+        <input type="time" name="oraFine" [(ngModel)]="oraFine" />
+      </label>
+    </div>
+
+    <label class="campo">
+      <span class="etichetta">Luogo</span>
+      <input name="luogo" [(ngModel)]="luogo" maxlength="160" placeholder="Es. Sede a Santa Chiara" />
+    </label>
+
+    <fieldset class="campo">
+      <legend class="etichetta">Etichette *</legend>
+      <div class="etichette">
+        @for (e of etichette; track e.valore) {
+          <button type="button" class="scelta-etichetta scelta-etichetta--{{ e.valore }}"
+                  [class.scelta-etichetta--scelta]="scelta(e.valore)"
+                  [attr.aria-pressed]="scelta(e.valore)" (click)="alternaEtichetta(e.valore)">
+            {{ e.nome }}
+          </button>
+        }
+      </div>
+      @if (scelte.has('capi')) {
+        <p class="nota-capi">Gli eventi dei capi li vedono solo capi e admin.</p>
+      } @else if (scelte.has('gruppo')) {
+        <p class="nota-capi">Evento di tutto il gruppo: Branco, Reparto e Clan.</p>
+      } @else {
+        <p class="nota-capi">Puoi sceglierne più di una: Branco, Reparto e Clan insieme diventano Gruppo.</p>
+      }
+    </fieldset>
+
+    <label class="campo">
+      <span class="etichetta">Descrizione</span>
+      <textarea name="descrizione" [(ngModel)]="descrizione" rows="4" maxlength="5000"
+                placeholder="Cosa portare, programma, contatti…"></textarea>
+    </label>
+
+    <button type="button" class="evidenza" [class.evidenza--attiva]="inEvidenza"
+            [attr.aria-pressed]="inEvidenza" (click)="inEvidenza = !inEvidenza">
+      <ion-icon [icon]="inEvidenza ? icone.evidenza : icone.evidenzaVuota" aria-hidden="true"></ion-icon>
+      {{ inEvidenza ? 'In evidenza' : 'Metti in evidenza' }}
+    </button>
+
+    @if (errore) {
+      <p class="errore" role="alert">{{ errore }}</p>
+    }
+
+    <button type="submit" class="salva" [disabled]="salvando">
+      @if (salvando) {
+        Salvataggio in corso…
+      } @else {
+        {{ modifica ? 'Salva modifiche' : 'Aggiungi al calendario' }}
+      }
+    </button>
+  </form>
+</ion-content>

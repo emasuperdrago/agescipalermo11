@@ -1,0 +1,64 @@
+@use './variables' as *;
+
+// Barra in alto delle pagine interne: "← Home" a sinistra e marchio Palermo 11 a destra.
+// Uso nello SCSS della pagina: @use '../../theme/testata' as *; @include testata-pagina;
+@mixin testata-pagina {
+  .testata-pagina ion-toolbar {
+    --background: rgba(255, 255, 255, .94);
+    --border-width: 0;
+    --padding-start: 8px;
+    --padding-end: 16px;
+    --min-height: 64px;
+  }
+
+  .indietro {
+    --color: #{$viola};
+    --border-radius: 999px;
+    --padding-start: 12px;
+    --padding-end: 14px;
+    --background-hover: #{rgba($viola-l, .12)};
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .marchio {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: $dark;
+    text-decoration: none;
+
+    img {
+      width: 38px;
+      height: 38px;
+      padding: 2px;
+      border: 1px solid $slate-200;
+      border-radius: 50%;
+      background: $white;
+    }
+
+    &__testo {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      line-height: 1.15;
+
+      strong {
+        font-size: .95rem;
+        font-weight: 800;
+        letter-spacing: .5px;
+        text-transform: uppercase;
+      }
+
+      small {
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: $slate;
+      }
+    }
+  }
+}

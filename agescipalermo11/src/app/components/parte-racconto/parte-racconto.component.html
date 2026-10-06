@@ -1,0 +1,50 @@
+<section class="scheda" [attr.aria-label]="parte.titolo">
+  <h2>
+    <ion-icon [icon]="icona" aria-hidden="true"></ion-icon>
+    {{ parte.titolo }}
+  </h2>
+  @for (par of paragrafi; track $index) {
+    <p class="testo">{{ par }}</p>
+  }
+  @if (parte.mostra_branche) {
+    <div class="branche">
+      @for (b of branche; track b.chiave) {
+        <a [class]="'branca branca--' + b.chiave" [routerLink]="b.link">
+          <strong>{{ b.sigla }}</strong>
+          <span>{{ b.nome }}</span>
+        </a>
+      }
+    </div>
+  }
+  @if (parte.evidenza) {
+    <blockquote class="evidenza">{{ parte.evidenza }}</blockquote>
+  }
+  @if (parte.etichette.length) {
+    <ul class="etichette">
+      @for (e of parte.etichette; track $index) {
+        <li>{{ e }}</li>
+      }
+    </ul>
+  }
+
+  @if (inModifica) {
+    <div class="comandi">
+      <button type="button" class="comandi__tasto" (click)="modifica.emit()" [disabled]="occupato">
+        <ion-icon [icon]="icone.modifica" aria-hidden="true"></ion-icon>
+        Modifica
+      </button>
+      <button type="button" class="comandi__tasto" (click)="sposta.emit('su')"
+              [disabled]="occupato || primo" aria-label="Sposta in su" title="Sposta in su">
+        <ion-icon [icon]="icone.su" aria-hidden="true"></ion-icon>
+      </button>
+      <button type="button" class="comandi__tasto" (click)="sposta.emit('giu')"
+              [disabled]="occupato || ultimo" aria-label="Sposta in giù" title="Sposta in giù">
+        <ion-icon [icon]="icone.giu" aria-hidden="true"></ion-icon>
+      </button>
+      <button type="button" class="comandi__tasto comandi__tasto--togli" (click)="togli.emit()"
+              [disabled]="occupato" aria-label="Togli" title="Togli">
+        <ion-icon [icon]="icone.elimina" aria-hidden="true"></ion-icon>
+      </button>
+    </div>
+  }
+</section>

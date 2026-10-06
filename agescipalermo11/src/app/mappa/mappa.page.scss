@@ -1,0 +1,395 @@
+@use '../../theme/variables' as *;
+@use '../../theme/testata' as *;
+
+@include testata-pagina;
+
+.pagina-mappa {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+// ---------- Disposizione ----------
+// Telefono: mappa in alto (buona parte dello schermo), elenco sotto.
+// Computer: elenco a sinistra e mappa a tutta altezza a destra.
+
+.disposizione {
+  @media (min-width: 992px) {
+    display: grid;
+    grid-template-columns: minmax(340px, 400px) 1fr;
+    height: 100%;
+  }
+}
+
+.riquadro-mappa {
+  position: relative;
+  height: 58vh;
+  min-height: 320px;
+
+  @media (min-width: 992px) {
+    grid-column: 2;
+    grid-row: 1;
+    height: 100%;
+  }
+}
+
+.mappa {
+  position: relative;
+  // Tiene i livelli di Leaflet sotto i pulsanti sopra la mappa.
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  background: $slate-100;
+}
+
+// ---------- Filtro per branca ----------
+
+.filtri {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 1;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  // Scorre in orizzontale su telefono senza mostrare la barra.
+  scrollbar-width: none;
+  pointer-events: none;
+
+  &::-webkit-scrollbar { display: none; }
+
+  @media (min-width: 768px) {
+    flex-wrap: wrap;
+  }
+}
+
+.filtro {
+  --colore-branca: #{$viola-m};
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 6px 8px 6px 14px;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  background: rgba($white, .96);
+  box-shadow: 0 4px 16px rgba($dark, .16);
+  font-family: inherit;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $slate-600;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background .15s, color .15s, opacity .15s;
+
+  &__bandierina {
+    width: 14px;
+    height: 11px;
+    background: var(--colore-branca);
+    clip-path: polygon(0 0, 100% 0, 75% 50%, 100% 100%, 0 100%);
+  }
+
+  &__numero {
+    min-width: 22px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: $slate-100;
+    font-size: .72rem;
+    text-align: center;
+    color: $slate-600;
+  }
+
+  &:hover { border-color: var(--colore-branca); }
+
+  // Branca nascosta dal filtro.
+  &--spento {
+    color: $slate-400;
+
+    .filtro__bandierina { opacity: .35; }
+  }
+
+  &--attivo {
+    background: var(--colore-branca);
+    // Il lilla del gruppo è chiaro: sopra ci va la scritta scura (vedi stiliBranca in services/posti.ts).
+    color: var(--su-branca, #{$white});
+
+    .filtro__bandierina { background: var(--su-branca, #{$white}); }
+
+    .filtro__numero {
+      background: var(--velo-branca, #{rgba($white, .25)});
+      color: var(--su-branca, #{$white});
+    }
+  }
+
+  &--tutte {
+    padding-left: 16px;
+
+    &.filtro--attivo { background: $sfumatura-viola; }
+  }
+}
+
+.nuovo-posto {
+  position: absolute;
+  right: 12px;
+  bottom: 24px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 20px 0 16px;
+  border: none;
+  border-radius: 999px;
+  background: $sfumatura-viola;
+  box-shadow: 0 10px 24px rgba($viola, .35);
+  font-family: inherit;
+  font-size: .92rem;
+  font-weight: 700;
+  color: $white;
+  cursor: pointer;
+
+  ion-icon { font-size: 1.3rem; }
+
+  &:hover { filter: brightness(1.08); }
+}
+
+// ---------- Elenco ----------
+
+.elenco {
+  padding: 20px 16px 32px;
+
+  @media (min-width: 768px) {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  @media (min-width: 992px) {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    overflow-y: auto;
+    border-right: 1px solid $slate-200;
+    background: $white;
+  }
+
+  &__intestazione {
+    margin-bottom: 14px;
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: $viola;
+    }
+
+    p {
+      margin: 0;
+      font-size: .85rem;
+      color: $slate;
+    }
+  }
+
+  &__conteggio {
+    margin: 0 0 8px;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: $slate-400;
+  }
+}
+
+.cerca {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0 6px 0 14px;
+  border: 1.5px solid $slate-200;
+  border-radius: 14px;
+  background: $white;
+
+  &:focus-within {
+    border-color: $viola-m;
+    box-shadow: 0 0 0 4px rgba($viola-l, .2);
+  }
+
+  > ion-icon {
+    flex-shrink: 0;
+    font-size: 1.1rem;
+    color: $slate-400;
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    min-height: 46px;
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: .92rem;
+    color: $dark;
+    outline: none;
+
+    &::-webkit-search-cancel-button { display: none; }
+  }
+
+  &__cancella {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: $slate-100;
+    color: $slate-600;
+    cursor: pointer;
+  }
+}
+
+.posti {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.posto {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 12px 14px;
+  border: 1px solid $slate-200;
+  border-left: 5px solid var(--colore-branca);
+  border-radius: 14px;
+  background: $white;
+  color: inherit;
+  text-decoration: none;
+  transition: box-shadow .15s, transform .15s;
+
+  &:hover {
+    box-shadow: 0 8px 22px rgba($dark, .08);
+    transform: translateY(-1px);
+  }
+
+  &__bandierina {
+    flex-shrink: 0;
+    width: 18px;
+    height: 14px;
+    background: var(--colore-branca);
+    clip-path: polygon(0 0, 100% 0, 75% 50%, 100% 100%, 0 100%);
+  }
+
+  &__testo {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+
+    strong {
+      font-size: .95rem;
+      font-weight: 700;
+      color: $dark;
+    }
+
+    small {
+      overflow: hidden;
+      font-size: .78rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: $slate;
+    }
+  }
+
+  &__sede {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: $sfumatura-viola;
+    font-size: .66rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    vertical-align: 2px;
+    color: $white;
+  }
+
+  &__allegati {
+    display: flex;
+    gap: 12px;
+    margin-top: 2px;
+    font-size: .72rem;
+    font-weight: 600;
+    color: $slate-400;
+
+    span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+  }
+
+  &__freccia {
+    flex-shrink: 0;
+    font-size: 1.1rem;
+    color: $slate-400;
+  }
+}
+
+.vuoto {
+  margin: 0;
+  padding: 24px;
+  border: 1px dashed $slate-200;
+  border-radius: 18px;
+  background: $white;
+  text-align: center;
+  color: $slate;
+
+  p { margin: 0; }
+
+  &--errore { color: $red; }
+
+  &__azione {
+    margin-top: 12px;
+    padding: 9px 18px;
+    border: none;
+    border-radius: 999px;
+    background: $sfumatura-viola;
+    font-family: inherit;
+    font-size: .85rem;
+    font-weight: 700;
+    color: $white;
+    cursor: pointer;
+  }
+}
+
+.scheletro {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  > div {
+    height: 64px;
+    border-radius: 14px;
+    background: linear-gradient(90deg, $slate-100 25%, $slate-200 50%, $slate-100 75%);
+    background-size: 200% 100%;
+    animation: luccichio 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes luccichio {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scheletro > div { animation: none; }
+  .posto { transition: none; }
+}

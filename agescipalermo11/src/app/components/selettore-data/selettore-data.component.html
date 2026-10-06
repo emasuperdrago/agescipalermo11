@@ -1,0 +1,20 @@
+<div class="selettore-data">
+  <select name="giorno" [(ngModel)]="giorno" (ngModelChange)="cambia()" aria-label="Giorno">
+    <option value="">Giorno</option>
+    @for (g of giorniDelMese; track g) {
+      <option [value]="g">{{ g }}</option>
+    }
+  </select>
+  <select name="mese" [(ngModel)]="mese" (ngModelChange)="cambia()" aria-label="Mese">
+    <option value="">Mese</option>
+    @for (m of mesi; track m; let i = $index) {
+      <option [value]="i + 1">{{ m }}</option>
+    }
+  </select>
+  <select name="anno" [(ngModel)]="anno" (ngModelChange)="cambia()" aria-label="Anno">
+    <option value="">Anno</option>
+    @for (a of anni; track a) {
+      <option [value]="a">{{ a }}</option>
+    }
+  </select>
+</div>

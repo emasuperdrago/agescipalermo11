@@ -1,0 +1,366 @@
+@use '../../theme/variables' as *;
+@use '../../theme/testata' as *;
+
+@include testata-pagina;
+
+.branco {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+.copertina {
+  padding: 18px 20px 62px;
+  color: $white;
+  background-color: $viola-m;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, .16) 1.5px, transparent 1.7px),
+    $sfumatura-viola;
+  background-size: 20px 20px, 100% 100%;
+
+  @media (min-width: 768px) { padding: 26px 32px 78px; }
+
+  &__contenuto {
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    margin: 0 0 2px;
+    font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0;
+    font-size: .85rem;
+    opacity: .9;
+  }
+}
+
+.corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 860px;
+  margin: -44px auto 0;
+  padding: 0 12px 32px;
+
+  @media (min-width: 768px) {
+    margin-top: -56px;
+    padding: 0 24px 48px;
+  }
+}
+
+.scheda {
+  padding: 18px 16px 20px;
+  border-radius: 22px;
+  background: $white;
+  box-shadow: 0 20px 50px rgba($dark, .1);
+
+  @media (min-width: 768px) { padding: 22px 24px; }
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: $dark;
+
+    ion-icon {
+      font-size: 1.3rem;
+      color: $viola-m;
+    }
+  }
+}
+
+.testo {
+  margin: 0 0 10px;
+  font-size: .94rem;
+  line-height: 1.6;
+  color: $slate-600;
+
+  strong { color: $dark; }
+}
+
+.nota {
+  margin: 0 0 14px;
+  font-size: .86rem;
+  line-height: 1.5;
+  color: $slate;
+}
+
+// ---------- La fascia delle tre parti ----------
+
+.scelta {
+  position: relative;
+  display: grid;
+  // Le voci si dividono lo spazio in parti uguali, quante che siano (--voci le conta).
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  padding: 5px;
+  border-radius: 999px;
+  background: $white;
+  box-shadow: 0 14px 30px rgba($dark, .1);
+
+  // La pastiglia viola che scivola sotto la voce scelta.
+  &__pastiglia {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: calc((100% - 10px) / var(--voci, 3));
+    height: calc(100% - 10px);
+    border-radius: 999px;
+    background: $sfumatura-viola;
+    box-shadow: 0 6px 16px rgba($viola, .3);
+    transition: transform .28s cubic-bezier(.4, 0, .2, 1);
+  }
+
+  &__voce {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 0;
+    padding: 11px 6px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    font-family: inherit;
+    font-size: .8rem;
+    font-weight: 700;
+    color: $slate;
+    cursor: pointer;
+    transition: color .2s;
+
+    ion-icon {
+      flex: none;
+      font-size: 1.1rem;
+    }
+
+    span { white-space: nowrap; }
+
+    // Sui telefoni stretti l'icona va sopra il nome, così le voci ci stanno tutte.
+    @media (max-width: 420px) {
+      flex-direction: column;
+      gap: 2px;
+      padding: 8px 0 7px;
+      font-size: .68rem;
+
+      ion-icon { font-size: 1.05rem; }
+    }
+
+    &--attiva { color: $white; }
+  }
+}
+
+// La parte che si apre arriva con un piccolo scivolamento.
+.scheda {
+  animation: entra-parte .22s ease-out;
+}
+
+@keyframes entra-parte {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scheda { animation: none; }
+  .scelta__pastiglia { transition: none; }
+}
+
+// ---------- Giungla, sestiglia, gioco ----------
+
+.invito {
+  margin: 18px 0 10px;
+  font-size: .8rem;
+  font-weight: 600;
+  color: $slate-400;
+}
+
+.pilastri {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+// Riquadro che si apre: il nome sempre, la spiegazione al tocco.
+.pilastro {
+  border-radius: 18px;
+  background: rgba($viola-l, .09);
+  overflow: hidden;
+  transition: background .2s;
+
+  &__testa {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px 16px;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    h3 {
+      flex: 1;
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 800;
+      color: $viola;
+    }
+  }
+
+  &__icona {
+    flex: none;
+    font-size: 1.5rem;
+    color: $viola-m;
+  }
+
+  &__freccia {
+    flex: none;
+    font-size: 1.1rem;
+    color: $viola-m;
+    transition: transform .22s;
+  }
+
+  &__testo {
+    margin: 0;
+    padding: 0 16px 16px;
+    font-size: .88rem;
+    line-height: 1.6;
+    color: $slate-600;
+    animation: apri-pilastro .22s ease-out;
+  }
+
+  &--aperto {
+    background: rgba($viola-l, .16);
+
+    .pilastro__freccia { transform: rotate(180deg); }
+  }
+}
+
+@keyframes apri-pilastro {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pilastro__testo { animation: none; }
+}
+
+// ---------- Promessa e Legge ----------
+
+.promessa {
+  h3 {
+    margin: 0 0 10px;
+    font-size: 1rem;
+    font-weight: 800;
+    color: $viola;
+  }
+
+  blockquote {
+    margin: 0;
+    padding: 16px 18px;
+    border-left: 4px solid $viola-m;
+    border-radius: 0 16px 16px 0;
+    background: rgba($viola-l, .09);
+    font-size: .95rem;
+    font-style: italic;
+    line-height: 1.7;
+    color: $dark;
+  }
+
+  > small {
+    display: block;
+    margin-top: 10px;
+    font-size: .8rem;
+    color: $slate;
+  }
+}
+
+.legge {
+  margin-top: 26px;
+
+  h3 {
+    margin: 0 0 4px;
+    font-size: 1rem;
+    font-weight: 800;
+    color: $viola;
+  }
+
+  .invito { margin: 0 0 12px; }
+
+  ol {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: articolo;
+  }
+
+  li {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: $slate-100;
+    font-size: .9rem;
+    line-height: 1.5;
+    color: $slate-600;
+    counter-increment: articolo;
+    transition: background .15s;
+
+    &::before {
+      content: counter(articolo);
+      flex: none;
+      min-width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: $viola-m;
+      font-size: .74rem;
+      font-weight: 800;
+      line-height: 22px;
+      text-align: center;
+      color: $white;
+    }
+
+    &:hover { background: rgba($viola-l, .14); }
+  }
+}
+
+// ---------- Il motto ----------
+
+.motto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 26px;
+  padding: 20px 18px;
+  border-radius: 20px;
+  background: $sfumatura-viola;
+  box-shadow: 0 16px 34px rgba($viola, .26);
+  text-align: center;
+  color: $white;
+
+  small {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    opacity: .75;
+  }
+
+  strong {
+    font-size: clamp(1.15rem, 5.5vw, 1.5rem);
+    font-weight: 800;
+    letter-spacing: -.01em;
+  }
+}

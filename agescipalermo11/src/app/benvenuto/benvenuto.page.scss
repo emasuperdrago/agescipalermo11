@@ -1,0 +1,177 @@
+@use '../../theme/variables' as *;
+@use '../../theme/murales' as *;
+
+$giallo-branco: #F2B705;
+$rosso-clan: #C8372D;
+
+.benvenuto {
+  --background: #{$sfondo-pagina};
+  font-family: 'Poppins', sans-serif;
+}
+
+.stage {
+  @include pagina-murales;
+}
+
+.scheda {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  padding: 40px 28px 28px;
+  text-align: center;
+  background: $card-bg;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba($white, .9);
+  border-radius: 28px;
+  box-shadow: 0 24px 60px rgba($blue-dk, .14);
+}
+
+.logo {
+  display: block;
+  width: 168px;
+  max-width: 58%;
+  height: auto;
+  margin: 0 auto 18px;
+}
+
+.sovratitolo {
+  margin: 0 0 4px;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: $mid;
+}
+
+.titolo {
+  margin: 0;
+  font-size: 2.2rem;
+  font-weight: 900;
+  letter-spacing: -.5px;
+  color: $blue-dk;
+}
+
+.sottotitolo {
+  margin: 12px 0 20px;
+  font-size: .95rem;
+  line-height: 1.55;
+  color: $slate-600;
+}
+
+.branche {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 28px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+}
+
+.branca {
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 700;
+
+  &--branco { background: rgba($giallo-branco, .18); color: #8A6400; }
+  &--reparto { background: rgba($green, .16); color: $green-d; }
+  &--clan { background: rgba($rosso-clan, .12); color: $rosso-clan; }
+}
+
+.sessione {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: $surf;
+  border: 1px solid $brd-light;
+
+  p {
+    margin: 0 0 8px;
+    font-size: .85rem;
+    font-weight: 600;
+    color: $blue-dk;
+  }
+
+  &__azioni {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+
+    a,
+    button {
+      padding: 0;
+      border: none;
+      background: none;
+      font: inherit;
+      font-size: .85rem;
+      font-weight: 700;
+      color: $blue-d;
+      text-decoration: none;
+      cursor: pointer;
+
+      &:hover { text-decoration: underline; }
+    }
+
+    button { color: $red; }
+  }
+}
+
+.azioni {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pulsante {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 16px;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s, background .15s;
+
+  &:active:not(:disabled) { transform: scale(.98); }
+  &:disabled { opacity: .6; cursor: default; }
+
+  &--primario {
+    border: none;
+    color: $white;
+    background: $sfumatura-viola;
+    box-shadow: 0 10px 24px rgba($viola, .3);
+
+    &:hover:not(:disabled) { box-shadow: 0 14px 30px rgba($viola, .4); }
+  }
+
+  &--secondario {
+    color: $blue-dk;
+    background: $white;
+    border: 1.5px solid $brd-light;
+
+    &:hover:not(:disabled) { background: $surf; }
+  }
+}
+
+.errore {
+  margin: 14px 0 0;
+  font-size: .85rem;
+  font-weight: 600;
+  color: $red;
+}
+
+.nota {
+  margin: 20px 0 0;
+  font-size: .8rem;
+  line-height: 1.5;
+  color: $slate;
+
+  strong { color: $blue-dk; }
+}
+
+@media (min-width: 768px) {
+  .scheda { padding: 48px 40px 36px; }
+  .titolo { font-size: 2.6rem; }
+}

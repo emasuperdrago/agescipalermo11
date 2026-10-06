@@ -1,0 +1,26 @@
+{
+  "name": "agescipalermo11-backend",
+  "version": "1.0.0",
+  "description": "Backend per agescipalermo11",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db:avvia": "LC_ALL=en_US.UTF-8 /opt/homebrew/opt/postgresql@17/bin/pg_ctl -D /opt/homebrew/var/postgresql@17 -l /opt/homebrew/var/postgresql@17/server.log -o '-c listen_addresses=localhost' start",
+    "db:ferma": "/opt/homebrew/opt/postgresql@17/bin/pg_ctl -D /opt/homebrew/var/postgresql@17 stop",
+    "db:copia": "/opt/homebrew/opt/postgresql@17/bin/pg_dump --no-owner palermo11 > copia-database.sql && chmod 600 copia-database.sql"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.0",
+    "nodemailer": "^10.0.14",
+    "pdfkit": "^0.20.2",
+    "pg": "^8.23.1"
+  }
+}

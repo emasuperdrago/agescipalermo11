@@ -1,0 +1,207 @@
+@use '../../theme/variables' as *;
+@use '../../theme/testata' as *;
+
+@include testata-pagina;
+
+.carta {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+.copertina {
+  padding: 18px 20px 62px;
+  color: $white;
+  background-color: $viola-m;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, .16) 1.5px, transparent 1.7px),
+    $sfumatura-viola;
+  background-size: 20px 20px, 100% 100%;
+
+  @media (min-width: 768px) { padding: 26px 32px 78px; }
+
+  &__contenuto {
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    margin: 0 0 2px;
+    font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0;
+    font-size: .85rem;
+    opacity: .9;
+  }
+}
+
+.corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 860px;
+  margin: -44px auto 0;
+  padding: 0 12px 32px;
+
+  @media (min-width: 768px) {
+    margin-top: -56px;
+    padding: 0 24px 48px;
+  }
+}
+
+.scheda {
+  padding: 18px 16px 20px;
+  border-radius: 22px;
+  background: $white;
+  box-shadow: 0 20px 50px rgba($dark, .1);
+
+  @media (min-width: 768px) { padding: 22px 24px; }
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: $dark;
+
+    ion-icon {
+      font-size: 1.3rem;
+      color: $viola-m;
+    }
+  }
+}
+
+.conta {
+  min-width: 24px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba($viola-l, .18);
+  font-size: .78rem;
+  font-weight: 800;
+  text-align: center;
+  color: $viola;
+}
+
+.nota {
+  margin: 8px 0 0;
+  font-size: .86rem;
+  line-height: 1.5;
+  color: $slate;
+}
+
+.avviso--errore {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba($red, .1);
+  font-size: .85rem;
+  font-weight: 600;
+  color: $red;
+}
+
+// ---------- Archivio ----------
+
+.vecchie {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vecchia {
+  border: 1.5px solid $slate-200;
+  border-radius: 18px;
+  overflow: hidden;
+
+  &--aperta {
+    border-color: rgba($viola-m, .35);
+    box-shadow: 0 10px 26px rgba($viola, .1);
+  }
+
+  &__riga {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    padding: 13px 15px;
+    border: none;
+    background: $white;
+    text-align: left;
+    font-family: inherit;
+    cursor: pointer;
+
+    > ion-icon {
+      flex: none;
+      font-size: 1.3rem;
+      color: $viola-m;
+    }
+
+    &:hover { background: rgba($viola-l, .07); }
+  }
+
+  &__testo {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin-right: auto;
+
+    strong {
+      font-size: .94rem;
+      font-weight: 800;
+      color: $dark;
+    }
+
+    small {
+      font-size: .78rem;
+      color: $slate;
+    }
+  }
+
+  &__apri {
+    flex: none;
+    padding: 5px 13px;
+    border-radius: 999px;
+    background: rgba($viola-l, .16);
+    font-size: .78rem;
+    font-weight: 800;
+    color: $viola;
+  }
+
+  &__dentro {
+    padding: 4px 14px 16px;
+    border-top: 1px solid $slate-200;
+  }
+}
+
+// ---------- Attesa ----------
+
+.scheletro {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  > div {
+    height: 140px;
+    border-radius: 14px;
+    background: linear-gradient(90deg, $slate-100 25%, $slate-200 50%, $slate-100 75%);
+    background-size: 200% 100%;
+    animation: luccichio-carta 1.4s ease-in-out infinite;
+
+    &:last-child:not(:first-child) { height: 44px; }
+  }
+}
+
+@keyframes luccichio-carta {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scheletro > div { animation: none; }
+}

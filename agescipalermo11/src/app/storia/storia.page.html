@@ -1,0 +1,140 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/home" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Home
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="storia">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      <h1>La nostra storia</h1>
+      <p>Il Gruppo AGESCI Palermo 11, dal 1983</p>
+    </div>
+  </header>
+
+  <div class="corpo">
+
+    <!-- Tre numeri per cominciare. -->
+    <div class="numeri">
+      <div class="numero">
+        <strong>1983</strong>
+        <small>l'anno in cui nasce</small>
+      </div>
+      <div class="numero">
+        <strong>{{ anni }}</strong>
+        <small>anni di strada</small>
+      </div>
+      <div class="numero">
+        <strong>7–20</strong>
+        <small>anni dei ragazzi</small>
+      </div>
+    </div>
+
+    <!-- Solo per i capi: accende e spegne i comandi di modifica. -->
+    @if (puoGestire) {
+      <button type="button" class="modifica-storia" [class.modifica-storia--accesa]="inModifica"
+              (click)="alternaModifica()">
+        <ion-icon [icon]="inModifica ? icone.fatto : icone.modifica" aria-hidden="true"></ion-icon>
+        {{ inModifica ? 'Fatto, esci dalla modifica' : 'Modifica la storia' }}
+      </button>
+    }
+
+    @if (errore) {
+      <p class="avviso-errore">{{ errore }}</p>
+    } @else if (caricamento) {
+      <div class="scheletro" aria-busy="true"><div></div><div></div></div>
+    } @else {
+
+      <!-- La strada del gruppo: le tappe, dalla nascita a oggi. -->
+      <section class="scheda" aria-labelledby="titolo-strada">
+        <h2 id="titolo-strada">Da dove veniamo</h2>
+        @if (tappe.length) {
+          <ol class="strada">
+            @for (t of tappe; track t.id; let primo = $first; let ultimo = $last) {
+              <li class="tappa" [class.tappa--adesso]="t.adesso">
+                <span class="tappa__segno" aria-hidden="true">
+                  <ion-icon [icon]="icona(t.icona)"></ion-icon>
+                </span>
+                <div class="tappa__corpo">
+                  <small>{{ t.quando }}</small>
+                  <h3>{{ t.titolo }}</h3>
+                  @for (p of paragrafi(t.testo); track $index) {
+                    <p>{{ p }}</p>
+                  }
+                  @if (t.nota) {
+                    <p class="tappa__nota">{{ t.nota }}</p>
+                  }
+                  @if (inModifica) {
+                    <ng-container
+                      *ngTemplateOutlet="comandi; context: { tipo: 'tappe', voce: t, primo: primo, ultimo: ultimo }" />
+                  }
+                </div>
+              </li>
+            }
+          </ol>
+        } @else {
+          <p class="vuoto">Ancora nessuna tappa.</p>
+        }
+        @if (inModifica) {
+          <button type="button" class="aggiungi" (click)="scrivi('tappe')">
+            <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+            Aggiungi una tappa
+          </button>
+        }
+      </section>
+
+      <!-- Le parti sotto la linea. -->
+      @for (p of parti; track p.id; let primo = $first; let ultimo = $last) {
+        <app-parte-racconto [parte]="p" [inModifica]="inModifica" [primo]="primo" [ultimo]="ultimo"
+                            [occupato]="occupato" (modifica)="scrivi('parti', p)"
+                            (sposta)="sposta('parti', p, $event)" (togli)="togli('parti', p)" />
+      }
+
+      @if (inModifica) {
+        <button type="button" class="aggiungi aggiungi--parte" (click)="scrivi('parti')">
+          <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+          Aggiungi una parte
+        </button>
+      }
+    }
+
+  </div>
+
+</ion-content>
+
+<!-- I comandi dei capi su una tappa o su una parte. -->
+<ng-template #comandi let-tipo="tipo" let-voce="voce" let-primo="primo" let-ultimo="ultimo">
+  <div class="comandi">
+    <button type="button" class="comandi__tasto" (click)="scrivi(tipo, voce)" [disabled]="occupato">
+      <ion-icon [icon]="icone.modifica" aria-hidden="true"></ion-icon>
+      Modifica
+    </button>
+    <button type="button" class="comandi__tasto" (click)="sposta(tipo, voce, 'su')"
+            [disabled]="occupato || primo" aria-label="Sposta in su" title="Sposta in su">
+      <ion-icon [icon]="icone.su" aria-hidden="true"></ion-icon>
+    </button>
+    <button type="button" class="comandi__tasto" (click)="sposta(tipo, voce, 'giu')"
+            [disabled]="occupato || ultimo" aria-label="Sposta in giù" title="Sposta in giù">
+      <ion-icon [icon]="icone.giu" aria-hidden="true"></ion-icon>
+    </button>
+    <button type="button" class="comandi__tasto comandi__tasto--togli" (click)="togli(tipo, voce)"
+            [disabled]="occupato" aria-label="Togli" title="Togli">
+      <ion-icon [icon]="icone.elimina" aria-hidden="true"></ion-icon>
+    </button>
+  </div>
+</ng-template>
+
+<app-barra-inferiore />

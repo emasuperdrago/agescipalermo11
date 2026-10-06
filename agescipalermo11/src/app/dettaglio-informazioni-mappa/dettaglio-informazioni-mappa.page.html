@@ -1,0 +1,217 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/mappa" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Mappa
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="dettaglio-posto">
+  @if (posto) {
+    <article class="posto" [style]="stiliBranca(posto.branca)">
+
+      <!-- Copertina nel colore della branca -->
+      <header class="copertina">
+        <div class="copertina__contenuto">
+          <span class="badge">
+            <span class="badge__bandierina" aria-hidden="true"></span>
+            {{ nomeBranca(posto.branca) }}
+          </span>
+          @if (posto.sede) {
+            <span class="badge">Sede del gruppo</span>
+          }
+          <h1>{{ posto.nome }}</h1>
+          @if (posto.indirizzo) {
+            <p class="copertina__indirizzo">
+              <ion-icon [icon]="icone.luogo" aria-hidden="true"></ion-icon>
+              {{ posto.indirizzo }}
+            </p>
+          }
+          @if (posto.campi.length) {
+            <p class="copertina__indirizzo">
+              <ion-icon [icon]="icone.campo" aria-hidden="true"></ion-icon>
+              {{ posto.campi.length === 1 ? 'Campo' : 'Ultimo campo' }}: {{ dateCampo(posto.campi[0]) }}
+            </p>
+          }
+          <div class="copertina__azioni">
+            <a class="pulsante pulsante--chiaro" [href]="indicazioni" target="_blank" rel="noopener">
+              <ion-icon [icon]="icone.indicazioni" aria-hidden="true"></ion-icon>
+              Indicazioni stradali
+            </a>
+            @if (puoModificare) {
+              <button type="button" class="pulsante pulsante--vetro" (click)="modifica()" [disabled]="eliminando">
+                <ion-icon [icon]="icone.modifica" aria-hidden="true"></ion-icon>
+                Modifica
+              </button>
+              <!-- La sede del gruppo non si elimina. -->
+              @if (!posto.sede) {
+                <button type="button" class="pulsante pulsante--vetro" (click)="confermaElimina()" [disabled]="eliminando">
+                  <ion-icon [icon]="icone.elimina" aria-hidden="true"></ion-icon>
+                  {{ eliminando ? 'Eliminazione…' : 'Elimina' }}
+                </button>
+              }
+            }
+          </div>
+        </div>
+      </header>
+
+      <div class="corpo">
+        <div class="colonna-principale">
+
+          @if (foto.length) {
+            <section class="scheda" aria-labelledby="titolo-foto">
+              <h2 id="titolo-foto">Foto <small>{{ foto.length }}</small></h2>
+              <ul class="galleria" [class.galleria--una]="foto.length === 1">
+                @for (f of foto; track f.id; let i = $index) {
+                  <li>
+                    <button type="button" class="galleria__foto" (click)="apriFoto(i)"
+                            [attr.aria-label]="'Apri la foto ' + (i + 1) + ' di ' + foto.length">
+                      <img [src]="urlBackend(f.url)" [alt]="f.nome" loading="lazy" />
+                      <span class="galleria__ingrandisci" aria-hidden="true">
+                        <ion-icon [icon]="icone.ingrandisci"></ion-icon>
+                      </span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+
+          @if (posto.campi.length > 1) {
+            <section class="scheda" aria-labelledby="titolo-campi">
+              <h2 id="titolo-campi">Campi fatti qui <small>{{ posto.campi.length }}</small></h2>
+              <ul class="campi">
+                @for (c of posto.campi; track $index) {
+                  <li>
+                    <ion-icon [icon]="icone.campo" aria-hidden="true"></ion-icon>
+                    {{ dateCampo(c) }}
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+
+          <section class="scheda" aria-labelledby="titolo-descrizione">
+            <h2 id="titolo-descrizione">Descrizione</h2>
+            @if (posto.descrizione) {
+              <p class="descrizione">{{ posto.descrizione }}</p>
+            } @else {
+              <p class="nessuno">Nessuna descrizione.</p>
+            }
+          </section>
+
+          @if (file.length) {
+            <section class="scheda" aria-labelledby="titolo-file">
+              <h2 id="titolo-file">File da scaricare <small>{{ file.length }}</small></h2>
+              <ul class="file">
+                @for (f of file; track f.id) {
+                  <li>
+                    <a class="file__voce" [href]="urlBackend(f.url_scarica)" [attr.download]="f.nome">
+                      <span class="file__tipo" aria-hidden="true">{{ tipoFile(f) }}</span>
+                      <span class="file__testo">
+                        <strong>{{ f.nome }}</strong>
+                        <small>{{ dimensioneLeggibile(f.dimensione) }}</small>
+                      </span>
+                      <span class="file__scarica">
+                        <ion-icon [icon]="icone.scarica" aria-hidden="true"></ion-icon>
+                        <span>Scarica</span>
+                      </span>
+                    </a>
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+        </div>
+
+        <aside class="colonna-laterale">
+          <section class="scheda scheda--mappa" aria-labelledby="titolo-dove">
+            <h2 id="titolo-dove">Dove si trova</h2>
+            <div class="mini-mappa" #miniMappa></div>
+            <p class="coordinate">{{ coordinate }}</p>
+            <a class="pulsante pulsante--pieno" [href]="indicazioni" target="_blank" rel="noopener">
+              <ion-icon [icon]="icone.indicazioni" aria-hidden="true"></ion-icon>
+              Portami qui
+            </a>
+          </section>
+
+          <section class="scheda" aria-labelledby="titolo-contatti">
+            <h2 id="titolo-contatti">Contatti</h2>
+            @if (posto.contatti.length) {
+              <ul class="contatti">
+                @for (c of posto.contatti; track $index) {
+                  <li class="contatto">
+                    <span class="contatto__nome">
+                      <ion-icon [icon]="icone.persona" aria-hidden="true"></ion-icon>
+                      {{ c.nome || 'Contatto' }}
+                    </span>
+                    @if (c.telefono) {
+                      <a class="contatto__link" [href]="telefonoLink(c.telefono)">
+                        <ion-icon [icon]="icone.telefono" aria-hidden="true"></ion-icon>
+                        {{ c.telefono }}
+                      </a>
+                    }
+                    @if (c.email) {
+                      <a class="contatto__link" [href]="'mailto:' + c.email">
+                        <ion-icon [icon]="icone.email" aria-hidden="true"></ion-icon>
+                        {{ c.email }}
+                      </a>
+                    }
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="nessuno">Nessun contatto inserito.</p>
+            }
+          </section>
+        </aside>
+      </div>
+    </article>
+  } @else if (errore) {
+    <div class="stato">
+      <p class="stato__titolo">{{ errore }}</p>
+      <a class="pulsante pulsante--pieno" routerLink="/mappa" routerDirection="back">
+        <ion-icon [icon]="icone.indietro" aria-hidden="true"></ion-icon>
+        Torna alla mappa
+      </a>
+    </div>
+  } @else if (caricamento) {
+    <div class="scheletro" aria-busy="true" aria-label="Caricamento del posto">
+      <div class="scheletro__copertina"></div>
+      <div class="scheletro__riga"></div>
+      <div class="scheletro__riga scheletro__riga--corta"></div>
+    </div>
+  }
+</ion-content>
+
+<!-- Foto a schermo intero: fuori da ion-content, così copre anche la barra in alto -->
+@if (fotoAperta !== null && foto[fotoAperta]; as f) {
+  <div class="visore" role="dialog" aria-modal="true" [attr.aria-label]="'Foto ' + (fotoAperta + 1) + ' di ' + foto.length"
+       (click)="chiudiFoto()">
+    <img [src]="urlBackend(f.url)" [alt]="f.nome" (click)="$event.stopPropagation()" />
+    <button type="button" class="visore__chiudi" (click)="chiudiFoto()" aria-label="Chiudi">
+      <ion-icon [icon]="icone.chiudi" aria-hidden="true"></ion-icon>
+    </button>
+    @if (foto.length > 1) {
+      <button type="button" class="visore__freccia visore__freccia--sinistra"
+              (click)="$event.stopPropagation(); scorriFoto(-1)" aria-label="Foto precedente">
+        <ion-icon [icon]="icone.precedente" aria-hidden="true"></ion-icon>
+      </button>
+      <button type="button" class="visore__freccia visore__freccia--destra"
+              (click)="$event.stopPropagation(); scorriFoto(1)" aria-label="Foto successiva">
+        <ion-icon [icon]="icone.successivo" aria-hidden="true"></ion-icon>
+      </button>
+      <p class="visore__contatore">{{ fotoAperta + 1 }} / {{ foto.length }}</p>
+    }
+  </div>
+}

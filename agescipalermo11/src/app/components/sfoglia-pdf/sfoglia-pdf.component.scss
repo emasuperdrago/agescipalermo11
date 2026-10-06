@@ -1,0 +1,124 @@
+@use '../../../theme/variables' as *;
+
+// Quanto può essere alto il foglio: nel riquadro e nella pagina dedicata alla Carta.
+$altezza-foglio: clamp(340px, 64vh, 640px);
+$altezza-foglio-grande: clamp(420px, 78vh, 900px);
+
+.sfoglia {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  outline: none;
+
+  // Altezza decisa qui: il foglio ci viene ridotto dentro tutto intero,
+  // così non si scorre mai su e giù dentro al PDF.
+  &__cornice {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    // Il riquadro prende la forma del foglio (--rapporto, la mette il componente) e non
+    // supera mai l'altezza qui sotto; la larghezza massima esce da quella stessa altezza,
+    // così il riquadro resta cucito addosso alla pagina e sta in mezzo.
+    aspect-ratio: var(--rapporto, .707);
+    // Senza questa la misura la detterebbe il foglio già disegnato, e il riquadro
+    // resterebbe più piccolo del necessario.
+    width: 100%;
+    max-height: $altezza-foglio;
+    max-width: calc(#{$altezza-foglio} * var(--rapporto, .707));
+    margin-inline: auto;
+    overflow: hidden;
+    padding: 10px;
+    border-radius: 18px;
+    background: $slate-100;
+    box-shadow: inset 0 0 0 1px rgba($dark, .06);
+    // Il trascinamento serve a cambiare pagina, non a far scorrere la pagina di lato.
+    touch-action: pan-y;
+  }
+
+  &--pagina &__cornice {
+    max-height: $altezza-foglio-grande;
+    max-width: calc(#{$altezza-foglio-grande} * var(--rapporto, .707));
+  }
+
+  &__tela {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 10px;
+    background: $white;
+    box-shadow: 0 10px 28px rgba($dark, .16);
+
+    &--nascosta { visibility: hidden; }
+  }
+
+  // Cerchietto che gira mentre il PDF arriva.
+  &__attesa {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    span {
+      width: 30px;
+      height: 30px;
+      border: 3px solid rgba($viola-m, .25);
+      border-top-color: $viola-m;
+      border-radius: 50%;
+      animation: gira-pdf .8s linear infinite;
+    }
+  }
+
+  &__errore {
+    position: absolute;
+    margin: 0;
+    padding: 0 18px;
+    font-size: .88rem;
+    font-weight: 600;
+    text-align: center;
+    color: $red;
+  }
+
+  &__comandi {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+
+  &__freccia {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: $sfumatura-viola;
+    box-shadow: 0 8px 18px rgba($viola, .28);
+    color: $white;
+    cursor: pointer;
+
+    ion-icon { font-size: 1.2rem; }
+
+    &:disabled {
+      background: $slate-200;
+      box-shadow: none;
+      color: $slate-400;
+      cursor: default;
+    }
+  }
+
+  &__conta {
+    min-width: 128px;
+    font-size: .84rem;
+    font-weight: 700;
+    text-align: center;
+    color: $slate-600;
+  }
+}
+
+@keyframes gira-pdf {
+  to { transform: rotate(360deg); }
+}

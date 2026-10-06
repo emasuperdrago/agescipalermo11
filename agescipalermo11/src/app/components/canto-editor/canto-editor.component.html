@@ -1,0 +1,65 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>{{ modifica ? 'Modifica canto' : 'Nuovo canto' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="chiudi()" aria-label="Chiudi" [disabled]="salvando">
+        <ion-icon slot="icon-only" [icon]="icone.chiudi"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="canto-editor">
+  <form class="modulo" (ngSubmit)="salva()">
+    <p class="obbligatori">I campi con <strong>*</strong> sono obbligatori.</p>
+
+    <label class="campo">
+      <span class="etichetta">Titolo *</span>
+      <input name="titolo" [(ngModel)]="titolo" maxlength="120" placeholder="Es. Buona Caccia" />
+    </label>
+
+    <fieldset class="campo">
+      <legend class="etichetta">Sezione *</legend>
+      <div class="scelte">
+        @for (s of sezioni; track s.valore) {
+          <button type="button" class="scelta-sezione" [style.--colore-sezione]="s.colore"
+                  [class.scelta-sezione--scelta]="sezione === s.valore"
+                  [attr.aria-pressed]="sezione === s.valore" (click)="sezione = s.valore">
+            {{ s.nome }}
+          </button>
+        }
+      </div>
+    </fieldset>
+
+    <label class="campo">
+      <span class="etichetta">Testo *</span>
+      <div class="strumenti">
+        <button type="button" class="grassetto" (click)="alternaGrassetto()"
+                title="Grassetto (Cmd/Ctrl + B)" aria-label="Metti in grassetto la parte scelta">
+          G
+        </button>
+        <span class="strumenti__aiuto">Scegli una parte del testo, anche su più righe, e tocca G</span>
+      </div>
+      <textarea #areaTesto name="testo" [(ngModel)]="testo" rows="16" maxlength="20000"
+                (keydown.control.b)="$event.preventDefault(); alternaGrassetto()"
+                (keydown.meta.b)="$event.preventDefault(); alternaGrassetto()"
+                placeholder="Scrivi gli accordi sopra le parole:&#10;RE        SOL&#10;Al chiaror del mattin…"></textarea>
+      <small class="aiuto">
+        Gli spazi e gli a capo restano come li scrivi, così gli accordi si vedono sopra le parole giuste.
+        Lascia una riga vuota tra una strofa e l'altra. Il grassetto si scrive tra asterischi: **così**.
+      </small>
+    </label>
+
+    @if (errore) {
+      <p class="errore" role="alert">{{ errore }}</p>
+    }
+
+    <button type="submit" class="salva" [disabled]="salvando">
+      @if (salvando) {
+        Salvataggio in corso…
+      } @else {
+        {{ modifica ? 'Salva modifiche' : 'Aggiungi al canzoniere' }}
+      }
+    </button>
+  </form>
+</ion-content>

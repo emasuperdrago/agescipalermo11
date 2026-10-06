@@ -1,0 +1,473 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/home" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Home
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="reparto">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      <h1>Reparto Pegaso</h1>
+      <p>Esploratori e guide, dai 12 ai 16 anni</p>
+    </div>
+  </header>
+
+  <div class="corpo">
+
+    <!-- Le tre parti: si sceglie da qui, la pastiglia scivola sulla voce scelta. -->
+    <div class="scelta" role="tablist" aria-label="Le parti della pagina" [style.--voci]="sezioni.length">
+      <span class="scelta__pastiglia" aria-hidden="true"
+            [style.transform]="'translateX(' + posizionePastiglia * 100 + '%)'"></span>
+      @for (s of sezioni; track s.chiave) {
+        <button type="button" class="scelta__voce" role="tab"
+                [class.scelta__voce--attiva]="sezioneAttiva === s.chiave"
+                [attr.aria-selected]="sezioneAttiva === s.chiave"
+                [attr.aria-controls]="'parte-' + s.chiave"
+                (click)="apriSezione(s.chiave)">
+          <ion-icon [icon]="s.icona" aria-hidden="true"></ion-icon>
+          <span>{{ s.titolo }}</span>
+        </button>
+      }
+    </div>
+
+    <!-- ---------- Chi siamo ---------- -->
+    @if (sezioneAttiva === 'chi-siamo') {
+      <section class="scheda" id="parte-chi-siamo" role="tabpanel" aria-label="Chi siamo">
+        <p class="testo">
+          Il Reparto è la seconda tappa del cammino scout: la comunità di esploratori e guide,
+          i ragazzi e le ragazze dai 12 ai 16 anni. Si arriva dal Branco e si scopre un modo
+          nuovo di stare insieme, in cui non si gioca più solo per giocare: si impara a fare.
+        </p>
+        <p class="testo">
+          Qui si vive all'aria aperta, si piantano le tende, si cucina sul fuoco, si costruisce
+          con pali e corde. Ognuno percorre il suo <strong>sentiero</strong>, con le sue tappe e
+          le sue specialità, e insieme alla squadriglia porta a termine le imprese che la
+          comunità decide.
+        </p>
+
+        <p class="invito">Tocca una parola per sapere cosa c'è dietro.</p>
+
+        <div class="pilastri">
+          @for (p of pilastri; track p.chiave) {
+            <article class="pilastro" [class.pilastro--aperto]="pilastroAperto === p.chiave">
+              <button type="button" class="pilastro__testa" (click)="alternaPilastro(p.chiave)"
+                      [attr.aria-expanded]="pilastroAperto === p.chiave">
+                <ion-icon class="pilastro__icona" [icon]="icone[p.chiave]" aria-hidden="true"></ion-icon>
+                <h3>{{ p.titolo }}</h3>
+                <ion-icon class="pilastro__freccia" [icon]="icone.apri" aria-hidden="true"></ion-icon>
+              </button>
+              @if (pilastroAperto === p.chiave) {
+                <p class="pilastro__testo">{{ p.testo }}</p>
+              }
+            </article>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- ---------- Squadriglie ---------- -->
+    @if (sezioneAttiva === 'squadriglie') {
+      <section class="scheda" id="parte-squadriglie" role="tabpanel" aria-label="Le squadriglie">
+        <p class="testo">
+          La squadriglia è il gruppo di sei o sette ragazzi che vivono il Reparto insieme:
+          ha il suo nome, il suo guidone, il suo grido e i suoi posti d'azione.
+        </p>
+
+        @if (erroreSquadriglie) {
+          <p class="avviso-errore">{{ erroreSquadriglie }}</p>
+        } @else if (caricamentoSquadriglie) {
+          <div class="scheletro" aria-busy="true"><div></div></div>
+        } @else {
+
+          <!-- Le squadriglie di adesso, in ordine alfabetico. -->
+          <div class="squadriglie">
+            @for (sq of squadriglie; track sq.id) {
+              <article class="squadriglia">
+                @if (urlFoto(sq)) {
+                  <img class="squadriglia__foto" [src]="urlFoto(sq)" [alt]="'Squadriglia ' + sq.nome" />
+                } @else {
+                  <span class="squadriglia__iniziale" aria-hidden="true">{{ iniziale(sq) }}</span>
+                }
+                <h3>{{ sq.nome }}</h3>
+
+                @if (puoGestire) {
+                  <div class="squadriglia__azioni">
+                    <!-- La foto dell'animale: si scatta o si scegle dalla galleria. -->
+                    <label class="squadriglia__tasto" [title]="urlFoto(sq) ? 'Cambia la foto' : 'Aggiungi la foto'">
+                      <input type="file" accept="image/*" (change)="scegliFoto($event, sq)" />
+                      <ion-icon [icon]="icone.foto" aria-hidden="true"></ion-icon>
+                      {{ urlFoto(sq) ? 'Cambia foto' : 'Foto' }}
+                    </label>
+                    @if (urlFoto(sq)) {
+                      <button type="button" class="squadriglia__tasto" (click)="confermaRimuoviFoto(sq)"
+                              [attr.aria-label]="'Togli la foto di ' + sq.nome" title="Togli la foto">
+                        <ion-icon [icon]="icone.elimina" aria-hidden="true"></ion-icon>
+                      </button>
+                    }
+                    <button type="button" class="squadriglia__tasto squadriglia__tasto--chiudi"
+                            (click)="confermaChiusura(sq)"
+                            [attr.aria-label]="'Chiudi la squadriglia ' + sq.nome">
+                      <ion-icon [icon]="icone.chiudi" aria-hidden="true"></ion-icon>
+                      Chiudi
+                    </button>
+                  </div>
+                }
+              </article>
+            }
+
+            <!-- Solo per i capi reparto: la squadriglia nuova. -->
+            @if (puoGestire) {
+              <button type="button" class="squadriglia squadriglia--nuova" (click)="aggiungiSquadriglia()">
+                <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+                <h3>Nuova squadriglia</h3>
+              </button>
+            }
+          </div>
+
+          @if (!squadriglie.length) {
+            <p class="nota">Nessuna squadriglia attiva.</p>
+          }
+
+          <!-- Le squadriglie chiuse: si aprono a parte, per non coprire quelle di adesso. -->
+          @if (squadriglieChiuse.length) {
+            <div class="storiche" [class.storiche--aperte]="storicheAperte">
+              <button type="button" class="storiche__testa" (click)="alternaStoriche()"
+                      [attr.aria-expanded]="storicheAperte">
+                <ion-icon class="storiche__icona" [icon]="icone.storiche" aria-hidden="true"></ion-icon>
+                <span class="storiche__testo">
+                  <strong>Le squadriglie di una volta</strong>
+                  <small>
+                    {{ squadriglieChiuse.length }}
+                    {{ squadriglieChiuse.length === 1 ? 'squadriglia chiusa' : 'squadriglie chiuse nel tempo' }}
+                  </small>
+                </span>
+                <ion-icon class="storiche__freccia" [icon]="icone.apri" aria-hidden="true"></ion-icon>
+              </button>
+
+              @if (storicheAperte) {
+                <div class="storiche__dentro">
+                  <p>
+                    Non ci sono più, ma hanno fatto il Reparto prima di noi: nomi, guidoni e gridi
+                    che tornano nei racconti dei campi.
+                  </p>
+                  <ul>
+                    @for (sq of squadriglieChiuse; track sq.id) {
+                      <li>
+                        @if (urlFoto(sq)) {
+                          <img [src]="urlFoto(sq)" [alt]="'Squadriglia ' + sq.nome" />
+                        }
+                        {{ sq.nome }}
+                        @if (puoGestire) {
+                          <button type="button" class="storiche__riapri" (click)="confermaRiapertura(sq)"
+                                  [attr.aria-label]="'Riapri la squadriglia ' + sq.nome" title="Riapri">
+                            <ion-icon [icon]="icone.riapri"></ion-icon>
+                          </button>
+                        }
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+          }
+        }
+
+      </section>
+    }
+
+    <!-- ---------- Guidoncini in vetta ---------- -->
+    @if (sezioneAttiva === 'guidoncini') {
+      <section class="scheda" id="parte-guidoncini" role="tabpanel" aria-label="Guidoncini in vetta">
+        <h2>
+          <span class="guidoncino-segno" aria-hidden="true"></span>
+          Guidoncini in vetta
+        </h2>
+        <p class="testo">
+          La <strong>specialità di squadriglia</strong> è la sfida più grande che una squadriglia
+          può prendersi in un anno: scegliere un campo, diventarci davvero brava e dimostrarlo.
+          Chi ce la fa riceve il <strong>guidoncino verde</strong>, da legare sotto la bandierina
+          della squadriglia.
+        </p>
+
+        <!-- Come si conquista: i tre passi del Regolamento. -->
+        <ol class="passi">
+          <li>
+            <strong>Due imprese</strong>
+            <span>Nell'anno scout, costruite sulle tecniche della specialità scelta.</span>
+          </li>
+          <li>
+            <strong>Una missione</strong>
+            <span>La affidano i capi reparto: una prova a sorpresa, sulle stesse tecniche.</span>
+          </li>
+          <li>
+            <strong>La relazione</strong>
+            <span>Si racconta tutto agli incaricati regionali E/G, che assegnano il guidoncino.</span>
+          </li>
+        </ol>
+        <p class="nota nota--passi">
+          Se ne conquista uno all'anno e si porta per tutto l'anno scout dopo. Con una nuova
+          impresa affine lo si conferma per un altro anno.
+        </p>
+
+        @if (erroreGuidoncini) {
+          <p class="avviso-errore">{{ erroreGuidoncini }}</p>
+        } @else if (caricamentoGuidoncini || caricamentoSquadriglie) {
+          <div class="scheletro" aria-busy="true"><div></div></div>
+        } @else {
+
+          <!-- Quelli appesi quest'anno. -->
+          <div class="vetta">
+            <h3>Sui guidoni nel {{ nomeAnno(annoCorrente) }}</h3>
+            @if (inVetta.length) {
+              <ul>
+                @for (g of inVetta; track g.id) {
+                  <li class="vetta__voce">
+                    @if (squadrigliaDi(g); as sq) {
+                      @if (urlFoto(sq)) {
+                        <img [src]="urlFoto(sq)" alt="" />
+                      } @else {
+                        <span class="vetta__iniziale" aria-hidden="true">{{ iniziale(sq) }}</span>
+                      }
+                      <span class="vetta__testo">
+                        <strong>{{ sq.nome }}</strong>
+                        <small>
+                          <ion-icon [icon]="iconaSpecialita(g.specialita)" aria-hidden="true"></ion-icon>
+                          {{ nomeSpecialita(g.specialita) }}
+                        </small>
+                      </span>
+                      <span class="guidoncino-segno guidoncino-segno--grande" aria-hidden="true"></span>
+                    }
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p>
+                Quest'anno nessun guidoncino verde sotto le nostre bandierine.
+                La prossima squadriglia a salire in vetta potrebbe essere la tua.
+              </p>
+            }
+          </div>
+
+          <!-- Le specialità: si tocca per sapere di cosa si tratta e chi l'ha conquistata. -->
+          <h3 class="sottotitolo">Le specialità</h3>
+          <p class="invito">Tocca una specialità per sapere di cosa si tratta.</p>
+          <div class="specialita">
+            @for (sp of specialita; track sp.chiave) {
+              <button type="button" class="specialita__voce"
+                      [class.specialita__voce--aperta]="specialitaAperta === sp.chiave"
+                      [attr.aria-expanded]="specialitaAperta === sp.chiave"
+                      (click)="alternaSpecialita(sp.chiave)">
+                <ion-icon [icon]="iconaSpecialita(sp.chiave)" aria-hidden="true"></ion-icon>
+                <span>{{ sp.nome }}</span>
+                @if (conquisteDi(sp.chiave).length) {
+                  <small class="specialita__conta"
+                         [attr.aria-label]="'conquistata ' + conquisteDi(sp.chiave).length + ' volte'">
+                    {{ conquisteDi(sp.chiave).length }}
+                  </small>
+                }
+              </button>
+            }
+          </div>
+
+          @if (specialitaScelta; as sp) {
+            <div class="specialita__dettaglio">
+              <h4>
+                <ion-icon [icon]="iconaSpecialita(sp.chiave)" aria-hidden="true"></ion-icon>
+                {{ sp.nome }}
+              </h4>
+              <p>{{ sp.ambito }}</p>
+              @if (conquisteDi(sp.chiave).length) {
+                <ul>
+                  @for (g of conquisteDi(sp.chiave); track g.id) {
+                    <li>
+                      <span class="guidoncino-segno" aria-hidden="true"></span>
+                      <strong>{{ squadrigliaDi(g)?.nome ?? 'Squadriglia' }}</strong>
+                      {{ nomeAnno(g.anno) }}{{ g.confermata ? ', confermata' : '' }}
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <small>Nessuna squadriglia del Palermo 11 l'ha ancora conquistata qui sul sito.</small>
+              }
+            </div>
+          }
+
+          <!-- Il palmarès: la storia di ogni squadriglia. -->
+          <h3 class="sottotitolo">Il palmarès delle squadriglie</h3>
+          @if (puoGestire && guidoncini.length) {
+            <p class="invito">Tocca un guidoncino per confermarlo o toglierlo.</p>
+          }
+          <div class="palmares">
+            @for (p of palmares; track p.squadriglia.id) {
+              <article class="palmares__riga" [class.palmares__riga--chiusa]="!p.squadriglia.attiva">
+                <div class="palmares__chi">
+                  @if (urlFoto(p.squadriglia)) {
+                    <img [src]="urlFoto(p.squadriglia)" alt="" />
+                  } @else {
+                    <span class="palmares__iniziale" aria-hidden="true">{{ iniziale(p.squadriglia) }}</span>
+                  }
+                  <strong>{{ p.squadriglia.nome }}</strong>
+                  @if (!p.squadriglia.attiva) {
+                    <small>di una volta</small>
+                  }
+                </div>
+                @if (p.guidoncini.length) {
+                  <ul class="palmares__guidoncini">
+                    @for (g of p.guidoncini; track g.id) {
+                      <li>
+                        <button type="button" class="guidoncino"
+                                [class.guidoncino--vetta]="sulGuidone(g)"
+                                [disabled]="!puoGestire"
+                                (click)="gestisciGuidoncino(g)"
+                                [attr.aria-label]="nomeSpecialita(g.specialita) + ', ' + nomeAnno(g.anno)">
+                          <ion-icon [icon]="iconaSpecialita(g.specialita)" aria-hidden="true"></ion-icon>
+                          <span class="guidoncino__testo">
+                            {{ nomeSpecialita(g.specialita) }}
+                            <small>{{ nomeAnno(g.anno) }}{{ g.confermata ? ' · confermata' : '' }}</small>
+                          </span>
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                } @else {
+                  <p class="palmares__vuoto">Ancora nessun guidoncino.</p>
+                }
+              </article>
+            }
+          </div>
+
+          <!-- Solo per i capi reparto: segnare un guidoncino conquistato. -->
+          @if (puoGestire) {
+            <form class="segna" (ngSubmit)="segnaGuidoncino()">
+              <h3>
+                <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+                Segna un guidoncino conquistato
+              </h3>
+              <label>
+                <span>Squadriglia</span>
+                <select name="squadriglia" [(ngModel)]="nuovo.squadriglia_id" required>
+                  <option [ngValue]="0" disabled>Scegli…</option>
+                  <optgroup label="Di adesso">
+                    @for (sq of squadriglie; track sq.id) {
+                      <option [ngValue]="sq.id">{{ sq.nome }}</option>
+                    }
+                  </optgroup>
+                  @if (squadriglieChiuse.length) {
+                    <optgroup label="Di una volta">
+                      @for (sq of squadriglieChiuse; track sq.id) {
+                        <option [ngValue]="sq.id">{{ sq.nome }}</option>
+                      }
+                    </optgroup>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Specialità</span>
+                <select name="specialita" [(ngModel)]="nuovo.specialita" required>
+                  <option value="" disabled>Scegli…</option>
+                  @for (sp of specialita; track sp.chiave) {
+                    <option [value]="sp.chiave">{{ sp.nome }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Anno scout della conquista</span>
+                <select name="anno" [(ngModel)]="nuovo.anno" required>
+                  @for (a of anniScelta; track a) {
+                    <option [ngValue]="a">{{ nomeAnno(a) }}</option>
+                  }
+                </select>
+              </label>
+              <button type="submit" class="segna__invia" [disabled]="salvataggioGuidoncino">
+                {{ salvataggioGuidoncino ? 'Salvo…' : 'Segna il guidoncino' }}
+              </button>
+            </form>
+          }
+        }
+      </section>
+    }
+
+    <!-- ---------- Specialità e brevetti ---------- -->
+    @if (sezioneAttiva === 'specialita') {
+      <section class="scheda" id="parte-specialita" role="tabpanel" aria-label="Specialità e brevetti">
+        <h2>
+          <ion-icon [icon]="icone.specialita" aria-hidden="true"></ion-icon>
+          Specialità e brevetti
+        </h2>
+        <p class="testo">
+          Ognuno nel Reparto ha qualcosa in cui vuole diventare bravo. La <strong>specialità</strong>
+          è una competenza tutta tua: la scegli, ti prepari con qualcuno che se ne intende e poi
+          dimostri quello che sai fare, mettendolo al servizio della squadriglia.
+        </p>
+        <p class="testo">
+          Il <strong>brevetto di competenza</strong> è il passo dopo, per chi è più grande: dice che
+          in un campo sei diventato competente davvero, e che il Reparto può contare su di te.
+        </p>
+
+        <div class="due-scelte" role="tablist" aria-label="Specialità o brevetti">
+          <button type="button" role="tab" [attr.aria-selected]="distintiviScelti === 'specialita'"
+                  [class.due-scelte__voce--attiva]="distintiviScelti === 'specialita'"
+                  (click)="distintiviScelti = 'specialita'">
+            Specialità <small>{{ specialitaIndividuali.length }}</small>
+          </button>
+          <button type="button" role="tab" [attr.aria-selected]="distintiviScelti === 'brevetti'"
+                  [class.due-scelte__voce--attiva]="distintiviScelti === 'brevetti'"
+                  (click)="distintiviScelti = 'brevetti'">
+            Brevetti <small>{{ brevetti.length }}</small>
+          </button>
+        </div>
+
+        @if (distintiviScelti === 'specialita') {
+          <app-elenco-distintivi [voci]="specialitaIndividuali" cartella="assets/specialita-reparto"
+                                 forma="quadrato" />
+        } @else {
+          <app-elenco-distintivi [voci]="brevetti" cartella="assets/brevetti-reparto"
+                                 forma="quadrato" singolare="brevetto" plurale="brevetti" />
+        }
+      </section>
+    }
+
+    <!-- ---------- Promessa e Legge ---------- -->
+    @if (sezioneAttiva === 'promessa-e-legge') {
+      <section class="scheda" id="parte-promessa-e-legge" role="tabpanel" aria-label="Promessa e Legge">
+        <article class="promessa">
+          <h3>La Promessa</h3>
+          <blockquote>
+            Con l'aiuto di Dio prometto sul mio onore di fare del mio meglio:<br />
+            per compiere il mio dovere verso Dio e verso il mio Paese,<br />
+            per aiutare gli altri in ogni circostanza,<br />
+            per osservare la Legge scout.
+          </blockquote>
+          <small>Si pronuncia una volta sola, davanti al Reparto, e vale per tutta la vita scout.</small>
+        </article>
+
+        <article class="legge">
+          <h3>La Legge</h3>
+          <p class="invito">I dieci articoli che dicono come si prova a viverla ogni giorno.</p>
+          <ol>
+            @for (articolo of legge; track articolo) {
+              <li>{{ articolo }}</li>
+            }
+          </ol>
+        </article>
+      </section>
+    }
+
+  </div>
+
+</ion-content>
+
+<app-barra-inferiore />

@@ -1,0 +1,7 @@
+{
+  "name": "agescipalermo11",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

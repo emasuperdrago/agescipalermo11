@@ -1,0 +1,27 @@
+<ion-content [fullscreen]="true" class="conferma">
+  <main class="stage">
+    <section class="scheda" aria-live="polite">
+      <img class="logo" src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+      @switch (stato) {
+        @case ('attesa') {
+          <h1>Sto confermando la tua email…</h1>
+          <p>Un attimo.</p>
+        }
+        @case ('fatto') {
+          @if (cambio) {
+            <h1>Email cambiata!</h1>
+            <p>Da adesso il tuo account usa la nuova email.</p>
+          } @else {
+            <h1>Email confermata!</h1>
+            <p>Benvenuto nel sito del Palermo 11: ti porto alla home.</p>
+          }
+        }
+        @case ('errore') {
+          <h1>Qualcosa non va</h1>
+          <p class="errore">{{ messaggio }}</p>
+          <a class="pulsante" routerLink="/login">Vai all'accesso</a>
+        }
+      }
+    </section>
+  </main>
+</ion-content>

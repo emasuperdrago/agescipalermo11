@@ -1,0 +1,73 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/area-capi" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Area Capi
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="sfondi">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      <h1>Foto della home</h1>
+      <p>Le foto che scorrono nell'apertura del sito, una ogni {{ secondi }} secondi.</p>
+    </div>
+  </header>
+
+  <div class="corpo">
+    <section class="scheda" aria-labelledby="titolo-sfondi">
+      <h2 id="titolo-sfondi">
+        <ion-icon [icon]="icone.foto" aria-hidden="true"></ion-icon>
+        Le foto
+        <span class="conta">{{ sfondi.length }}</span>
+      </h2>
+
+      @if (errore) {
+        <p class="avviso avviso--errore">{{ errore }}</p>
+      } @else {
+
+        <label class="aggiungi" [class.aggiungi--occupata]="inCaricamento">
+          <input type="file" accept="image/*" (change)="scegliFoto($event)" [disabled]="inCaricamento" />
+          <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+          <span>{{ inCaricamento ? 'Caricamento in corso…' : 'Aggiungi una foto' }}</span>
+          <small>Orizzontali vengono meglio</small>
+        </label>
+
+        @if (caricamento) {
+          <div class="scheletro" aria-busy="true"><div></div><div></div></div>
+        } @else {
+          <ul class="galleria">
+            @for (s of sfondi; track s.id; let i = $index) {
+              <li class="scatto">
+                <img [src]="url(s)" alt="" loading="lazy" />
+                <span class="scatto__posto">{{ i + 1 }}ª</span>
+                <button type="button" class="scatto__elimina" (click)="confermaElimina(s)"
+                        aria-label="Rimuovi questa foto" title="Rimuovi">
+                  <ion-icon [icon]="icone.elimina"></ion-icon>
+                </button>
+              </li>
+            }
+          </ul>
+          <p class="nota">
+            Scorrono nell'ordine in cui le vedi qui. Ne deve restare almeno una, e si arriva
+            al massimo a dodici.
+          </p>
+        }
+      }
+    </section>
+  </div>
+
+</ion-content>
+
+<app-barra-inferiore attiva="area-capi" />

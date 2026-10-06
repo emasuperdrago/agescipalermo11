@@ -1,0 +1,793 @@
+@use 'sass:map';
+@use '../../theme/variables' as *;
+
+// Per ogni etichetta: colore, colore del testo che ci sta sopra e colore leggibile su bianco.
+// Il gruppo è un lilla chiaro, quindi sopra ci vuole una scritta scura.
+$colori-branca: (
+  branco: $green-d,
+  reparto: #B98A00,
+  clan: #D8392F,
+  gruppo: #E3C0FF,
+  capi: $viola-m,
+);
+
+$testi-branca: (
+  branco: $white,
+  reparto: $white,
+  clan: $white,
+  gruppo: $viola-d,
+  capi: $white,
+);
+
+$forti-branca: (
+  branco: $green-d,
+  reparto: #B98A00,
+  clan: #D8392F,
+  gruppo: $viola-m,
+  capi: $viola-m,
+);
+
+.calendario {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+// ---------- Barra in alto (come profilo e dettaglio post) ----------
+
+.testata-pagina ion-toolbar {
+  --background: rgba(255, 255, 255, .94);
+  --border-width: 0;
+  --padding-start: 8px;
+  --padding-end: 16px;
+  --min-height: 64px;
+}
+
+.indietro {
+  --color: #{$viola};
+  --border-radius: 999px;
+  --padding-start: 12px;
+  --padding-end: 14px;
+  --background-hover: #{rgba($viola-l, .12)};
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.marchio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: $dark;
+  text-decoration: none;
+
+  img {
+    width: 38px;
+    height: 38px;
+    padding: 2px;
+    border: 1px solid $slate-200;
+    border-radius: 50%;
+    background: $white;
+  }
+
+  &__testo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.15;
+
+    strong {
+      font-size: .95rem;
+      font-weight: 800;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    small {
+      font-size: .62rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: $slate;
+    }
+  }
+}
+
+// ---------- Elementi comuni ----------
+
+.pallino {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+
+  @each $nome, $colore in $colori-branca {
+    &--#{$nome} { background: $colore; }
+  }
+}
+
+.evento,
+.prossimo {
+  --colore-etichetta: #{$viola-m};
+  --su-etichetta: #{$white};
+  --forte-etichetta: #{$viola-m};
+
+  @each $nome, $colore in $colori-branca {
+    &.evento--#{$nome} {
+      --colore-etichetta: #{$colore};
+      --su-etichetta: #{map.get($testi-branca, $nome)};
+      --forte-etichetta: #{map.get($forti-branca, $nome)};
+    }
+  }
+}
+
+// ---------- Copertina ----------
+
+.copertina {
+  padding: 18px 20px 62px;
+  color: $white;
+  background-color: $viola-m;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, .16) 1.5px, transparent 1.7px),
+    $sfumatura-viola;
+  background-size: 20px 20px, 100% 100%;
+
+  @media (min-width: 768px) {
+    padding: 26px 32px 78px;
+  }
+
+  &__contenuto {
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    margin: 0 0 2px;
+    font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0;
+    font-size: .85rem;
+    opacity: .9;
+  }
+}
+
+// ---------- Disposizione: una colonna su telefono, due affiancate su computer ----------
+
+.corpo {
+  position: relative;
+  z-index: 1;
+  margin-top: -48px;
+  padding-bottom: 32px;
+
+  @media (min-width: 992px) {
+    display: grid;
+    grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
+    align-items: start;
+    gap: 28px;
+    width: calc(100% - 48px);
+    max-width: 1080px;
+    margin: -56px auto 0;
+
+    .scheda-calendario {
+      position: sticky;
+      top: 16px;
+      width: 100%;
+      margin: 0;
+    }
+
+    .giornata,
+    .in-evidenza {
+      width: 100%;
+    }
+
+    // Gli eventi iniziano sotto la copertina viola, non sopra.
+    .giornata {
+      margin-top: 72px;
+    }
+  }
+}
+
+// ---------- Calendario ----------
+
+.scheda-calendario {
+  width: calc(100% - 24px);
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 12px 10px 10px;
+  border-radius: 22px;
+  background: $white;
+  box-shadow: 0 20px 50px rgba($dark, .12);
+
+  @media (min-width: 768px) {
+    padding: 16px 16px 12px;
+  }
+}
+
+.navigazione {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+
+  h2 {
+    flex: 1;
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    text-align: center;
+    color: $dark;
+  }
+}
+
+.freccia,
+.oggi {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.freccia {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: $slate-100;
+  color: $viola;
+
+  ion-icon { font-size: 1.2rem; }
+
+  &:hover:not(:disabled) { background: rgba($viola-l, .2); }
+  &:disabled { opacity: .35; cursor: default; }
+}
+
+.oggi {
+  order: -1;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba($viola-l, .16);
+  font-size: .82rem;
+  font-weight: 700;
+  color: $viola;
+
+  ion-icon { font-size: 1rem; }
+
+  &:hover { background: rgba($viola-l, .28); }
+
+  @media (max-width: 420px) {
+    padding: 8px 10px;
+    font-size: 0;
+
+    ion-icon { font-size: 1.15rem; }
+  }
+}
+
+.settimana {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+
+  span {
+    padding: 4px 0;
+    font-size: .66rem;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+    color: $slate-400;
+  }
+}
+
+// I mesi stanno uno accanto all'altro: si scorre in orizzontale, un mese alla volta.
+.mesi {
+  display: flex;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+.mese {
+  display: grid;
+  flex: 0 0 100%;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.giorno {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1px;
+  // Caselle basse: il mese intero sta in poco spazio.
+  height: 42px;
+  padding: 3px 0 0;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  font-family: inherit;
+  color: $dark;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+
+  @media (min-width: 768px) {
+    height: 46px;
+  }
+
+  &:hover { background: $slate-100; }
+
+  &__numero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: .85rem;
+    font-weight: 600;
+  }
+
+  &__puntini {
+    display: flex;
+    gap: 2px;
+
+    .pallino {
+      width: 5px;
+      height: 5px;
+    }
+  }
+
+  &__bandiera {
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    font-size: .65rem;
+    color: $viola-m;
+  }
+
+  &--fuori {
+    color: $slate-400;
+    opacity: .55;
+  }
+
+  &--evidenza {
+    background: rgba($viola-l, .08);
+  }
+
+  &--oggi .giorno__numero {
+    border: 2px solid $viola-m;
+    font-weight: 800;
+    color: $viola;
+  }
+
+  &--selezionato {
+    background: rgba($viola-l, .18);
+
+    .giorno__numero {
+      border: none;
+      background: $sfumatura-viola;
+      box-shadow: 0 4px 12px rgba($viola, .3);
+      font-weight: 800;
+      color: $white;
+    }
+
+    &:hover { background: rgba($viola-l, .24); }
+  }
+}
+
+.filtri {
+  margin: 0 0 10px;
+  padding: 0 2px 10px;
+  border-bottom: 1px solid $slate-100;
+
+  &__intestazione {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  &__titolo {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: $slate;
+
+    ion-icon { font-size: .9rem; }
+  }
+
+  &__conteggio {
+    font-size: .72rem;
+    font-weight: 600;
+    color: $slate-400;
+  }
+
+  &__scelte {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+
+.filtro {
+  --colore-etichetta: #{$viola-m};
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 12px;
+  border: 1.5px solid $slate-200;
+  border-radius: 999px;
+  background: $white;
+  font-family: inherit;
+  font-size: .76rem;
+  font-weight: 700;
+  color: $slate-600;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s, opacity .15s;
+
+  @each $nome, $colore in $colori-branca {
+    &--#{$nome} {
+      --colore-etichetta: #{$colore};
+      --su-etichetta: #{map.get($testi-branca, $nome)};
+    }
+  }
+
+  .pallino {
+    width: 9px;
+    height: 9px;
+  }
+
+  ion-icon {
+    font-size: .9rem;
+    color: $viola-m;
+  }
+
+  &:hover { border-color: var(--colore-etichetta); }
+
+  // Etichetta nascosta da un filtro.
+  &--spento {
+    opacity: .5;
+
+    .pallino { background: transparent; box-shadow: inset 0 0 0 1.5px $slate-400; }
+  }
+
+  &--attivo {
+    border-color: var(--colore-etichetta);
+    background: var(--colore-etichetta);
+    color: var(--su-etichetta, #{$white});
+
+    .pallino { background: var(--su-etichetta, #{$white}); }
+    ion-icon { color: var(--su-etichetta, #{$white}); }
+  }
+
+  // "Tutti" e "In evidenza" usano il viola del sito.
+  &--tutti.filtro--attivo,
+  &--evidenza.filtro--attivo {
+    border-color: transparent;
+    background: $sfumatura-viola;
+    color: $white;
+
+    ion-icon { color: $white; }
+  }
+
+  @media (max-width: 420px) {
+    padding: 6px 10px;
+    font-size: .72rem;
+  }
+}
+
+// ---------- Eventi del giorno ----------
+
+.giornata,
+.in-evidenza {
+  width: calc(100% - 24px);
+  max-width: 760px;
+  margin: 22px auto 0;
+}
+
+.giornata__intestazione {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+
+  h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: $dark;
+  }
+}
+
+.aggiungi {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 999px;
+  background: $sfumatura-viola;
+  box-shadow: 0 8px 20px rgba($viola, .28);
+  font-family: inherit;
+  font-size: .9rem;
+  font-weight: 700;
+  color: $white;
+  cursor: pointer;
+
+  ion-icon { font-size: 1.1rem; }
+}
+
+.eventi {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.evento {
+  display: flex;
+  gap: 12px;
+  padding: 16px 16px 16px 26px;
+  border-radius: 18px;
+  // Striscia a sinistra nel colore dell'etichetta (a fasce se l'evento è di più branche).
+  background:
+    var(--striscia, linear-gradient(var(--colore-etichetta), var(--colore-etichetta))) left top / 6px 100% no-repeat,
+    $white;
+  box-shadow: 0 8px 24px rgba($dark, .06);
+
+  &--evidenza {
+    box-shadow: 0 0 0 2px rgba($viola-l, .7), 0 10px 26px rgba($viola, .14);
+  }
+
+  &__corpo {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  h4 {
+    margin: 0 0 6px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: $dark;
+    overflow-wrap: anywhere;
+  }
+
+  &__dettaglio {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 2px;
+    font-size: .86rem;
+    font-weight: 600;
+    color: $slate-600;
+
+    ion-icon {
+      flex-shrink: 0;
+      font-size: 1rem;
+      color: var(--forte-etichetta, var(--colore-etichetta));
+    }
+  }
+
+  &__descrizione {
+    margin: 8px 0 0;
+    font-size: .9rem;
+    line-height: 1.6;
+    color: $slate-600;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+
+  &__azioni {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 50%;
+      background: $slate-100;
+      color: $slate-600;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+
+      ion-icon { font-size: 1.05rem; }
+
+      &:hover { color: $viola; background: rgba($viola-l, .18); }
+
+      &.attiva {
+        background: $viola-m;
+        color: $white;
+      }
+
+      &.elimina:hover {
+        background: $red;
+        color: $white;
+      }
+    }
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: $slate-100;
+  font-size: .72rem;
+  font-weight: 700;
+  color: $slate-600;
+
+  &--evidenza {
+    background: $viola-m;
+    color: $white;
+
+    ion-icon { font-size: .8rem; }
+  }
+}
+
+.vuoto {
+  margin: 0;
+  padding: 24px;
+  border: 1px dashed $slate-200;
+  border-radius: 18px;
+  background: $white;
+  text-align: center;
+  color: $slate;
+
+  &--errore { color: $red; }
+
+  &__azione {
+    display: block;
+    margin: 10px auto 0;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 999px;
+    background: $sfumatura-viola;
+    font-family: inherit;
+    font-size: .82rem;
+    font-weight: 700;
+    color: $white;
+    cursor: pointer;
+  }
+}
+
+// Pulsante "Aggiungi al calendario" dentro la scheda dell'evento.
+.esporta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 8px 14px;
+  border: 1.5px solid rgba($viola-m, .35);
+  border-radius: 999px;
+  background: $white;
+  font-family: inherit;
+  font-size: .8rem;
+  font-weight: 700;
+  color: $viola;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+
+  ion-icon { font-size: 1.05rem; }
+
+  &:hover {
+    border-color: $viola-m;
+    background: rgba($viola-l, .12);
+  }
+}
+
+// ---------- Prossimi eventi in evidenza ----------
+
+.in-evidenza {
+  padding-bottom: 32px;
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: $dark;
+
+    ion-icon { color: $viola-m; }
+  }
+
+  ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+}
+
+.prossimo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px 10px 10px;
+  border: none;
+  border-radius: 16px;
+  background: $white;
+  box-shadow: 0 6px 18px rgba($dark, .06);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform .15s;
+
+  &:hover { transform: translateY(-2px); }
+
+  &__data {
+    display: flex;
+    flex-shrink: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 54px;
+    border-radius: 12px;
+    background: var(--striscia, var(--colore-etichetta));
+    line-height: 1.1;
+    color: var(--su-etichetta, #{$white});
+
+    strong { font-size: 1.25rem; font-weight: 800; }
+    small { font-size: .68rem; font-weight: 700; text-transform: uppercase; }
+  }
+
+  &__testo {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    strong {
+      overflow: hidden;
+      font-size: .95rem;
+      font-weight: 800;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      color: $dark;
+    }
+
+    small {
+      font-size: .78rem;
+      font-weight: 600;
+      color: $slate;
+    }
+  }
+}

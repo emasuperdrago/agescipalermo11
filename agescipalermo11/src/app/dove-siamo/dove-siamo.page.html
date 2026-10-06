@@ -1,0 +1,57 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/home" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Home
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="dove-siamo">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      <h1>Dove siamo</h1>
+      <p>La sede del gruppo, a Palermo</p>
+    </div>
+  </header>
+
+  <div class="corpo">
+    <section class="scheda">
+      @if (errore) {
+        <p class="avviso-errore">{{ errore }}</p>
+      }
+
+      <!-- La mappa: un punto solo, quello della sede. -->
+      <div class="mappa" #contenitore role="img"
+           [attr.aria-label]="'Mappa con la sede del gruppo' + (sede?.indirizzo ? ', ' + sede?.indirizzo : '')"></div>
+
+      <div class="indirizzo">
+        <ion-icon [icon]="icone.posto" aria-hidden="true"></ion-icon>
+        <span>
+          <strong>{{ sede?.nome ?? 'Sede del gruppo' }}</strong>
+          <small>{{ sede?.indirizzo ?? 'Palermo' }}</small>
+        </span>
+      </div>
+
+      @if (sede) {
+        <a class="porta" [href]="indicazioni" target="_blank" rel="noopener">
+          <ion-icon [icon]="icone.indicazioni" aria-hidden="true"></ion-icon>
+          Fatti portare qui
+        </a>
+      }
+    </section>
+  </div>
+
+</ion-content>
+
+<app-barra-inferiore />

@@ -1,0 +1,1139 @@
+@use '../../theme/variables' as *;
+@use '../../theme/testata' as *;
+
+@include testata-pagina;
+
+.reparto {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+.copertina {
+  padding: 18px 20px 62px;
+  color: $white;
+  background-color: $viola-m;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, .16) 1.5px, transparent 1.7px),
+    $sfumatura-viola;
+  background-size: 20px 20px, 100% 100%;
+
+  @media (min-width: 768px) { padding: 26px 32px 78px; }
+
+  &__contenuto {
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    margin: 0 0 2px;
+    font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0;
+    font-size: .85rem;
+    opacity: .9;
+  }
+}
+
+.corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 860px;
+  margin: -44px auto 0;
+  padding: 0 12px 32px;
+
+  @media (min-width: 768px) {
+    margin-top: -56px;
+    padding: 0 24px 48px;
+  }
+}
+
+.scheda {
+  padding: 18px 16px 20px;
+  border-radius: 22px;
+  background: $white;
+  box-shadow: 0 20px 50px rgba($dark, .1);
+
+  @media (min-width: 768px) { padding: 22px 24px; }
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: $dark;
+
+    ion-icon {
+      font-size: 1.3rem;
+      color: $viola-m;
+    }
+  }
+}
+
+.testo {
+  margin: 0 0 10px;
+  font-size: .94rem;
+  line-height: 1.6;
+  color: $slate-600;
+
+  strong { color: $dark; }
+}
+
+.nota {
+  margin: 0 0 14px;
+  font-size: .86rem;
+  line-height: 1.5;
+  color: $slate;
+}
+
+// ---------- La fascia delle tre parti ----------
+
+.scelta {
+  position: relative;
+  display: grid;
+  // Le voci si dividono lo spazio in parti uguali, quante che siano (--voci le conta).
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  padding: 5px;
+  border-radius: 999px;
+  background: $white;
+  box-shadow: 0 14px 30px rgba($dark, .1);
+
+  // La pastiglia viola che scivola sotto la voce scelta.
+  &__pastiglia {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: calc((100% - 10px) / var(--voci, 3));
+    height: calc(100% - 10px);
+    border-radius: 999px;
+    background: $sfumatura-viola;
+    box-shadow: 0 6px 16px rgba($viola, .3);
+    transition: transform .28s cubic-bezier(.4, 0, .2, 1);
+  }
+
+  &__voce {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 0;
+    padding: 11px 6px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    font-family: inherit;
+    font-size: .8rem;
+    font-weight: 700;
+    color: $slate;
+    cursor: pointer;
+    transition: color .2s;
+
+    ion-icon {
+      flex: none;
+      font-size: 1.1rem;
+    }
+
+    span { white-space: nowrap; }
+
+    // Sui telefoni stretti l'icona va sopra il nome, così le quattro voci ci stanno.
+    @media (max-width: 420px) {
+      flex-direction: column;
+      gap: 2px;
+      padding: 8px 0 7px;
+      font-size: .68rem;
+
+      ion-icon { font-size: 1.05rem; }
+    }
+
+    &--attiva { color: $white; }
+  }
+}
+
+// La parte che si apre arriva con un piccolo scivolamento.
+.scheda {
+  animation: entra-parte .22s ease-out;
+}
+
+@keyframes entra-parte {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scheda { animation: none; }
+  .scelta__pastiglia { transition: none; }
+}
+
+// ---------- Avventura, squadriglia, impresa ----------
+
+.invito {
+  margin: 18px 0 10px;
+  font-size: .8rem;
+  font-weight: 600;
+  color: $slate-400;
+}
+
+.pilastri {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+// Riquadro che si apre: il nome sempre, la spiegazione al tocco.
+.pilastro {
+  border-radius: 18px;
+  background: rgba($viola-l, .09);
+  overflow: hidden;
+  transition: background .2s;
+
+  &__testa {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px 16px;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    h3 {
+      flex: 1;
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 800;
+      color: $viola;
+    }
+  }
+
+  &__icona {
+    flex: none;
+    font-size: 1.5rem;
+    color: $viola-m;
+  }
+
+  &__freccia {
+    flex: none;
+    font-size: 1.1rem;
+    color: $viola-m;
+    transition: transform .22s;
+  }
+
+  &__testo {
+    margin: 0;
+    padding: 0 16px 16px;
+    font-size: .88rem;
+    line-height: 1.6;
+    color: $slate-600;
+    animation: apri-pilastro .22s ease-out;
+  }
+
+  &--aperto {
+    background: rgba($viola-l, .16);
+
+    .pilastro__freccia { transform: rotate(180deg); }
+  }
+}
+
+@keyframes apri-pilastro {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pilastro__testo { animation: none; }
+}
+
+// ---------- Squadriglie ----------
+
+.squadriglie {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 18px;
+
+  @media (min-width: 520px) { grid-template-columns: repeat(3, 1fr); }
+}
+
+.squadriglia {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 10px;
+  border-radius: 18px;
+  background: rgba($viola-l, .09);
+  text-align: center;
+  transition: transform .15s, background .15s;
+
+  // La foto dell'animale, rotonda; se manca c'è l'iniziale del nome.
+  &__foto {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: $white;
+    box-shadow: 0 6px 16px rgba($dark, .16);
+  }
+
+  &__iniziale {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: $sfumatura-viola;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: $white;
+    box-shadow: 0 6px 16px rgba($viola, .25);
+  }
+
+  h3 {
+    margin: 0;
+    font-size: .95rem;
+    font-weight: 800;
+    color: $viola;
+  }
+
+  &:hover {
+    background: rgba($viola-l, .16);
+    transform: translateY(-2px);
+  }
+
+  // Solo ai capi reparto: foto, rimozione della foto e chiusura.
+  &__azioni {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 4px;
+  }
+
+  &__tasto {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    border: 1.4px solid rgba($slate, .3);
+    border-radius: 999px;
+    background: $white;
+    font-family: inherit;
+    font-size: .72rem;
+    font-weight: 700;
+    color: $slate-600;
+    cursor: pointer;
+
+    input { display: none; }
+
+    ion-icon { font-size: .9rem; }
+
+    &:hover {
+      border-color: rgba($viola-m, .5);
+      color: $viola;
+    }
+
+    &--chiudi:hover {
+      border-color: rgba($red, .45);
+      color: $red;
+    }
+  }
+
+  // Il riquadro tratteggiato per aggiungerne una.
+  &--nuova {
+    border: 1.6px dashed rgba($viola-m, .45);
+    background: rgba($viola-l, .05);
+    font-family: inherit;
+    cursor: pointer;
+
+    ion-icon {
+      font-size: 1.6rem;
+      color: $viola-m;
+    }
+
+    h3 { color: $viola; }
+  }
+}
+
+// Le squadriglie chiuse: un riquadro che si apre sotto a quelle di adesso.
+.storiche {
+  margin-top: 18px;
+  border: 1.5px solid $slate-200;
+  border-radius: 18px;
+  overflow: hidden;
+
+  &--aperte {
+    border-color: rgba($viola-m, .3);
+    background: rgba($viola-l, .05);
+  }
+
+  &__testa {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    padding: 13px 15px;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover { background: rgba($viola-l, .07); }
+  }
+
+  &__icona {
+    flex: none;
+    font-size: 1.3rem;
+    color: $viola-m;
+  }
+
+  &__testo {
+    display: flex;
+    flex-direction: column;
+    margin-right: auto;
+
+    strong {
+      font-size: .94rem;
+      font-weight: 800;
+      color: $dark;
+    }
+
+    small {
+      font-size: .78rem;
+      color: $slate;
+    }
+  }
+
+  &__freccia {
+    flex: none;
+    font-size: 1.1rem;
+    color: $viola-m;
+    transition: transform .22s;
+  }
+
+  &--aperte &__freccia { transform: rotate(180deg); }
+
+  &__dentro {
+    padding: 2px 15px 16px;
+    animation: apri-pilastro .22s ease-out;
+
+    p {
+      margin: 0 0 12px;
+      font-size: .85rem;
+      line-height: 1.6;
+      color: $slate-600;
+    }
+
+    ul {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    li {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px 5px 8px;
+
+      img {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+      border-radius: 999px;
+      background: $white;
+      box-shadow: inset 0 0 0 1.5px rgba($viola-m, .25);
+      font-size: .84rem;
+      font-weight: 700;
+      color: $viola;
+
+      // Senza il pulsante di riapertura la pasticca resta simmetrica.
+      &:not(:has(.storiche__riapri)) { padding-right: 14px; }
+      &:not(:has(img)) { padding-left: 14px; }
+    }
+  }
+
+  // Solo ai capi reparto: riporta la squadriglia fra le attive.
+  &__riapri {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 999px;
+    background: rgba($green, .18);
+    color: $green-d;
+    cursor: pointer;
+
+    ion-icon { font-size: .95rem; }
+
+    &:hover { background: rgba($green, .32); }
+  }
+}
+
+// Attesa e avvisi della zona squadriglie.
+.scheletro {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+
+  > div {
+    height: 90px;
+    border-radius: 14px;
+    background: linear-gradient(90deg, $slate-100 25%, $slate-200 50%, $slate-100 75%);
+    background-size: 200% 100%;
+    animation: luccichio-reparto 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes luccichio-reparto {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.avviso-errore {
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba($red, .1);
+  font-size: .85rem;
+  font-weight: 600;
+  color: $red;
+}
+
+.nota {
+  margin: 14px 0 0;
+  font-size: .86rem;
+  color: $slate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scheletro > div { animation: none; }
+}
+
+// ---------- Guidoncini in vetta ----------
+
+// Il guidoncino verde disegnato: un triangolo che sventola sull'asta.
+.guidoncino-segno {
+  flex: none;
+  display: inline-block;
+  width: 16px;
+  height: 13px;
+  background: linear-gradient(135deg, $green, $green-d);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  box-shadow: inset 2px 0 0 $green-d;
+
+  &--grande {
+    width: 22px;
+    height: 18px;
+    margin-left: auto;
+  }
+}
+
+.scheda h2 .guidoncino-segno {
+  width: 20px;
+  height: 16px;
+}
+
+.passi {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: passo;
+
+  @media (min-width: 620px) { grid-template-columns: repeat(3, 1fr); }
+
+  li {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 14px 12px 50px;
+    border-radius: 16px;
+    background: rgba($viola-l, .09);
+    counter-increment: passo;
+
+    &::before {
+      content: counter(passo);
+      position: absolute;
+      top: 12px;
+      left: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: $sfumatura-viola;
+      font-size: .8rem;
+      font-weight: 800;
+      color: $white;
+    }
+
+    strong {
+      font-size: .9rem;
+      font-weight: 800;
+      color: $viola;
+    }
+
+    span {
+      font-size: .8rem;
+      line-height: 1.5;
+      color: $slate-600;
+    }
+  }
+}
+
+.nota--passi { margin: 10px 0 0; }
+
+.sottotitolo {
+  margin: 26px 0 4px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: $viola;
+
+  + .invito { margin-top: 0; }
+}
+
+// Quelli appesi quest'anno: un riquadro verde in cima.
+.vetta {
+  margin-top: 20px;
+  padding: 14px 14px 16px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba($green, .16), rgba($green-l, .12));
+  box-shadow: inset 0 0 0 1.5px rgba($green-d, .22);
+
+  h3 {
+    margin: 0 0 10px;
+    font-size: .95rem;
+    font-weight: 800;
+    color: $green-d;
+  }
+
+  p {
+    margin: 0;
+    font-size: .86rem;
+    line-height: 1.55;
+    color: $slate-600;
+  }
+
+  ul {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    @media (min-width: 520px) { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  &__voce {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px 8px 8px;
+    border-radius: 14px;
+    background: $white;
+    box-shadow: 0 6px 16px rgba($dark, .07);
+
+    img {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+  }
+
+  &__iniziale {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: $sfumatura-viola;
+    font-weight: 800;
+    color: $white;
+  }
+
+  &__testo {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    strong {
+      font-size: .9rem;
+      font-weight: 800;
+      color: $dark;
+    }
+
+    small {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: .78rem;
+      font-weight: 600;
+      color: $green-d;
+    }
+  }
+}
+
+// La griglia delle specialità.
+.specialita {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+
+  @media (min-width: 620px) { grid-template-columns: repeat(4, 1fr); }
+
+  &__voce {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    padding: 14px 4px 12px;
+    border: none;
+    border-radius: 16px;
+    background: rgba($viola-l, .09);
+    font-family: inherit;
+    font-size: .74rem;
+    font-weight: 700;
+    color: $viola;
+    cursor: pointer;
+    transition: background .15s, transform .15s, color .15s;
+
+    ion-icon {
+      font-size: 1.5rem;
+      color: $viola-m;
+    }
+
+    span {
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      line-height: 1.2;
+    }
+
+    &:hover {
+      background: rgba($viola-l, .16);
+      transform: translateY(-2px);
+    }
+
+    &--aperta {
+      background: $sfumatura-viola;
+      color: $white;
+
+      ion-icon { color: $white; }
+      &:hover { background: $sfumatura-viola; }
+    }
+  }
+
+  // Quante volte l'abbiamo conquistata: un pallino verde nell'angolo.
+  &__conta {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    min-width: 19px;
+    height: 19px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: $green;
+    font-size: .68rem;
+    font-weight: 800;
+    line-height: 19px;
+    color: $white;
+  }
+
+  &__dettaglio {
+    margin-top: 10px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: rgba($viola-l, .09);
+    animation: apri-pilastro .22s ease-out;
+
+    h4 {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin: 0 0 6px;
+      font-size: .95rem;
+      font-weight: 800;
+      color: $viola;
+
+      ion-icon { font-size: 1.2rem; }
+    }
+
+    p {
+      margin: 0 0 10px;
+      font-size: .86rem;
+      line-height: 1.6;
+      color: $slate-600;
+    }
+
+    ul {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .84rem;
+      color: $slate-600;
+
+      strong { color: $dark; }
+    }
+
+    small {
+      font-size: .8rem;
+      color: $slate;
+    }
+  }
+}
+
+// Il palmarès: una riga per squadriglia con i suoi guidoncini.
+.palmares {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+
+  &__riga {
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: $slate-100;
+
+    &--chiusa { opacity: .85; }
+  }
+
+  &__chi {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    img {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    strong {
+      font-size: .92rem;
+      font-weight: 800;
+      color: $dark;
+    }
+
+    small {
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: $slate-200;
+      font-size: .7rem;
+      font-weight: 700;
+      color: $slate;
+    }
+  }
+
+  &__iniziale {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: $sfumatura-viola;
+    font-size: .85rem;
+    font-weight: 800;
+    color: $white;
+  }
+
+  &__guidoncini {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__vuoto {
+    margin: 6px 0 0 39px;
+    font-size: .8rem;
+    color: $slate-400;
+  }
+}
+
+// Un guidoncino del palmarès: verde pieno quando quest'anno è appeso al guidone.
+.guidoncino {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px 5px 9px;
+  border: none;
+  border-radius: 999px;
+  background: $white;
+  box-shadow: inset 0 0 0 1.5px rgba($green-d, .35);
+  font-family: inherit;
+  text-align: left;
+  color: $green-d;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 1;
+    cursor: default;
+  }
+
+  ion-icon {
+    flex: none;
+    font-size: 1rem;
+  }
+
+  &__testo {
+    display: flex;
+    flex-direction: column;
+    font-size: .78rem;
+    font-weight: 800;
+    line-height: 1.2;
+
+    small {
+      font-size: .68rem;
+      font-weight: 600;
+      opacity: .85;
+    }
+  }
+
+  &:not(:disabled):hover { box-shadow: inset 0 0 0 1.5px $green-d; }
+
+  &--vetta {
+    background: linear-gradient(135deg, $green, $green-d);
+    box-shadow: 0 4px 12px rgba($green-d, .3);
+    color: $white;
+
+    &:not(:disabled):hover { box-shadow: 0 4px 14px rgba($green-d, .45); }
+  }
+}
+
+// Il modulo dei capi reparto.
+.segna {
+  display: grid;
+  gap: 10px;
+  margin-top: 22px;
+  padding: 16px;
+  border: 1.6px dashed rgba($viola-m, .45);
+  border-radius: 18px;
+  background: rgba($viola-l, .05);
+
+  @media (min-width: 620px) {
+    grid-template-columns: repeat(3, 1fr);
+
+    h3, .segna__invia { grid-column: 1 / -1; }
+  }
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font-size: .95rem;
+    font-weight: 800;
+    color: $viola;
+
+    ion-icon { font-size: 1.15rem; }
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    span {
+      font-size: .75rem;
+      font-weight: 700;
+      color: $slate-600;
+    }
+  }
+
+  select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid $slate-200;
+    border-radius: 12px;
+    background: $white;
+    font-family: inherit;
+    font-size: .88rem;
+    color: $dark;
+
+    &:focus {
+      outline: none;
+      border-color: $viola-m;
+    }
+  }
+
+  &__invia {
+    justify-self: start;
+    padding: 11px 20px;
+    border: none;
+    border-radius: 999px;
+    background: $sfumatura-viola;
+    font-family: inherit;
+    font-size: .88rem;
+    font-weight: 700;
+    color: $white;
+    cursor: pointer;
+
+    &:disabled { opacity: .6; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .specialita__dettaglio { animation: none; }
+}
+
+// ---------- Specialità e brevetti ----------
+
+// Il piccolo interruttore fra specialità e brevetti.
+.due-scelte {
+  display: flex;
+  gap: 6px;
+  margin: 16px 0 14px;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: 1.5px solid rgba($viola-m, .3);
+    border-radius: 999px;
+    background: $white;
+    font-family: inherit;
+    font-size: .86rem;
+    font-weight: 700;
+    color: $viola;
+    cursor: pointer;
+
+    small {
+      padding: 1px 7px;
+      border-radius: 999px;
+      background: rgba($viola-l, .14);
+      font-size: .72rem;
+    }
+  }
+
+  &__voce--attiva {
+    border-color: transparent !important;
+    background: $sfumatura-viola !important;
+    color: $white !important;
+
+    small { background: rgba($white, .22) !important; }
+  }
+}
+
+// ---------- Promessa e Legge ----------
+
+.promessa {
+  h3 {
+    margin: 0 0 10px;
+    font-size: 1rem;
+    font-weight: 800;
+    color: $viola;
+  }
+
+  blockquote {
+    margin: 0;
+    padding: 16px 18px;
+    border-left: 4px solid $viola-m;
+    border-radius: 0 16px 16px 0;
+    background: rgba($viola-l, .09);
+    font-size: .95rem;
+    font-style: italic;
+    line-height: 1.7;
+    color: $dark;
+  }
+
+  > small {
+    display: block;
+    margin-top: 10px;
+    font-size: .8rem;
+    color: $slate;
+  }
+}
+
+.legge {
+  margin-top: 26px;
+
+  h3 {
+    margin: 0 0 4px;
+    font-size: 1rem;
+    font-weight: 800;
+    color: $viola;
+  }
+
+  .invito { margin: 0 0 12px; }
+
+  ol {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: articolo;
+  }
+
+  li {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: $slate-100;
+    font-size: .9rem;
+    line-height: 1.5;
+    color: $slate-600;
+    counter-increment: articolo;
+    transition: background .15s;
+
+    &::before {
+      content: counter(articolo);
+      flex: none;
+      min-width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: $viola-m;
+      font-size: .74rem;
+      font-weight: 800;
+      line-height: 22px;
+      text-align: center;
+      color: $white;
+    }
+
+    &:hover { background: rgba($viola-l, .14); }
+  }
+}

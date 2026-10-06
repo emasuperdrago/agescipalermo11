@@ -1,0 +1,114 @@
+<ion-header class="testata-post">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/home" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Home
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="dettaglio">
+  @if (post) {
+    <article class="articolo" [style.--colore-post]="post.colore">
+
+      <!-- Copertina nel colore del post: data in cima, etichetta e titolo. -->
+      <header class="copertina">
+        <div class="copertina__contenuto">
+          <div class="copertina__meta">
+            <time class="copertina__data" [attr.datetime]="post.data_creazione">
+              <ion-icon [icon]="icone.data" aria-hidden="true"></ion-icon>
+              {{ data }}
+            </time>
+            <span class="badge">
+              <span class="pallino pallino--{{ post.etichetta }}" aria-hidden="true"></span>
+              {{ etichetta }}
+            </span>
+            @if (post.in_evidenza) {
+              <span class="badge badge--evidenza">
+                <ion-icon [icon]="icone.evidenza" aria-hidden="true"></ion-icon>
+                In evidenza
+              </span>
+            }
+          </div>
+          <h1>{{ post.didascalia }}</h1>
+        </div>
+      </header>
+
+      <figure class="articolo__figura" (touchstart)="inizioScorrimento($event)" (touchend)="fineScorrimento($event)">
+        <img class="articolo__foto" [src]="urlFoto"
+             [alt]="fotoTutte.length > 1 ? post.didascalia + ' (foto ' + (fotoAttuale + 1) + ' di ' + fotoTutte.length + ')' : post.didascalia" />
+        @if (fotoTutte.length > 1) {
+          <button type="button" class="sfoglia sfoglia--prima" (click)="vaiAFoto(fotoAttuale - 1)" aria-label="Foto prima">
+            <ion-icon [icon]="icone.prima" aria-hidden="true"></ion-icon>
+          </button>
+          <button type="button" class="sfoglia sfoglia--dopo" (click)="vaiAFoto(fotoAttuale + 1)" aria-label="Foto dopo">
+            <ion-icon [icon]="icone.dopo" aria-hidden="true"></ion-icon>
+          </button>
+          <span class="contafoto" aria-live="polite">{{ fotoAttuale + 1 }} / {{ fotoTutte.length }}</span>
+        }
+      </figure>
+
+      @if (fotoTutte.length > 1) {
+        <div class="miniature" role="tablist" aria-label="Le foto del post">
+          @for (f of fotoTutte; track f; let i = $index) {
+            <button type="button" class="miniatura" role="tab" [class.miniatura--attiva]="i === fotoAttuale"
+                    [attr.aria-selected]="i === fotoAttuale" [attr.aria-label]="'Foto ' + (i + 1)" (click)="vaiAFoto(i)">
+              <img [src]="f" alt="" loading="lazy" />
+            </button>
+          }
+        </div>
+      }
+
+      <!-- I video: prima quelli caricati sul sito, poi quelli di YouTube e Instagram. -->
+      @if (post.video.length || videoEsterni.length) {
+        <div class="articolo__video">
+          @for (v of post.video; track v.id) {
+            <video class="video" controls playsinline preload="metadata">
+              <source [src]="urlVideo(v.url)" [type]="v.tipo" />
+              <!-- Se il browser non sa riprodurlo (un .mov su Android, per esempio) si scarica. -->
+              <a [href]="urlVideo(v.url)" download>Scarica il video</a>
+            </video>
+          }
+          @for (v of videoEsterni; track v.link) {
+            <div class="video-esterno" [class.video-esterno--instagram]="v.sito === 'instagram'">
+              <iframe [src]="v.url" [title]="v.sito === 'youtube' ? 'Video di YouTube' : 'Video di Instagram'"
+                      loading="lazy" allowfullscreen
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerpolicy="strict-origin-when-cross-origin"></iframe>
+            </div>
+          }
+        </div>
+      }
+
+      @if (post.testo) {
+        <div class="articolo__testo">{{ post.testo }}</div>
+      }
+      
+    </article>
+  } @else if (errore) {
+    <div class="stato">
+      <p class="stato__titolo">{{ errore }}</p>
+      <p class="stato__testo">Il post potrebbe essere stato eliminato o spostato.</p>
+      <a class="torna" routerLink="/home" routerDirection="back">
+        <ion-icon [icon]="icone.indietro" aria-hidden="true"></ion-icon>
+        Torna alla home
+      </a>
+    </div>
+  } @else if (caricamento) {
+    <div class="scheletro" aria-busy="true" aria-label="Caricamento del post">
+      <div class="scheletro__copertina"></div>
+      <div class="scheletro__foto"></div>
+      <div class="scheletro__riga"></div>
+      <div class="scheletro__riga scheletro__riga--corta"></div>
+    </div>
+  }
+</ion-content>

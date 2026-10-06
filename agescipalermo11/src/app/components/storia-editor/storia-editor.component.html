@@ -1,0 +1,95 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>{{ titoloFinestra }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="chiudi()" aria-label="Chiudi" [disabled]="salvando">
+        <ion-icon slot="icon-only" [icon]="icone.chiudi"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="storia-editor">
+  <form class="modulo" (ngSubmit)="salva()">
+    <p class="obbligatori">I campi con <strong>*</strong> sono obbligatori.</p>
+
+    @if (tipo === 'tappe') {
+      <label class="campo">
+        <span class="etichetta">Quando *</span>
+        <input name="quando" [(ngModel)]="quando" maxlength="60" placeholder='Es. "1995", "Per oltre 15 anni", "Adesso"' />
+      </label>
+    }
+
+    <label class="campo">
+      <span class="etichetta">Titolo *</span>
+      <input name="titolo" [(ngModel)]="titolo" maxlength="100"
+             [placeholder]="tipo === 'tappe' ? 'Es. Il primo campo estivo' : 'Es. I nostri campi'" />
+    </label>
+
+    <fieldset class="campo">
+      <legend class="etichetta">Icona</legend>
+      <div class="icone">
+        @for (i of sceltaIcone; track i.chiave) {
+          <label class="icona" [class.icona--scelta]="icona === i.chiave" [title]="i.nome">
+            <input type="radio" name="icona" [value]="i.chiave" [(ngModel)]="icona" [attr.aria-label]="i.nome" />
+            <ion-icon [icon]="i.icona" aria-hidden="true"></ion-icon>
+          </label>
+        }
+      </div>
+    </fieldset>
+
+    <label class="campo">
+      <span class="etichetta">Testo{{ tipo === 'parti' ? ' *' : '' }}</span>
+      <textarea name="testo" [(ngModel)]="testo" rows="7" maxlength="5000"
+                placeholder="Racconta cosa è successo."></textarea>
+      <span class="suggerimento">Per cominciare un nuovo paragrafo lascia una riga vuota.</span>
+    </label>
+
+    @if (tipo === 'tappe') {
+      <label class="campo">
+        <span class="etichetta">Frase in evidenza</span>
+        <textarea name="nota" [(ngModel)]="nota" rows="3" maxlength="1500"
+                  placeholder="Facoltativa: compare in un riquadro sotto il testo."></textarea>
+      </label>
+
+      <label class="spunta">
+        <input type="checkbox" name="adesso" [(ngModel)]="adesso" />
+        <span>
+          <strong>È la tappa di oggi</strong>
+          <small>Ha il segno verde. Può esserci una sola tappa di oggi: le altre tornano normali.</small>
+        </span>
+      </label>
+    } @else {
+      <label class="campo">
+        <span class="etichetta">Frase in evidenza</span>
+        <textarea name="evidenza" [(ngModel)]="evidenza" rows="3" maxlength="2000"
+                  placeholder="Facoltativa: compare in un riquadro sotto il testo."></textarea>
+      </label>
+
+      <label class="campo">
+        <span class="etichetta">Etichette</span>
+        <textarea name="etichette" [(ngModel)]="etichette" rows="3"
+                  placeholder="Facoltative, una per riga (es. Jamboree)"></textarea>
+        <span class="suggerimento">Compaiono in fondo alla parte come piccole etichette. Al massimo 15.</span>
+      </label>
+
+      @if (conBranche) {
+        <label class="spunta">
+          <input type="checkbox" name="branche" [(ngModel)]="mostraBranche" />
+          <span>
+            <strong>Mostra Branco, Reparto e Clan</strong>
+            <small>Aggiunge i tre riquadri delle branche, che portano alle loro pagine.</small>
+          </span>
+        </label>
+      }
+    }
+
+    @if (errore) {
+      <p class="errore" role="alert">{{ errore }}</p>
+    }
+
+    <button type="submit" class="salva" [disabled]="salvando">
+      {{ salvando ? 'Salvataggio in corso…' : (modifica ? 'Salva le modifiche' : 'Aggiungi alla storia') }}
+    </button>
+  </form>
+</ion-content>

@@ -1,0 +1,62 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/home" routerDirection="back" [replaceUrl]="true">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Home
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" [replaceUrl]="true"
+       aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="non-trovata">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      <span class="copertina__numero" aria-hidden="true">404</span>
+      <h1>Pagina non trovata</h1>
+      <p>Questo indirizzo non esiste o è stato spostato. Capita a tutti di sbagliare sentiero.</p>
+    </div>
+  </header>
+
+  <div class="corpo">
+    <section class="scheda">
+      <h2 class="scheda__titolo">Dove vuoi andare?</h2>
+
+      <ul class="scorciatoie">
+        @for (s of scorciatoie; track s.link) {
+          <li>
+            <a class="scorciatoia" [routerLink]="s.link" [replaceUrl]="true">
+              <span class="scorciatoia__icona" aria-hidden="true">
+                <ion-icon [icon]="s.icona"></ion-icon>
+              </span>
+              <span class="scorciatoia__testo">
+                <strong>{{ s.nome }}</strong>
+                <small>{{ s.descrizione }}</small>
+              </span>
+              <ion-icon class="scorciatoia__freccia" [icon]="icone.apri" aria-hidden="true"></ion-icon>
+            </a>
+          </li>
+        }
+      </ul>
+
+      <a class="torna-home" routerLink="/home" [replaceUrl]="true">
+        <ion-icon [icon]="icone.home" aria-hidden="true"></ion-icon>
+        Torna alla home
+      </a>
+    </section>
+  </div>
+
+</ion-content>
+
+@if (conSessione) {
+  <app-barra-inferiore />
+}

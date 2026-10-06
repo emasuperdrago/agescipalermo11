@@ -1,0 +1,26 @@
+<div class="pb-dropdown-wrapper">
+  <div class="pb-dropdown"
+       #triggerEl
+       [class.is-open]="isOpen"
+       [class.is-disabled]="disabled"
+       (click)="toggleOpen()"
+       tabindex="0"
+       (keydown.enter)="toggleOpen()"
+       (keydown.space)="toggleOpen(); $event.preventDefault()">
+    <span class="pb-dropdown-text" [class.is-placeholder]="!internalValue && internalValue !== 0">
+      {{ displayText }}
+    </span>
+    <svg class="pb-dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 9 12 15 18 9"></polyline>
+    </svg>
+  </div>
+  <div class="pb-dropdown-menu" *ngIf="isOpen" [ngStyle]="menuStyle">
+    <div class="pb-dropdown-option"
+         *ngFor="let opt of options"
+         [class.is-selected]="isSelected(opt)"
+         (click)="selectOption(opt)">
+      {{ getLabel(opt) }}
+    </div>
+  </div>
+  <div class="pb-dropdown-backdrop" *ngIf="isOpen" (click)="close()"></div>
+</div>

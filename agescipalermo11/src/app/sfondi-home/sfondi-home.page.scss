@@ -1,0 +1,221 @@
+@use '../../theme/variables' as *;
+@use '../../theme/testata' as *;
+
+@include testata-pagina;
+
+.sfondi {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+.copertina {
+  padding: 18px 20px 62px;
+  color: $white;
+  background-color: $viola-m;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, .16) 1.5px, transparent 1.7px),
+    $sfumatura-viola;
+  background-size: 20px 20px, 100% 100%;
+
+  @media (min-width: 768px) { padding: 26px 32px 78px; }
+
+  &__contenuto {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    margin: 0 0 2px;
+    font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0;
+    font-size: .85rem;
+    opacity: .9;
+  }
+}
+
+.corpo {
+  max-width: 900px;
+  margin: -44px auto 0;
+  padding: 0 12px 32px;
+
+  @media (min-width: 768px) {
+    margin-top: -56px;
+    padding: 0 24px 48px;
+  }
+}
+
+.scheda {
+  padding: 18px 16px 20px;
+  border-radius: 22px;
+  background: $white;
+  box-shadow: 0 20px 50px rgba($dark, .1);
+
+  @media (min-width: 768px) { padding: 22px 24px; }
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 14px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: $dark;
+
+    ion-icon {
+      font-size: 1.3rem;
+      color: $viola-m;
+    }
+  }
+}
+
+.conta {
+  min-width: 24px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba($viola-l, .18);
+  font-size: .78rem;
+  font-weight: 800;
+  color: $viola;
+}
+
+.aggiungi {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1.5px dashed rgba($viola-m, .5);
+  border-radius: 16px;
+  background: rgba($viola-l, .07);
+  cursor: pointer;
+
+  &:hover { border-color: $viola-m; background: rgba($viola-l, .12); }
+
+  &--occupata { opacity: .6; cursor: default; }
+
+  input { display: none; }
+
+  ion-icon {
+    flex-shrink: 0;
+    font-size: 1.4rem;
+    color: $viola;
+  }
+
+  span {
+    font-size: .95rem;
+    font-weight: 700;
+    color: $viola;
+  }
+
+  small {
+    margin-left: auto;
+    font-size: .76rem;
+    color: $slate-400;
+  }
+}
+
+// ---------- Galleria ----------
+
+.galleria {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  @media (min-width: 560px) { grid-template-columns: 1fr 1fr; }
+  @media (min-width: 900px) { grid-template-columns: repeat(3, 1fr); }
+}
+
+.scatto {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid $slate-200;
+  border-radius: 16px;
+  background: $slate-100;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+  }
+
+  // Numero d'ordine: dice in che giro compare nella home.
+  &__posto {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba($dark, .6);
+    backdrop-filter: blur(6px);
+    font-size: .74rem;
+    font-weight: 800;
+    color: $white;
+  }
+
+  &__elimina {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: rgba($dark, .6);
+    backdrop-filter: blur(6px);
+    color: $white;
+    cursor: pointer;
+
+    ion-icon { font-size: 1.05rem; }
+
+    &:hover { background: $red; }
+  }
+}
+
+.nota {
+  margin: 12px 0 0;
+  font-size: .82rem;
+  color: $slate;
+}
+
+.avviso--errore {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba($red, .1);
+  font-size: .85rem;
+  font-weight: 600;
+  color: $red;
+}
+
+.scheletro {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+
+  > div {
+    height: 150px;
+    border-radius: 16px;
+    background: linear-gradient(90deg, $slate-100 25%, $slate-200 50%, $slate-100 75%);
+    background-size: 200% 100%;
+    animation: luccichio 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes luccichio {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scheletro > div { animation: none; }
+}

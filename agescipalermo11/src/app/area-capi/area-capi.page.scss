@@ -1,0 +1,667 @@
+@use '../../theme/variables' as *;
+@use '../../theme/testata' as *;
+
+@include testata-pagina;
+
+.area-capi {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+// ---------- Copertina (come nel calendario) ----------
+
+.copertina {
+  padding: 18px 20px 62px;
+  color: $white;
+  background-color: $viola-m;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, .16) 1.5px, transparent 1.7px),
+    $sfumatura-viola;
+  background-size: 20px 20px, 100% 100%;
+
+  @media (min-width: 768px) {
+    padding: 26px 32px 78px;
+  }
+
+  &__contenuto {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    margin: 0 0 2px;
+    font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0;
+    font-size: .85rem;
+    opacity: .9;
+  }
+}
+
+// ---------- Sezioni ----------
+
+.corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 760px;
+  margin: -44px auto 0;
+  padding: 0 12px 32px;
+
+  @media (min-width: 768px) {
+    margin-top: -56px;
+    padding: 0 24px 48px;
+  }
+}
+
+.scheda {
+  padding: 18px;
+  border-radius: 22px;
+  background: $white;
+  box-shadow: 0 20px 50px rgba($dark, .1);
+
+  @media (min-width: 768px) {
+    padding: 22px 24px;
+  }
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 14px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: $dark;
+
+    ion-icon {
+      font-size: 1.3rem;
+      color: $viola-m;
+    }
+  }
+}
+
+.vuoto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 28px 16px;
+  border: 1px dashed $slate-200;
+  border-radius: 16px;
+  text-align: center;
+
+  &__icona {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    margin-bottom: 8px;
+    border-radius: 50%;
+    background: rgba($viola-l, .14);
+    color: $viola;
+
+    ion-icon { font-size: 1.6rem; }
+  }
+
+  &__titolo {
+    margin: 0;
+    font-weight: 700;
+    color: $dark;
+  }
+
+  &__testo {
+    margin: 0;
+    font-size: .85rem;
+    color: $slate;
+  }
+}
+
+// ---------- Notifiche: richieste di iscrizione ----------
+
+// Pallino col numero delle richieste ancora da guardare, accanto al titolo.
+.conta {
+  min-width: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: $red;
+  font-size: .78rem;
+  font-weight: 800;
+  color: $white;
+  text-align: center;
+}
+
+.sottotitolo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: -6px 0 12px;
+  font-size: .85rem;
+  color: $slate;
+}
+
+.branca {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--colore-branca);
+  font-size: .78rem;
+  font-weight: 800;
+  color: var(--su-branca);
+}
+
+.strumenti {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.strumento {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 14px;
+  border: 1.5px solid $slate-200;
+  border-radius: 999px;
+  background: $white;
+  font-family: inherit;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $slate-600;
+  cursor: pointer;
+
+  ion-icon { font-size: 1.05rem; }
+
+  &:hover { border-color: $viola-m; }
+
+  &--attivo {
+    border-color: $viola-m;
+    background: rgba($viola-l, .14);
+    color: $viola;
+  }
+
+  &:disabled { opacity: .6; cursor: default; }
+}
+
+.avviso {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: $slate-100;
+  font-size: .85rem;
+  color: $slate-600;
+
+  &--errore {
+    background: rgba($red, .1);
+    font-weight: 600;
+    color: $red;
+  }
+}
+
+.richieste {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.richiesta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid $slate-200;
+  border-left: 5px solid $slate-200;
+  border-radius: 16px;
+  background: $white;
+
+  // Quelle ancora da guardare si vedono subito.
+  &--nuova {
+    border-left-color: $viola-m;
+    background: rgba($viola-l, .07);
+  }
+
+  &--archiviata { opacity: .7; }
+
+  &__testa {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__icona {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: rgba($viola-l, .16);
+    color: $viola;
+
+    ion-icon { font-size: 1.2rem; }
+  }
+
+  &__chi {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+
+    strong {
+      font-size: .98rem;
+      font-weight: 800;
+      color: $dark;
+    }
+
+    small {
+      font-size: .78rem;
+      color: $slate;
+    }
+  }
+
+  &__scuola,
+  &__genitori {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font-size: .85rem;
+    font-weight: 700;
+    color: $slate-600;
+
+    ion-icon {
+      font-size: 1.05rem;
+      color: $viola-m;
+    }
+  }
+
+  &__note {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: $slate-100;
+    font-size: .85rem;
+    color: $slate-600;
+    white-space: pre-wrap;
+  }
+
+  &__capo {
+    margin: 0;
+    font-size: .78rem;
+    font-weight: 700;
+    color: $viola;
+  }
+
+  &__azioni {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 2px;
+  }
+}
+
+.segno {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: $slate-100;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  color: $slate-600;
+
+  &--nuova {
+    background: $red;
+    color: $white;
+  }
+
+  &--letta {
+    background: rgba($viola-l, .22);
+    color: $viola;
+  }
+
+  &--accettata {
+    background: rgba($green-d, .16);
+    color: $green-d;
+  }
+
+  &--rifiutata {
+    background: rgba($red, .12);
+    color: $red;
+  }
+}
+
+// Accetta e rifiuta: spenti finché non si decide, colorati quando la decisione è presa.
+.azione--accetta.azione--scelta {
+  border-color: $green-d;
+  background: rgba($green-d, .14);
+  color: $green-d;
+}
+
+.azione--rifiuta.azione--scelta {
+  border-color: $red;
+  background: rgba($red, .1);
+  color: $red;
+}
+
+.strumento--excel {
+  border-color: rgba($viola-m, .45);
+  color: $viola;
+}
+
+.contatti {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.contatto {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1.5px solid $slate-200;
+  border-radius: 999px;
+  background: $white;
+  font-size: .84rem;
+  font-weight: 700;
+  color: $viola;
+  text-decoration: none;
+
+  ion-icon { font-size: 1.05rem; }
+
+  &:hover {
+    border-color: $viola-m;
+    background: rgba($viola-l, .1);
+  }
+}
+
+.azione {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1.5px solid $slate-200;
+  border-radius: 999px;
+  background: $white;
+  font-family: inherit;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $slate-600;
+  cursor: pointer;
+
+  ion-icon { font-size: 1.05rem; }
+
+  &:hover { border-color: $viola-m; color: $viola; }
+
+  &--principale {
+    border-color: transparent;
+    background: $sfumatura-viola;
+    color: $white;
+
+    &:hover { color: $white; filter: brightness(1.08); }
+  }
+
+  &--elimina {
+    margin-left: auto;
+    color: $red;
+
+    &:hover { border-color: $red; color: $red; }
+  }
+}
+
+.scheletro {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  > div {
+    height: 120px;
+    border-radius: 16px;
+    background: linear-gradient(90deg, $slate-100 25%, $slate-200 50%, $slate-100 75%);
+    background-size: 200% 100%;
+    animation: luccichio 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes luccichio {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scheletro > div { animation: none; }
+}
+
+// ---------- Collegamento ai codici censimento ----------
+
+.scorciatoia {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid $slate-200;
+  border-left: 5px solid $viola-m;
+  border-radius: 14px;
+  background: $white;
+  color: inherit;
+  text-decoration: none;
+  transition: box-shadow .15s, transform .15s;
+
+  &:hover {
+    box-shadow: 0 8px 22px rgba($dark, .08);
+    transform: translateY(-1px);
+  }
+
+  &__icona {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: rgba($viola-l, .16);
+    color: $viola;
+
+    ion-icon { font-size: 1.2rem; }
+  }
+
+  &__testo {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+
+    strong {
+      font-size: .95rem;
+      font-weight: 700;
+      color: $dark;
+    }
+
+    small {
+      font-size: .78rem;
+      color: $slate;
+    }
+  }
+
+  &__freccia {
+    flex-shrink: 0;
+    font-size: 1.1rem;
+    color: $slate-400;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scorciatoia { transition: none; }
+}
+
+// ---------- Scorciatoie della zona capi e del capogruppo ----------
+
+.scorciatoie {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  @media (min-width: 700px) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.anno {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: $sfumatura-viola;
+  font-size: .76rem;
+  font-weight: 800;
+  color: $white;
+}
+
+.apri-anno {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  margin-top: 14px;
+  border: none;
+  border-radius: 16px;
+  background: $sfumatura-viola;
+  box-shadow: 0 10px 24px rgba($viola, .3);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  color: $white;
+  cursor: pointer;
+
+  ion-icon { font-size: 1.25rem; }
+
+  &:hover { filter: brightness(1.08); }
+  &:disabled { opacity: .7; cursor: default; }
+}
+
+.nota {
+  margin: 8px 0 0;
+  font-size: .78rem;
+  color: $slate;
+}
+
+// ---------- Avvisi sui contenuti dei ragazzi ----------
+
+.avvisi {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.avviso-riga {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border: 1px solid $slate-200;
+  border-left: 5px solid $viola-m;
+  border-radius: 14px;
+
+  &__icona {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: rgba($viola-l, .16);
+    color: $viola;
+
+    ion-icon { font-size: 1.15rem; }
+  }
+
+  &__testo {
+    flex: 1;
+    min-width: 0;
+
+    strong {
+      display: block;
+      overflow: hidden;
+      font-size: .92rem;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: $dark;
+    }
+
+    small {
+      font-size: .78rem;
+      color: $slate;
+    }
+  }
+}
+
+// Gli elenchi delle notifiche scorrono qui dentro: la pagina resta corta e si arriva
+// subito alle altre sezioni.
+.scorrevole {
+  max-height: 420px;
+  padding-right: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  @media (min-width: 768px) { max-height: 520px; }
+
+  &::-webkit-scrollbar { width: 6px; }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: $slate-200;
+  }
+
+  &::-webkit-scrollbar-thumb:hover { background: $slate-400; }
+}
+
+// Avviso sui 10 mesi di vita delle richieste: piccolo, sotto ai pulsanti.
+.durata {
+  margin: 0 0 14px;
+  font-size: .78rem;
+  line-height: 1.5;
+  color: $slate;
+}
+
+// ---------- I compleanni di oggi ----------
+
+.compleanni {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba($amber, .16), rgba($viola-l, .14));
+  box-shadow: inset 0 0 0 1.5px rgba($amber, .3);
+
+  &__torta {
+    flex: none;
+    font-size: 1.7rem;
+    line-height: 1;
+  }
+
+  p {
+    margin: 0;
+    font-size: .9rem;
+    line-height: 1.5;
+    color: $slate-600;
+
+    strong { color: $dark; }
+  }
+}

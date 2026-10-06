@@ -1,0 +1,166 @@
+@use '../../../theme/variables' as *;
+
+// Stessa impostazione degli altri pop-up (posti, eventi).
+
+.storia-editor {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+.modulo {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 20px 16px calc(28px + env(safe-area-inset-bottom));
+}
+
+.obbligatori {
+  margin: 0;
+  font-size: .82rem;
+  color: $slate;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+
+  input,
+  textarea {
+    width: 100%;
+    min-height: 48px;
+    padding: 11px 14px;
+    border: 1.5px solid $slate-200;
+    border-radius: 12px;
+    background: $white;
+    font-family: inherit;
+    font-size: .95rem;
+    line-height: 1.5;
+    color: $dark;
+    outline: none;
+
+    &:focus {
+      border-color: $viola-m;
+      box-shadow: 0 0 0 4px rgba($viola-l, .2);
+    }
+  }
+
+  textarea { resize: vertical; }
+}
+
+.etichetta {
+  padding: 0;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $slate-600;
+}
+
+.suggerimento {
+  font-size: .78rem;
+  color: $slate;
+}
+
+// La scelta dell'icona: una griglia di tasti tondi.
+.icone {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+  gap: 8px;
+}
+
+.icona {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  border: 1.5px solid $slate-200;
+  border-radius: 14px;
+  background: $white;
+  color: $slate-600;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &:hover { border-color: rgba($viola-m, .5); }
+
+  &:has(input:focus-visible) { box-shadow: 0 0 0 4px rgba($viola-l, .3); }
+
+  &--scelta {
+    border-color: transparent;
+    background: $sfumatura-viola;
+    color: $white;
+  }
+}
+
+.spunta {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1.5px solid $slate-200;
+  border-radius: 14px;
+  background: $white;
+  cursor: pointer;
+
+  input {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    margin: 2px 0 0;
+    accent-color: $viola-m;
+  }
+
+  span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  strong {
+    font-size: .9rem;
+    color: $dark;
+  }
+
+  small {
+    font-size: .78rem;
+    line-height: 1.4;
+    color: $slate;
+  }
+}
+
+.errore {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba($red, .1);
+  font-size: .85rem;
+  font-weight: 600;
+  color: $red;
+}
+
+.salva {
+  min-height: 52px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 16px;
+  background: $sfumatura-viola;
+  box-shadow: 0 10px 24px rgba($viola, .3);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  color: $white;
+  cursor: pointer;
+
+  &:disabled { opacity: .7; cursor: default; }
+}

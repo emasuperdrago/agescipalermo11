@@ -1,0 +1,11 @@
+node_modules/
+
+# Chiavi e dati del gruppo: non vanno condivisi.
+.env
+database.sqlite
+certificati/
+uploads/
+
+# Copie del database e archivio del vecchio SQLite: dati personali, mai su GitHub.
+copia-database.sql
+archivio-sqlite/

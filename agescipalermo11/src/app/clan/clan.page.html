@@ -1,0 +1,102 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/home" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Home
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="clan">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      <h1>Clan Arcobaleno</h1>
+      <p>Rover e scolte, dai 16 ai 21 anni</p>
+    </div>
+  </header>
+
+  <div class="corpo">
+
+    <!-- Chi sono i rover e le scolte: la spiegazione per chi arriva da fuori. -->
+    <section class="scheda" aria-labelledby="titolo-chi-siamo">
+      <h2 id="titolo-chi-siamo">Chi siamo</h2>
+      <p class="testo">
+        Il Clan è l'ultima tappa del cammino scout: la comunità di rover e scolte, i ragazzi e le
+        ragazze dai 16 ai 21 anni. Il primo anno si chiama <strong>noviziato</strong>: si entra
+        piano, si conosce la comunità e si capisce che aria tira.
+      </p>
+      <p class="testo">
+        Qui non ci sono più i giochi del branco né le imprese di squadriglia: c'è una comunità che
+        sceglie da sé la propria strada, e che risponde di quello che sceglie. Al termine del
+        cammino c'è la <strong>Partenza</strong>: non un traguardo, ma la promessa di restare
+        uomini e donne al servizio degli altri anche fuori dal gruppo.
+      </p>
+
+      <div class="pilastri">
+        @for (p of pilastri; track p.chiave) {
+          <article class="pilastro">
+            <ion-icon [icon]="icone[p.chiave]" aria-hidden="true"></ion-icon>
+            <h3>{{ p.titolo }}</h3>
+          </article>
+        }
+      </div>
+    </section>
+
+    <!-- La cassa: la vedono solo quelli del clan. -->
+    @if (vedeLaCassa) {
+      <a class="porta" routerLink="/clan/cassa">
+        <ion-icon class="porta__icona" [icon]="icone.cassa" aria-hidden="true"></ion-icon>
+        <span class="porta__testo">
+          <strong>Cassa di clan</strong>
+          <small>Entrate, uscite e saldo della comunità</small>
+        </span>
+      </a>
+    }
+
+    <!-- La Carta di Clan in vigore: si sfoglia qui dentro. -->
+    <section class="scheda" aria-labelledby="titolo-carta">
+      <h2 id="titolo-carta">
+        <ion-icon [icon]="icone.carta" aria-hidden="true"></ion-icon>
+        Carta di Clan
+      </h2>
+      <p class="nota">
+        È il documento che il clan si scrive da sé: lo stile, gli impegni e le regole che la
+        comunità decide di darsi.
+      </p>
+
+      @if (caricamento) {
+        <div class="scheletro" aria-busy="true"><div></div><div></div></div>
+      } @else if (errore) {
+        <p class="avviso-errore">{{ errore }}</p>
+      } @else {
+        <app-riquadro-carta [carta]="carta" [puoGestire]="puoGestire" (cambiate)="carica()" />
+      }
+
+      <a class="verso-archivio" routerLink="/clan/carta-di-clan">
+        <ion-icon [icon]="icone.archivio" aria-hidden="true"></ion-icon>
+        <span>
+          Archivio delle Carte di Clan
+          @if (quanteInArchivio) {
+            <small>{{ quanteInArchivio }} {{ quanteInArchivio === 1 ? 'Carta precedente' : 'Carte precedenti' }}</small>
+          } @else {
+            <small>Qui finiranno le Carte degli anni passati</small>
+          }
+        </span>
+      </a>
+    </section>
+
+  </div>
+
+</ion-content>
+
+<app-barra-inferiore />

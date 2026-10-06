@@ -1,0 +1,358 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/area-capi" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Area Capi
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="censiti">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      <h1>{{ tipo === 'capi' ? 'Comunità capi' : 'Ragazzi' }}</h1>
+      <p>
+        @if (tipo === 'capi') {
+          I codici censimento dei capi: li carichi tu come capogruppo.
+        } @else if (branca) {
+          I codici censimento dei ragazzi del {{ nomeBranca(branca).toLowerCase() }}, la branca che segui.
+        } @else {
+          Da qui si caricano i ragazzi della propria branca.
+        }
+      </p>
+    </div>
+  </header>
+
+  <div class="corpo">
+
+    @if (elencoPronto && !puoCaricare) {
+      <section class="scheda">
+        <div class="vuoto">
+          <span class="vuoto__icona" aria-hidden="true">
+            <ion-icon [icon]="tipo === 'capi' ? icone.capi : icone.ragazzi"></ion-icon>
+          </span>
+          @if (tipo === 'capi') {
+            <p class="vuoto__titolo">Questa zona è dei capigruppo</p>
+            <p class="vuoto__testo">La comunità capi la caricano loro. Tu carichi i ragazzi della tua branca.</p>
+          } @else {
+            <p class="vuoto__titolo">Non risulti in nessuna branca</p>
+            <p class="vuoto__testo">
+              Ogni capo carica i ragazzi della branca che segue. Chiedi ai capigruppo di assegnarti
+              branco, reparto o clan.
+            </p>
+          }
+        </div>
+      </section>
+    }
+
+    @if (puoCaricare) {
+      <section class="scheda" aria-labelledby="titolo-carica">
+        <h2 id="titolo-carica">
+          <ion-icon [icon]="icone.carica" aria-hidden="true"></ion-icon>
+          Carica da Excel
+        </h2>
+
+        <p class="descrizione">
+          Va bene l'elenco soci del censimento così com'è. Dal file (.xlsx) si leggono solo
+          <strong>codice socio, nome, cognome, data di nascita, tipo unità e branca</strong>@if (tipo === 'capi') {,
+          e per i capi anche <strong>livello Fo.Ca. ed email</strong>}: tutte le altre colonne
+          (codice fiscale, indirizzo, cellulare…) non vengono nemmeno lette. I codici già presenti
+          vengono aggiornati, non duplicati.
+          @if (tipo === 'ragazzi') {
+            Se aggiungi una colonna <strong>Anno</strong> con 1, 2, 3… il sito la usa per l'anno di
+            percorso di chi non ce l'ha ancora: a chi ce l'ha già non la tocca, perché lì comanda
+            l'apertura dell'anno scout.
+          }
+        </p>
+
+        @if (tipo === 'capi') {
+          <p class="nota nota--branca">
+            <span class="ruolo-carico">
+              <ion-icon [icon]="icone.capi" aria-hidden="true"></ion-icon>
+              Comunità capi
+            </span>
+            Dall'elenco del censimento si prendono solo i capi (la Comunità capi): i ragazzi si
+            saltano. Lì i capi risultano "Adulti", quindi la loro branca non cambia: la metti a mano
+            dalla Comunità capi oppure con il file delle branche qui sotto.
+          </p>
+        } @else if (branca) {
+          <p class="nota nota--branca">
+            <span class="branca" [style]="stiliBranca(branca)">{{ nomeBranca(branca) }}</span>
+            Dall'elenco del censimento si prendono solo i ragazzi della tua branca: capi e altre
+            branche si saltano. I capi nuovi li caricano i capigruppo.
+          </p>
+        }
+
+        <label class="file">
+          <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                 (change)="scegliFile($event)" />
+          <span class="file__icona" aria-hidden="true">
+            <ion-icon [icon]="icone.file"></ion-icon>
+          </span>
+          <span class="file__testo">{{ nomeFile || 'Scegli il file Excel…' }}</span>
+        </label>
+
+        @if (errore) {
+          <p class="messaggio messaggio--errore" role="alert">{{ errore }}</p>
+        }
+
+        @if (esito) {
+          <p class="messaggio messaggio--ok">
+            <ion-icon [icon]="icone.fatto" aria-hidden="true"></ion-icon>
+            Caricamento finito: <strong>{{ esito.inseriti }}</strong> nuovi,
+            <strong>{{ esito.aggiornati }}</strong> aggiornati@if (esito.abbinati) {,
+            <strong>{{ esito.abbinati }}</strong> hanno ricevuto il codice}.
+          </p>
+          @if (esito.scartate.length) {
+            <details class="scartate">
+              <summary>{{ esito.scartate.length }} righe scartate</summary>
+              <ul>
+                @for (s of esito.scartate; track s.riga) {
+                  <li>Riga {{ s.riga }}: {{ s.motivo }}</li>
+                }
+              </ul>
+            </details>
+          }
+          @if (esito.avvisi?.length) {
+            <details class="scartate">
+              <summary>{{ esito.avvisi!.length }} righe caricate con un avviso</summary>
+              <ul>
+                @for (s of esito.avvisi; track s.riga) {
+                  <li>Riga {{ s.riga }}: {{ s.motivo }}</li>
+                }
+              </ul>
+            </details>
+          }
+        }
+
+        @if (lettura) {
+          <div class="anteprima">
+            <p class="anteprima__titolo">
+              Foglio «{{ lettura.foglio }}»: <strong>{{ lettura.righe.length }}</strong> righe buone@if (lettura.scartate.length) {, <strong>{{ lettura.scartate.length }}</strong> da scartare}
+            </p>
+            @if (lettura.ignorate) {
+              <p class="nota">
+                {{ lettura.ignorate }} {{ lettura.ignorate === 1 ? 'riga riguarda' : 'righe riguardano' }}
+                {{ tipo === 'capi' ? 'i ragazzi' : 'i capi o le altre branche' }}: non si caricano da qui.
+              </p>
+            }
+
+            @if (lettura.righe.length) {
+              <div class="tabella">
+                <table>
+                  <thead>
+                    <tr><th>Riga</th><th>Codice</th><th>Cognome</th><th>Nome</th><th>Nascita</th><th>Età</th>
+                        @if (tipo === 'ragazzi') { <th>Anno</th><th>Branca</th> }
+                        @else { <th>Fo.Ca.</th><th>Email</th> }</tr>
+                  </thead>
+                  <tbody>
+                    @for (r of lettura.righe; track r.riga) {
+                      <tr>
+                        <td class="muto">{{ r.riga }}</td>
+                        <td>
+                          @if (r.codice_censimento) { {{ r.codice_censimento }} }
+                          @else { <span class="senza-codice">senza codice</span> }
+                        </td>
+                        <td>{{ r.cognome }}</td>
+                        <td>{{ r.nome }}</td>
+                        <td>{{ dataItaliana(r.data_nascita) }}</td>
+                        <td>{{ r.eta ?? '—' }}</td>
+                        @if (tipo === 'ragazzi') {
+                          <td>{{ r.anno_branca ?? '—' }}</td>
+                          <td>{{ brancaScritta(branca) }}</td>
+                        } @else {
+                          <td>{{ nomeFoca(r.livello_foca) }}</td>
+                          <td>{{ r.email ?? '—' }}</td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+
+            @if (lettura.scartate.length) {
+              <details class="scartate">
+                <summary>Righe che verranno scartate</summary>
+                <ul>
+                  @for (s of lettura.scartate; track s.riga) {
+                    <li>Riga {{ s.riga }}: {{ s.motivo }}</li>
+                  }
+                </ul>
+              </details>
+            }
+
+            <div class="azioni">
+              <button type="button" class="pulsante" (click)="annulla()">Annulla</button>
+              <button type="button" class="pulsante pulsante--primario" (click)="importa()"
+                      [disabled]="caricamento || !lettura.righe.length">
+                @if (caricamento) {
+                  Caricamento…
+                } @else {
+                  Carica {{ lettura.righe.length }} {{ chiCarico }}
+                }
+              </button>
+            </div>
+          </div>
+        }
+      </section>
+    }
+
+    <!-- Solo per i capigruppo: il secondo file con codice censimento e branca di ogni capo. -->
+    @if (tipo === 'capi' && capogruppo) {
+      <section class="scheda" aria-labelledby="titolo-branche">
+        <h2 id="titolo-branche">
+          <ion-icon [icon]="icone.file" aria-hidden="true"></ion-icon>
+          Branche dei capi da Excel
+        </h2>
+        <p class="descrizione">
+          Un file con due colonne, <strong>codice censimento</strong> e <strong>branca</strong>
+          (Branco, Reparto o Clan, oppure L/C, E/G, R/S). Si aggiorna la branca dei capi che sono
+          già nel sito; chi non è nel file resta com'è.
+        </p>
+
+        <label class="file">
+          <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                 (change)="scegliFileBranche($event)" />
+          <span class="file__icona" aria-hidden="true">
+            <ion-icon [icon]="icone.file"></ion-icon>
+          </span>
+          <span class="file__testo">{{ nomeFileBranche || 'Scegli il file delle branche…' }}</span>
+        </label>
+
+        @if (erroreBranche) {
+          <p class="messaggio messaggio--errore" role="alert">{{ erroreBranche }}</p>
+        }
+
+        @if (esitoBranche) {
+          <p class="messaggio messaggio--ok">
+            <ion-icon [icon]="icone.fatto" aria-hidden="true"></ion-icon>
+            Fatto: <strong>{{ esitoBranche.aggiornati }}</strong> capi con la branca aggiornata.
+          </p>
+          @if (esitoBranche.scartate.length) {
+            <details class="scartate">
+              <summary>{{ esitoBranche.scartate.length }} righe scartate</summary>
+              <ul>
+                @for (s of esitoBranche.scartate; track s.riga) {
+                  <li>Riga {{ s.riga }}: {{ s.motivo }}</li>
+                }
+              </ul>
+            </details>
+          }
+        }
+
+        @if (letturaBranche) {
+          <div class="anteprima">
+            <p class="anteprima__titolo">
+              Foglio «{{ letturaBranche.foglio }}»: <strong>{{ letturaBranche.righe.length }}</strong> righe buone@if (letturaBranche.scartate.length) {, <strong>{{ letturaBranche.scartate.length }}</strong> da scartare}
+            </p>
+            @if (letturaBranche.righe.length) {
+              <div class="tabella">
+                <table>
+                  <thead><tr><th>Riga</th><th>Codice</th><th>Capo</th><th>Branca</th></tr></thead>
+                  <tbody>
+                    @for (r of letturaBranche.righe; track r.riga) {
+                      <tr>
+                        <td class="muto">{{ r.riga }}</td>
+                        <td>{{ r.codice_censimento }}</td>
+                        <td>{{ nomeCapo(r.codice_censimento) }}</td>
+                        <td>{{ brancaScritta(r.branca) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+            @if (letturaBranche.scartate.length) {
+              <details class="scartate">
+                <summary>Righe che verranno scartate</summary>
+                <ul>
+                  @for (s of letturaBranche.scartate; track s.riga) {
+                    <li>Riga {{ s.riga }}: {{ s.motivo }}</li>
+                  }
+                </ul>
+              </details>
+            }
+            <div class="azioni">
+              <button type="button" class="pulsante" (click)="annullaBranche()">Annulla</button>
+              <button type="button" class="pulsante pulsante--primario" (click)="importaBranche()"
+                      [disabled]="caricamentoBranche || !letturaBranche.righe.length">
+                {{ caricamentoBranche ? 'Aggiornamento…' : 'Aggiorna ' + letturaBranche.righe.length + ' branche' }}
+              </button>
+            </div>
+          </div>
+        }
+      </section>
+    }
+
+    <section class="scheda" aria-labelledby="titolo-elenco">
+      <h2 id="titolo-elenco">
+        <ion-icon [icon]="tipo === 'capi' ? icone.capi : icone.ragazzi" aria-hidden="true"></ion-icon>
+        @if (tipo === 'capi') { I capi } @else { I ragazzi della tua branca }
+        <span class="conta">{{ utenti.length }}</span>
+      </h2>
+
+      @if (utenti.length) {
+        <p class="nota">{{ attivati }} hanno già creato la password.</p>
+
+        <label class="cerca">
+          <ion-icon [icon]="icone.cerca" aria-hidden="true"></ion-icon>
+          <input type="search" [(ngModel)]="filtro" name="filtro" autocomplete="off"
+                 placeholder="Cerca per nome, cognome o codice" aria-label="Cerca un censito" />
+        </label>
+      }
+
+      @if (utentiFiltrati.length) {
+        <div class="tabella">
+          <table>
+            <thead>
+              <tr><th>Codice</th><th>Cognome</th><th>Nome</th><th>Nascita</th><th>Età</th><th>Ruolo</th><th>Branca</th>
+                  @if (tipo === 'capi') { <th>Fo.Ca.</th> }
+                  <th>Stato</th></tr>
+            </thead>
+            <tbody>
+              @for (u of utentiFiltrati; track u.id) {
+                <tr>
+                  <td>
+                    @if (u.codice_censimento) { {{ u.codice_censimento }} }
+                    @else { <span class="senza-codice">senza codice</span> }
+                  </td>
+                  <td>{{ u.cognome }}</td>
+                  <td>{{ u.nome }}</td>
+                  <td>{{ dataItaliana(u.data_nascita) }}</td>
+                  <td>{{ u.eta ?? '—' }}</td>
+                  <td>{{ etichettaRuolo(u.ruolo) }}</td>
+                  <td>{{ brancaScritta(u.branca) }}</td>
+                  @if (tipo === 'capi') { <td>{{ nomeFoca(u.livello_foca) }}</td> }
+                  <td>
+                    <span class="stato" [class.stato--attivo]="u.attivato">
+                      {{ u.attivato ? 'Attivo' : 'Deve ancora entrare' }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="vuoto vuoto--riga">
+          {{ utenti.length ? 'Nessun risultato per la ricerca.' : 'Ancora nessun censito caricato.' }}
+        </p>
+      }
+    </section>
+
+  </div>
+
+</ion-content>
+
+<app-barra-inferiore attiva="area-capi" />

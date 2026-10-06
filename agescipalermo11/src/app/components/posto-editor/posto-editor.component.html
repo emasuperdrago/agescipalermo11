@@ -1,0 +1,203 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>{{ modifica ? 'Modifica posto' : 'Nuovo posto' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="chiudi()" aria-label="Chiudi" [disabled]="salvando">
+        <ion-icon slot="icon-only" [icon]="icone.chiudi"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="posto-editor">
+  <form class="modulo" (ngSubmit)="salva()">
+    <p class="obbligatori">I campi con <strong>*</strong> sono obbligatori.</p>
+
+    <label class="campo">
+      <span class="etichetta">Nome del posto *</span>
+      <input name="nome" [(ngModel)]="nome" maxlength="100" placeholder="Es. Base scout di Piano Zucchi" />
+    </label>
+
+    <fieldset class="campo" [disabled]="eSede">
+      <legend class="etichetta">Branca *</legend>
+      <div class="scelte">
+        @for (b of branche; track b.valore) {
+          <label class="scelta-branca" [style]="stiliBranca(b.valore)"
+                 [class.scelta-branca--scelta]="branca === b.valore">
+            <input type="radio" name="branca" [value]="b.valore" [(ngModel)]="branca" (ngModelChange)="cambiaBranca()" />
+            <span class="scelta-branca__bandierina" aria-hidden="true"></span>
+            {{ b.nome }}
+          </label>
+        }
+      </div>
+      @if (eSede) {
+        <p class="suggerimento">Questa è la sede del gruppo: la bandierina resta viola. Puoi spostarla e cambiarne i dati.</p>
+      }
+    </fieldset>
+
+    <!-- Campi fatti nel posto: uno per riga (la sede non ne ha) -->
+    @if (!eSede) {
+      <fieldset class="campo">
+        <legend class="etichetta">Date dei campi</legend>
+        @for (c of campi; track c.chiave; let i = $index) {
+          <div class="data-campo">
+            <label class="campo">
+              <span class="sottoetichetta">Dal</span>
+              <input type="date" [name]="'campo-inizio-' + c.chiave" [(ngModel)]="c.data_inizio" />
+            </label>
+            <label class="campo">
+              <span class="sottoetichetta">Al <small>(se dura più giorni)</small></span>
+              <input type="date" [name]="'campo-fine-' + c.chiave" [(ngModel)]="c.data_fine" [min]="c.data_inizio"
+                     [disabled]="!c.data_inizio" />
+            </label>
+            <button type="button" class="data-campo__rimuovi" (click)="rimuoviCampo(i)"
+                    aria-label="Rimuovi questo campo" title="Rimuovi">
+              <ion-icon [icon]="icone.elimina" aria-hidden="true"></ion-icon>
+            </button>
+          </div>
+        }
+        @if (campi.length < 50) {
+          <button type="button" class="aggiungi" (click)="aggiungiCampo()">
+            <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+            {{ campi.length ? 'Aggiungi un altro campo' : 'Aggiungi campo' }}
+          </button>
+        }
+      </fieldset>
+    }
+
+    <!-- Posizione: ricerca, GPS oppure tocco sulla mappa -->
+    <fieldset class="campo">
+      <legend class="etichetta">Posizione *</legend>
+      <div class="ricerca">
+        <input name="ricerca" [(ngModel)]="ricerca" placeholder="Cerca un indirizzo o un luogo"
+               (keydown.enter)="$event.preventDefault(); cerca()" autocomplete="off" />
+        <button type="button" class="ricerca__pulsante" (click)="cerca()" [disabled]="cercando" aria-label="Cerca">
+          <ion-icon [icon]="icone.cerca" aria-hidden="true"></ion-icon>
+        </button>
+      </div>
+      @if (risultatiRicerca.length) {
+        <ul class="risultati">
+          @for (r of risultatiRicerca; track $index) {
+            <li><button type="button" (click)="scegliRisultato(r)">{{ r.nome }}</button></li>
+          }
+        </ul>
+      }
+
+      <div class="mappa-scelta">
+        <div class="mappa-scelta__mappa" #mappa></div>
+        <button type="button" class="mappa-scelta__gps" (click)="usaMiaPosizione()">
+          <ion-icon [icon]="icone.posizione" aria-hidden="true"></ion-icon>
+          La mia posizione
+        </button>
+      </div>
+      <p class="suggerimento" aria-live="polite">
+        @if (messaggioPosizione) {
+          {{ messaggioPosizione }}
+        } @else if (coordinate) {
+          Bandierina in {{ coordinate }} · puoi trascinarla o toccare un altro punto.
+        } @else {
+          Tocca la mappa nel punto esatto del posto per mettere la bandierina.
+        }
+      </p>
+    </fieldset>
+
+    <label class="campo">
+      <span class="etichetta">Indirizzo</span>
+      <input name="indirizzo" [(ngModel)]="indirizzo" maxlength="200" placeholder="Si compila da solo quando segni il posto" />
+    </label>
+
+    <label class="campo">
+      <span class="etichetta">Descrizione</span>
+      <textarea name="descrizione" [(ngModel)]="descrizione" rows="5" maxlength="5000"
+                placeholder="Com'è il posto, come arrivarci, servizi, quanti posti letto/tende…"></textarea>
+    </label>
+
+    <!-- Contatti -->
+    <fieldset class="campo">
+      <legend class="etichetta">Contatti</legend>
+      @for (c of contatti; track $index; let i = $index) {
+        <div class="contatto">
+          <input [name]="'contatto-nome-' + i" [(ngModel)]="c.nome" maxlength="80" placeholder="Nome o ruolo (es. Custode)" />
+          <input [name]="'contatto-telefono-' + i" [(ngModel)]="c.telefono" maxlength="30" type="tel"
+                 inputmode="tel" placeholder="Telefono" />
+          <input [name]="'contatto-email-' + i" [(ngModel)]="c.email" maxlength="120" type="email"
+                 inputmode="email" placeholder="Email" />
+          <button type="button" class="contatto__rimuovi" (click)="rimuoviContatto(i)"
+                  aria-label="Rimuovi questo contatto" title="Rimuovi">
+            <ion-icon [icon]="icone.elimina" aria-hidden="true"></ion-icon>
+          </button>
+        </div>
+      }
+      @if (contatti.length < 10) {
+        <button type="button" class="aggiungi" (click)="aggiungiContatto()">
+          <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+          Aggiungi contatto
+        </button>
+      }
+    </fieldset>
+
+    <!-- Foto e file -->
+    <fieldset class="campo">
+      <legend class="etichetta">Foto e file</legend>
+      <p class="suggerimento">Foto, PDF, tracce GPS (GPX, KML) e documenti, fino a 15 MB l'uno.</p>
+
+      @if (allegatiEsistenti.length || nuoviAllegati.length) {
+        <ul class="allegati">
+          @for (a of allegatiEsistenti; track a.id) {
+            <li class="allegato" [class.allegato--rimosso]="daRimuovere.has(a.id)">
+              @if (a.tipo === 'foto') {
+                <img class="allegato__anteprima" [src]="urlFoto(a)" alt="" loading="lazy" />
+              } @else {
+                <span class="allegato__icona"><ion-icon [icon]="icone.file" aria-hidden="true"></ion-icon></span>
+              }
+              <span class="allegato__testo">
+                <strong>{{ a.nome }}</strong>
+                <small>{{ daRimuovere.has(a.id) ? 'Verrà rimosso al salvataggio' : dimensioneLeggibile(a.dimensione) }}</small>
+              </span>
+              <button type="button" class="allegato__azione" (click)="alternaRimozione(a)"
+                      [attr.aria-label]="(daRimuovere.has(a.id) ? 'Tieni ' : 'Rimuovi ') + a.nome"
+                      [attr.title]="daRimuovere.has(a.id) ? 'Tieni' : 'Rimuovi'">
+                <ion-icon [icon]="daRimuovere.has(a.id) ? icone.ripristina : icone.elimina" aria-hidden="true"></ion-icon>
+              </button>
+            </li>
+          }
+          @for (n of nuoviAllegati; track n; let i = $index) {
+            <li class="allegato allegato--nuovo">
+              @if (n.anteprima) {
+                <img class="allegato__anteprima" [src]="n.anteprima" alt="" />
+              } @else {
+                <span class="allegato__icona"><ion-icon [icon]="icone.file" aria-hidden="true"></ion-icon></span>
+              }
+              <span class="allegato__testo">
+                <strong>{{ n.file.name }}</strong>
+                <small>Nuovo · {{ dimensioneLeggibile(n.file.size) }}</small>
+              </span>
+              <button type="button" class="allegato__azione" (click)="rimuoviNuovo(i)"
+                      [attr.aria-label]="'Togli ' + n.file.name" title="Togli">
+                <ion-icon [icon]="icone.elimina" aria-hidden="true"></ion-icon>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+
+      <label class="carica">
+        <input type="file" multiple [accept]="accettati" (change)="scegliFile($event)" />
+        <ion-icon [icon]="icone.carica" aria-hidden="true"></ion-icon>
+        Aggiungi foto o file
+      </label>
+    </fieldset>
+
+    @if (errore) {
+      <p class="errore" role="alert">{{ errore }}</p>
+    }
+
+    <button type="submit" class="salva" [disabled]="salvando">
+      @if (salvando) {
+        {{ avanzamento || 'Salvataggio in corso…' }}
+      } @else {
+        {{ modifica ? 'Salva modifiche' : 'Aggiungi alla mappa' }}
+      }
+    </button>
+  </form>
+</ion-content>

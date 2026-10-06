@@ -1,0 +1,45 @@
+<ion-content [fullscreen]="true" class="benvenuto">
+  <main class="stage">
+    <div class="foto" aria-hidden="true"></div>
+
+    <section class="scheda">
+      <img class="logo" src="assets/logo-palermo11.png" alt="Gruppo Scout AGESCI Palermo 11" width="420" height="400" />
+
+      <p class="sovratitolo"> -Gruppo Scout-</p>
+      <p class="sottotitolo">
+        Scopri la nostra storia ed il nostro presente
+      </p>
+
+      <ul class="branche">
+        <li class="branca branca--branco">Branco</li>
+        <li class="branca branca--reparto">Reparto</li>
+        <li class="branca branca--clan">Clan</li>
+      </ul>
+
+      @if (messaggioSessione) {
+        <div class="sessione">
+          <p>{{ messaggioSessione }}</p>
+          <div class="sessione__azioni">
+            <a routerLink="/home">Vai alla home</a>
+            <button type="button" (click)="esci()">Esci</button>
+          </div>
+        </div>
+      }
+
+      <div class="azioni">
+        <button type="button" class="pulsante pulsante--primario" routerLink="/login">Accedi</button>
+        <button type="button" class="pulsante pulsante--secondario" (click)="accediComeVisitatore()" [disabled]="caricamento">
+          {{ caricamento ? 'Accesso in corso…' : 'Entra come visitatore' }}
+        </button>
+      </div>
+
+      @if (errore) {
+        <p class="errore" role="alert">{{ errore }}</p>
+      }
+
+      <p class="nota">
+        È la prima volta? Dalla pagina Accedi puoi creare la tua password.
+      </p>
+    </section>
+  </main>
+</ion-content>

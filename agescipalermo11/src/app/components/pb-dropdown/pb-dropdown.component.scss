@@ -1,0 +1,103 @@
+@use '../../../theme/variables' as *;
+
+.pb-dropdown-wrapper {
+  position: relative;
+}
+
+.pb-dropdown {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  cursor: pointer;
+  min-height: 22px;
+  user-select: none;
+  border-radius: 14px;
+  background: transparent;
+  border: none;
+  transition: background 0.2s;
+
+  &:focus-within,
+  &:focus {
+    background: rgba($white, 0.5);
+    outline: none;
+  }
+}
+
+.pb-dropdown.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pb-dropdown-text {
+  flex: 1;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: $dark;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pb-dropdown-text.is-placeholder {
+  color: $mid;
+  opacity: 0.4;
+}
+
+.pb-dropdown-arrow {
+  width: 16px;
+  height: 16px;
+  color: $mid;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.pb-dropdown.is-open .pb-dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.pb-dropdown-menu {
+  z-index: 10001;
+  max-height: 200px;
+  overflow-y: auto;
+  background: $white;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
+  padding: 4px;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.pb-dropdown-option {
+  padding: 10px 14px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: $dark;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pb-dropdown-option:hover {
+  background: rgba($green, 0.06);
+}
+
+.pb-dropdown-option.is-selected {
+  background: rgba($green, 0.1);
+  font-weight: 700;
+  color: $green-d;
+}
+
+.pb-dropdown-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: transparent;
+}

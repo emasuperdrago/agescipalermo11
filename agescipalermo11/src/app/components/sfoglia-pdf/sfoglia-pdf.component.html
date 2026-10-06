@@ -1,0 +1,27 @@
+<div class="sfoglia" [class.sfoglia--pagina]="modo === 'pagina'" tabindex="0" (keydown)="tasto($event)">
+
+  <div class="sfoglia__cornice" #cornice [style.--rapporto]="rapporto"
+         (touchstart)="iniziaTocco($event)" (touchend)="finisciTocco($event)">
+    @if (caricamento) {
+      <div class="sfoglia__attesa" aria-busy="true"><span></span></div>
+    } @else if (errore) {
+      <p class="sfoglia__errore">{{ errore }}</p>
+    }
+    <canvas #tela class="sfoglia__tela" [class.sfoglia__tela--nascosta]="caricamento || !!errore"
+            [attr.aria-label]="'Pagina ' + pagina + ' di ' + pagine"></canvas>
+  </div>
+
+  @if (pagine > 0 && !errore) {
+    <div class="sfoglia__comandi">
+      <button type="button" class="sfoglia__freccia" (click)="precedente()" [disabled]="pagina <= 1"
+              aria-label="Pagina precedente" title="Pagina precedente">
+        <ion-icon [icon]="icone.indietro"></ion-icon>
+      </button>
+      <span class="sfoglia__conta">Pagina {{ pagina }} di {{ pagine }}</span>
+      <button type="button" class="sfoglia__freccia" (click)="successiva()" [disabled]="pagina >= pagine"
+              aria-label="Pagina successiva" title="Pagina successiva">
+        <ion-icon [icon]="icone.avanti"></ion-icon>
+      </button>
+    </div>
+  }
+</div>

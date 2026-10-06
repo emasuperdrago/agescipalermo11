@@ -1,0 +1,160 @@
+@use '../../../theme/variables' as *;
+
+// Stessa impostazione degli altri pop-up (eventi, posti).
+
+.canto-editor {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+.modulo {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 20px 16px calc(28px + env(safe-area-inset-bottom));
+}
+
+.obbligatori {
+  margin: 0;
+  font-size: .82rem;
+  color: $slate;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+
+  input,
+  textarea {
+    width: 100%;
+    min-height: 48px;
+    padding: 11px 14px;
+    border: 1.5px solid $slate-200;
+    border-radius: 12px;
+    background: $white;
+    font-family: inherit;
+    font-size: .95rem;
+    color: $dark;
+    outline: none;
+
+    &:focus {
+      border-color: $viola-m;
+      box-shadow: 0 0 0 4px rgba($viola-l, .2);
+    }
+  }
+
+  // Il testo si scrive a larghezza fissa, come sul foglio del canzoniere.
+  textarea {
+    font-family: 'SFMono-Regular', ui-monospace, 'Menlo', 'Consolas', monospace;
+    font-size: .88rem;
+    line-height: 1.5;
+    resize: vertical;
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: auto;
+  }
+}
+
+.etichetta {
+  padding: 0;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $slate-600;
+}
+
+.aiuto {
+  font-size: .76rem;
+  color: $slate;
+}
+
+// Pulsanti sopra il testo del canto.
+.strumenti {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  &__aiuto {
+    font-size: .76rem;
+    color: $slate;
+  }
+}
+
+.grassetto {
+  width: 38px;
+  height: 34px;
+  border: 1.5px solid $slate-200;
+  border-radius: 10px;
+  background: $white;
+  font-family: inherit;
+  font-size: .95rem;
+  font-weight: 800;
+  color: $viola;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+
+  &:hover {
+    border-color: $viola-m;
+    background: rgba($viola-l, .12);
+  }
+}
+
+.scelte {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.scelta-sezione {
+  --colore-sezione: #{$viola-m};
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1.5px solid $slate-200;
+  border-radius: 999px;
+  background: $white;
+  font-family: inherit;
+  font-size: .88rem;
+  font-weight: 700;
+  color: $slate-600;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+
+  &:hover { border-color: var(--colore-sezione); }
+
+  &--scelta {
+    border-color: var(--colore-sezione);
+    background: var(--colore-sezione);
+    color: $white;
+  }
+}
+
+.errore {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba($red, .1);
+  font-size: .85rem;
+  font-weight: 600;
+  color: $red;
+}
+
+.salva {
+  min-height: 52px;
+  border: none;
+  border-radius: 16px;
+  background: $sfumatura-viola;
+  box-shadow: 0 10px 24px rgba($viola, .3);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  color: $white;
+  cursor: pointer;
+
+  &:disabled { opacity: .7; cursor: default; }
+}

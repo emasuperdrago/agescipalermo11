@@ -1,0 +1,1313 @@
+@use '../../theme/variables' as *;
+
+// Foto del campo di gruppo: versione leggera per telefono, piena per computer.
+$foto-campo-mobile: url('/assets/sfondo/campo-di-gruppo-mobile.jpg');
+$foto-campo: url('/assets/sfondo/campo-di-gruppo.jpg');
+$notte: rgb(10, 14, 24);
+$desktop: 992px;
+
+.home {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+// ---------- Foto iniziale ----------
+
+.eroe {
+  position: relative;
+  min-height: 88vh;
+  min-height: 88svh;
+  display: flex;
+  flex-direction: column;
+  color: $white;
+  // Velo scuro in alto (menu) e in basso (testo), la foto resta visibile al centro.
+  background:
+    linear-gradient(180deg, rgba($notte, .6) 0%, rgba($notte, .12) 26%, rgba($notte, .2) 55%, rgba($notte, .78) 100%),
+    $foto-campo-mobile 55% 40% / cover no-repeat;
+
+  @media (min-width: $desktop) {
+    min-height: 92vh;
+    // Su computer il testo sta a sinistra: velo più scuro da quel lato.
+    background:
+      linear-gradient(90deg, rgba($notte, .72) 0%, rgba($notte, .38) 42%, rgba($notte, .05) 75%),
+      linear-gradient(180deg, rgba($notte, .5) 0%, rgba($notte, 0) 24%),
+      $foto-campo center 35% / cover no-repeat;
+  }
+}
+
+// Le foto che scorrono stanno sotto al velo scuro e sopra alla foto fissa di riserva.
+.eroe__foto {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.eroe__scatto {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-position: center 40%;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 0;
+  // Quella che esce resta ferma finché la nuova non l'ha coperta del tutto:
+  // così non si vedono due foto slavate una sopra l'altra.
+  transition: opacity 0s linear 1.6s;
+
+  &--visibile {
+    z-index: 2;
+    opacity: 1;
+    // Il cambio è lento apposta: si deve notare appena.
+    transition: opacity 1.6s ease-in-out;
+  }
+
+  @media (min-width: $desktop) { background-position: center 35%; }
+}
+
+// Il velo scuro va sopra le foto, così i testi restano leggibili.
+.eroe::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  // Un filo più scuro della foto fissa di prima: le foto del gruppo sono più chiare
+  // e il titolo bianco deve restare leggibile su tutte.
+  background: linear-gradient(180deg, rgba($notte, .68) 0%, rgba($notte, .28) 26%, rgba($notte, .38) 55%, rgba($notte, .85) 100%);
+
+  @media (min-width: $desktop) {
+    // Niente ombra laterale: la foto si vede intera. Resta solo un velo sopra (per il menu)
+    // e sotto (per il titolo), che il testo lo rende leggibile la sua ombra.
+    background: linear-gradient(180deg, rgba($notte, .52) 0%, rgba($notte, 0) 28%,
+                                rgba($notte, .1) 58%, rgba($notte, .62) 100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eroe__scatto { transition: none; }
+}
+
+.testata {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: calc(16px + env(safe-area-inset-top)) 16px 16px;
+
+  @media (min-width: $desktop) {
+    padding: 28px 6vw;
+  }
+}
+
+.marchio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: $white;
+  text-decoration: none;
+
+  img {
+    width: 48px;
+    height: 48px;
+    padding: 3px;
+    border-radius: 50%;
+    background: $white;
+    box-shadow: 0 4px 14px rgba($notte, .3);
+  }
+
+  &__testo {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+    text-shadow: 0 1px 8px rgba($notte, .4);
+
+    strong {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    small {
+      font-size: .66rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      opacity: .85;
+    }
+  }
+}
+
+// ---------- Pezzi condivisi dai menu a fisarmonica ----------
+
+// Pannello bianco che si apre sotto una barra (menu del telefono e barra che segue lo scorrimento).
+@mixin pannello-menu {
+  position: absolute;
+  top: 100%;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  max-height: 70vh;
+  max-height: 70svh;
+  padding: 10px;
+  overflow-y: auto;
+  background: $white;
+  border-radius: 20px;
+  box-shadow: 0 18px 40px rgba($notte, .3);
+}
+
+// Le tendine diventano sezioni che si espandono una alla volta, dentro il pannello.
+@mixin fisarmonica {
+  .voci-menu {
+    flex-direction: column;
+  }
+
+  .tendina__titolo {
+    width: 100%;
+    justify-content: space-between;
+    padding: 13px 14px;
+    border-radius: 12px;
+    font-size: 1rem;
+    color: $dark;
+    text-shadow: none;
+
+    &:hover { background: $slate-100; }
+  }
+
+  .tendina__pannello,
+  .tendina:last-child .tendina__pannello {
+    display: none;
+    position: static;
+    min-width: 0;
+    padding: 0 0 6px 12px;
+    background: transparent;
+    box-shadow: none;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+
+    &::before { display: none; }
+
+    a { white-space: normal; }
+  }
+
+  .tendina--aperta .tendina__pannello,
+  .tendina--aperta:last-child .tendina__pannello {
+    display: block;
+    transform: none;
+  }
+
+  .esci {
+    margin: 6px 0 0;
+    padding: 13px;
+  }
+
+  // Nel pannello i social sono righe come le sezioni, con la scritta accanto al logo.
+  .social {
+    width: 100%;
+    height: auto;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 13px 14px;
+    border-radius: 12px;
+    color: $dark;
+    filter: none;
+
+    &--instagram ion-icon { color: #D62976; }
+    &--facebook ion-icon { color: #1877F2; }
+
+    &:hover { background: $slate-100; }
+  }
+
+  .social__testo {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    font-size: 1rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+}
+
+@mixin hamburger($sfondo, $colore) {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border: none;
+  border-radius: 14px;
+  background: $sfondo;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: $colore;
+  cursor: pointer;
+
+  ion-icon { font-size: 1.6rem; }
+}
+
+// ---------- Menu a tendina (computer) ----------
+
+.hamburger {
+  display: none;
+}
+
+.menu-principale {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.voci-menu {
+  display: flex;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tendina {
+  position: relative;
+  // Colore della sottolineatura al passaggio del cursore.
+  --colore-tendina: transparent;
+
+  &--branco { --colore-tendina: #{$green}; }
+  &--reparto { --colore-tendina: #F2B705; }
+  &--clan { --colore-tendina: #D8392F; }
+  &--capi { --colore-tendina: #{$viola-l}; }
+}
+
+.tendina__testo {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -5px;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--colore-tendina);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .2s ease;
+  }
+}
+
+// Compare con il cursore sopra la voce (e resta finché la tendina è aperta).
+// Su telefono, dove il cursore non c'è, compare quando si tocca la voce.
+.tendina--aperta .tendina__testo::after {
+  transform: scaleX(1);
+}
+
+@media (hover: hover) {
+  .tendina:hover .tendina__testo::after {
+    transform: scaleX(1);
+  }
+}
+
+.tendina__titolo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  font-size: .92rem;
+  font-weight: 700;
+  color: $white;
+  text-shadow: 0 1px 8px rgba($notte, .4);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .15s;
+
+  ion-icon {
+    font-size: .9rem;
+    transition: transform .2s;
+  }
+
+  &:hover {
+    background: rgba($white, .14);
+  }
+}
+
+.tendina__pannello {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  min-width: 240px;
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+  background: $white;
+  border-radius: 16px;
+  box-shadow: 0 18px 40px rgba($notte, .25);
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, -6px);
+  transition: opacity .18s, transform .18s, visibility .18s;
+
+  // Ponte invisibile sullo spazio tra titolo e pannello, così il mouse non lo chiude.
+  &::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 0;
+    right: 0;
+    height: 10px;
+  }
+
+  a {
+    display: block;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: .9rem;
+    font-weight: 600;
+    color: $dark;
+    text-decoration: none;
+    white-space: nowrap;
+
+    &:hover {
+      background: rgba($viola-l, .16);
+      color: $viola;
+    }
+  }
+}
+
+.tendina--aperta {
+  .tendina__titolo ion-icon {
+    transform: rotate(180deg);
+  }
+
+  .tendina__pannello {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
+  }
+}
+
+// ---------- Instagram e Facebook ----------
+
+// Nella barra sopra la foto è solo il logo; nei pannelli (vedi fisarmonica) c'è anche la scritta.
+.social {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  color: $white;
+  text-decoration: none;
+  filter: drop-shadow(0 1px 6px rgba($notte, .4));
+  transition: background .15s;
+
+  ion-icon { font-size: 1.35rem; }
+
+  &:hover { background: rgba($white, .14); }
+}
+
+// Nascosta ma letta dagli screen reader (il nome del link è già nell'aria-label).
+.social__testo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+// L'ultima tendina si apre verso sinistra, così non esce dallo schermo.
+.tendina:last-child .tendina__pannello {
+  left: auto;
+  right: 0;
+  transform: translateY(-6px);
+}
+
+.tendina--aperta:last-child .tendina__pannello {
+  transform: translateY(0);
+}
+
+.esci {
+  margin-left: 8px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 999px;
+  background: $sfumatura-viola;
+  box-shadow: 0 8px 20px rgba($viola, .35);
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 700;
+  color: $white;
+  text-decoration: none;
+  cursor: pointer;
+
+  // Voce "Profilo" dei capi: stesso pulsante, con l'icona.
+  &--profilo {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    ion-icon { font-size: 1.15rem; }
+  }
+}
+
+// ---------- Menu su telefono e tablet ----------
+
+@media (max-width: $desktop - 1) {
+  .testata .hamburger {
+    @include hamburger(rgba($white, .2), $white);
+  }
+
+  .menu-principale {
+    @include pannello-menu;
+    @include fisarmonica;
+    display: none;
+    left: 12px;
+    right: 12px;
+  }
+
+  .menu-principale--aperto {
+    display: flex;
+  }
+}
+
+// ---------- Barra che segue lo scorrimento ----------
+
+.barra-fissa {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(8px + env(safe-area-inset-top)) 16px 8px;
+  background: rgba($white, .92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 6px 24px rgba($notte, .12);
+  // Nascosta sopra lo schermo finché il logo della testata è visibile.
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .25s ease, opacity .25s ease;
+
+  @media (min-width: $desktop) {
+    padding-left: 6vw;
+    padding-right: 6vw;
+  }
+
+  &--visibile {
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .marchio {
+    color: $dark;
+
+    img {
+      width: 38px;
+      height: 38px;
+      border: 1px solid $slate-200;
+      box-shadow: none;
+    }
+  }
+
+  .marchio__testo {
+    text-shadow: none;
+
+    small {
+      color: $slate;
+      opacity: 1;
+    }
+  }
+
+  .hamburger {
+    @include hamburger(rgba($viola-l, .16), $viola);
+  }
+}
+
+.pannello-fisso {
+  @include pannello-menu;
+  @include fisarmonica;
+  display: none;
+  right: 12px;
+  width: min(360px, calc(100% - 24px));
+  margin-top: 6px;
+
+  @media (min-width: $desktop) {
+    right: 6vw;
+  }
+
+  &--aperto {
+    display: flex;
+  }
+}
+
+// ---------- Testo sopra la foto ----------
+
+.eroe__contenuto {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  max-width: 760px;
+  padding: 24px 20px 48px;
+
+  @media (min-width: $desktop) {
+    justify-content: center;
+    padding: 0 6vw 8vh;
+  }
+
+  h1 {
+    margin: 0 0 14px;
+    font-size: clamp(2rem, 6.5vw, 3.6rem);
+    font-weight: 800;
+    line-height: 1.12;
+    letter-spacing: -.5px;
+    // Due ombre: una stretta e una larga. Tengono il bianco leggibile anche sulle foto chiare,
+    // senza bisogno di scurire la foto.
+    text-shadow: 0 2px 6px rgba($notte, .55), 0 6px 28px rgba($notte, .5);
+  }
+
+  p {
+    max-width: 520px;
+    margin: 0 0 24px;
+    font-size: clamp(.95rem, 2.4vw, 1.1rem);
+    line-height: 1.55;
+    text-shadow: 0 2px 10px rgba($notte, .6);
+    opacity: .95;
+  }
+}
+
+.eroe__azione {
+  align-self: flex-start;
+  padding: 14px 26px;
+  border-radius: 999px;
+  background: $sfumatura-viola;
+  box-shadow: 0 10px 24px rgba($viola, .35);
+  font-weight: 700;
+  color: $white;
+  text-decoration: none;
+  transition: transform .15s, box-shadow .15s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba($viola, .45);
+  }
+}
+
+// ---------- Ultime dal gruppo (post) ----------
+
+// Richiamo al modulo di iscrizione, fra l'apertura e le notizie.
+.iscriviti {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 26px 20px 0;
+
+  &__scheda {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 1.5px solid rgba($viola-m, .35);
+    border-radius: 18px;
+    background: $white;
+    box-shadow: 0 12px 30px rgba($viola, .12);
+    color: inherit;
+    text-decoration: none;
+    transition: box-shadow .15s, transform .15s;
+
+    &:hover {
+      box-shadow: 0 16px 36px rgba($viola, .2);
+      transform: translateY(-2px);
+    }
+  }
+
+  &__icona {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: $sfumatura-viola;
+    color: $white;
+
+    ion-icon { font-size: 1.4rem; }
+  }
+
+  &__testo {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+
+    strong {
+      font-size: .98rem;
+      font-weight: 800;
+      color: $viola;
+    }
+
+    small {
+      font-size: .82rem;
+      color: $slate;
+    }
+  }
+
+  &__freccia {
+    flex-shrink: 0;
+    font-size: 1.2rem;
+    color: $viola-l;
+  }
+}
+
+// ---------- Post proposti dai ragazzi del clan ----------
+
+.in-attesa {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 26px 20px 0;
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 14px;
+    font-size: clamp(1.15rem, 3.2vw, 1.4rem);
+    font-weight: 800;
+    color: $viola;
+  }
+
+  &__conta {
+    min-width: 26px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: $amber;
+    font-size: .82rem;
+    font-weight: 800;
+    color: #4A3000;
+    text-align: center;
+  }
+}
+
+.proposte {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+
+  @media (min-width: 760px) { grid-template-columns: 1fr 1fr; }
+}
+
+.proposta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1.5px dashed rgba($amber, .7);
+  border-radius: 18px;
+  background: $white;
+  box-shadow: 0 12px 26px rgba($dark, .08);
+
+  // Tutta la parte sinistra è un pulsante: apre l'anteprima.
+  &__apri {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover strong { color: $viola; }
+  }
+
+  &__foto {
+    flex-shrink: 0;
+    width: 72px;
+    height: 72px;
+    border-radius: 14px;
+    object-fit: cover;
+  }
+
+  &__testo {
+    flex: 1;
+    min-width: 0;
+
+    strong {
+      display: block;
+      overflow: hidden;
+      font-size: .95rem;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: $dark;
+    }
+
+    small {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .78rem;
+      color: $slate;
+    }
+  }
+
+  &__azioni {
+    display: flex;
+    flex-shrink: 0;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__si,
+  &__no,
+  &__modifica {
+    min-height: 32px;
+    padding: 6px 14px;
+    border: 1.5px solid transparent;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: .8rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  &__si {
+    background: $sfumatura-viola;
+    color: $white;
+
+    &:hover { filter: brightness(1.08); }
+  }
+
+  &__no {
+    border-color: $slate-200;
+    background: $white;
+    color: $red;
+
+    &:hover { border-color: $red; }
+  }
+
+  &__modifica {
+    border-color: $slate-200;
+    background: $white;
+    color: $slate-600;
+
+    &:hover { border-color: $viola-m; color: $viola; }
+  }
+}
+
+.notizie {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 40px 20px 36px;
+
+  h2 {
+    margin: 0 0 16px;
+    font-size: clamp(1.6rem, 4.5vw, 2.1rem);
+    font-weight: 800;
+    text-align: center;
+    color: $viola;
+  }
+
+  .vuoto {
+    width: 100%;
+    margin: 12px 0 0;
+    padding: 28px;
+    border: 1px dashed $slate-200;
+    border-radius: 18px;
+    background: $white;
+    text-align: center;
+    color: $slate;
+
+    &--errore { color: $red; }
+  }
+}
+
+// Colori delle etichette: gli stessi delle sottolineature del menu.
+$colori-etichetta: (
+  branco: $green-d,
+  reparto: #B98A00,
+  clan: #D8392F,
+  gruppo: $viola-m,
+);
+
+.pallino {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: $slate-400;
+
+  @each $nome, $colore in $colori-etichetta {
+    &--#{$nome} { background: $colore; }
+  }
+
+  &--tutte {
+    background: conic-gradient($green-d 0 25%, #B98A00 0 50%, #D8392F 0 75%, $viola-m 0);
+  }
+}
+
+// ---------- Pulsanti sopra le card ----------
+
+.strumenti {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 0 0 28px;
+}
+
+.aggiungi-post {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border: none;
+  border-radius: 999px;
+  background: $sfumatura-viola;
+  box-shadow: 0 8px 20px rgba($viola, .3);
+  font-family: inherit;
+  font-size: .95rem;
+  font-weight: 700;
+  color: $white;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+
+  ion-icon { font-size: 1.2rem; }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba($viola, .4);
+  }
+}
+
+.filtro {
+  position: relative;
+
+  &__pulsante {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 18px;
+    border: 1.5px solid rgba($viola-m, .35);
+    border-radius: 999px;
+    background: $white;
+    font-family: inherit;
+    font-size: .95rem;
+    font-weight: 700;
+    color: $viola;
+    cursor: pointer;
+
+    ion-icon { font-size: 1.1rem; }
+
+    &:hover { background: rgba($viola-l, .1); }
+  }
+
+  &__freccia {
+    font-size: .9rem !important;
+    transition: transform .2s;
+  }
+
+  &__pulsante[aria-expanded='true'] &__freccia {
+    transform: rotate(180deg);
+  }
+
+  &__menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    z-index: 30;
+    min-width: 220px;
+    margin: 0;
+    padding: 8px;
+    list-style: none;
+    transform: translateX(-50%);
+    background: $white;
+    border-radius: 16px;
+    box-shadow: 0 18px 40px rgba($dark, .18);
+
+    button {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 10px;
+      background: transparent;
+      font-family: inherit;
+      font-size: .92rem;
+      font-weight: 600;
+      text-align: left;
+      color: $dark;
+      cursor: pointer;
+
+      &:hover { background: $slate-100; }
+
+      &.scelto {
+        background: rgba($viola-l, .16);
+        color: $viola;
+      }
+    }
+  }
+}
+
+// ---------- Card ("Featured Stories"): foto sopra, blocco colorato con la didascalia sotto ----------
+
+.storie {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 24px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.storia {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--colore-post);
+  box-shadow: 0 10px 28px rgba($dark, .08);
+  transition: transform .2s, box-shadow .2s;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 36px rgba($dark, .14);
+  }
+
+  // Post in evidenza: bordo viola e ombra più marcata.
+  &--evidenza {
+    box-shadow: 0 0 0 3px $viola-l, 0 14px 32px rgba($viola, .22);
+  }
+
+  &__link {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  &__media {
+    position: relative;
+  }
+
+  &__foto {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    background: $slate-100;
+  }
+
+  // Quante foto ha il post, quando sono più di una.
+  &__quante {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba($dark, .6);
+    font-size: .78rem;
+    font-weight: 700;
+    color: $white;
+
+    ion-icon { font-size: .95rem; }
+  }
+
+  &__badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  &__corpo {
+    flex: 1;
+    min-height: 150px;
+    padding: 24px 26px 30px;
+
+    h3 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 800;
+      line-height: 1.5;
+      color: $white;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  // Azioni per capi e admin, in alto a destra sopra la foto.
+  &__azioni {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 6px;
+
+    button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border: none;
+      border-radius: 50%;
+      background: rgba($white, .92);
+      box-shadow: 0 4px 12px rgba($dark, .18);
+      color: $slate-600;
+      cursor: pointer;
+      transition: background .15s, color .15s, transform .15s;
+
+      ion-icon { font-size: 1.15rem; }
+
+      &:hover {
+        transform: scale(1.08);
+        color: $viola;
+      }
+
+      &.attiva {
+        background: $viola-m;
+        color: $white;
+      }
+
+      &.elimina:hover {
+        background: $red;
+        color: $white;
+      }
+    }
+  }
+}
+
+.badge-evidenza,
+.badge-etichetta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba($dark, .15);
+}
+
+.badge-evidenza {
+  background: $viola-m;
+  color: $white;
+
+  ion-icon { font-size: .9rem; }
+}
+
+.badge-etichetta {
+  background: rgba($white, .94);
+  color: $dark;
+}
+
+.vedi-altro {
+  margin-top: 32px;
+  padding: 12px 34px;
+  border: 2px solid $viola-m;
+  border-radius: 999px;
+  background: $white;
+  font-family: inherit;
+  font-size: .95rem;
+  font-weight: 700;
+  color: $viola;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+
+  &:hover:not(:disabled) {
+    background: $viola-m;
+    color: $white;
+  }
+
+  &:disabled { opacity: .6; cursor: default; }
+}
+
+// ---------- Piè di pagina ----------
+
+.piede {
+  margin-top: 48px;
+  padding: 36px 20px 22px;
+  background: $viola-d;
+  color: rgba($white, .82);
+
+  @media (min-width: 768px) { padding: 48px 32px 24px; }
+
+  &__corpo {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 28px;
+    max-width: 1100px;
+    margin: 0 auto;
+
+    @media (min-width: 620px) { grid-template-columns: 1.4fr 1fr 1fr; }
+    @media (min-width: 900px) { grid-template-columns: 1.6fr 1fr 1fr 1.2fr; }
+  }
+
+  // Logo, nome e una riga su chi siamo.
+  &__gruppo p {
+    margin: 12px 0 0;
+    max-width: 34ch;
+    font-size: .88rem;
+    line-height: 1.6;
+  }
+
+  &__marchio {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: $white;
+
+    img {
+      width: 46px;
+      height: 46px;
+    }
+
+    span {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.15;
+    }
+
+    strong {
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: .01em;
+    }
+
+    small {
+      font-size: .74rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: rgba($white, .6);
+    }
+  }
+
+  // I due cerchietti dei social.
+  &__social {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+
+    a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      background: rgba($white, .1);
+      color: $white;
+      text-decoration: none;
+      transition: background .15s, transform .15s;
+    }
+
+    ion-icon { font-size: 1.35rem; }
+
+    a:hover {
+      background: rgba($white, .2);
+      transform: translateY(-1px);
+    }
+  }
+
+  // Le colonne di collegamenti.
+  &__colonna {
+    h2 {
+      margin: 0 0 12px;
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: rgba($white, .55);
+    }
+
+    ul {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    a {
+      font-size: .9rem;
+      font-weight: 600;
+      color: rgba($white, .84);
+      text-decoration: none;
+
+      &:hover {
+        color: $white;
+        text-decoration: underline;
+      }
+    }
+
+    p {
+      margin: 0 0 14px;
+      max-width: 30ch;
+      font-size: .86rem;
+      line-height: 1.6;
+    }
+  }
+
+  // Il pulsante che porta al modulo di iscrizione. Il selettore è doppio per battere
+  // il colore dei collegamenti della colonna, che altrimenti lo farebbe bianco su bianco.
+  &__colonna &__invito {
+    display: inline-block;
+    padding: 11px 20px;
+    border-radius: 999px;
+    background: $white;
+    font-size: .88rem;
+    font-weight: 800;
+    color: $viola;
+    text-decoration: none;
+    transition: transform .15s;
+
+    &:hover { transform: translateY(-1px); }
+  }
+
+  &__firma {
+    max-width: 1100px;
+    margin: 30px auto 0;
+    padding-top: 18px;
+    border-top: 1px solid rgba($white, .14);
+    font-size: .76rem;
+    line-height: 1.6;
+    color: rgba($white, .55);
+  }
+}

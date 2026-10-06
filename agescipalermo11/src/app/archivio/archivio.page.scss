@@ -1,0 +1,306 @@
+@use '../../theme/variables' as *;
+@use '../../theme/testata' as *;
+
+@include testata-pagina;
+
+.archivio {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+.copertina {
+  padding: 18px 20px 62px;
+  color: $white;
+  background-color: $viola-m;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, .16) 1.5px, transparent 1.7px),
+    $sfumatura-viola;
+  background-size: 20px 20px, 100% 100%;
+
+  @media (min-width: 768px) { padding: 26px 32px 78px; }
+
+  &__contenuto {
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    margin: 0 0 2px;
+    font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0;
+    font-size: .85rem;
+    opacity: .9;
+  }
+}
+
+.corpo {
+  max-width: 1180px;
+  margin: -44px auto 0;
+  padding: 0 12px 32px;
+
+  @media (min-width: 768px) {
+    margin-top: -56px;
+    padding: 0 24px 48px;
+  }
+}
+
+// ---------- Filtro per branca ----------
+
+.filtri {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 15px;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  background: $white;
+  box-shadow: 0 8px 20px rgba($dark, .08);
+  font-family: inherit;
+  font-size: .85rem;
+  font-weight: 700;
+  color: $slate-600;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+
+  &:hover { border-color: rgba($viola-m, .45); }
+
+  &--scelto {
+    background: $sfumatura-viola;
+    color: $white;
+
+    .pallino { box-shadow: 0 0 0 2px rgba($white, .6); }
+  }
+}
+
+.conteggio {
+  margin: 0 0 12px;
+  padding-left: 4px;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  // Sta sotto ai filtri, quindi sullo sfondo chiaro: scritta scura.
+  color: $slate-400;
+}
+
+// ---------- Un anno per volta ----------
+
+.anno {
+  margin-bottom: 26px;
+
+  &__titolo {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: rgba($white, .92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 8px 20px rgba($dark, .08);
+    font-size: .95rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: $viola;
+  }
+}
+
+.storie {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+
+  @media (min-width: 620px) { grid-template-columns: 1fr 1fr; }
+  @media (min-width: 980px) { grid-template-columns: repeat(3, 1fr); }
+}
+
+// ---------- Le schede dei post (come in home, un filo più sobrie) ----------
+
+.storia {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  background: $white;
+  box-shadow: 0 14px 30px rgba($dark, .1);
+
+  &__link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  &__media {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    background: $slate-100;
+  }
+
+  &__foto {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &__badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  &__corpo {
+    padding: 12px 14px 14px;
+    border-top: 4px solid var(--colore-post, #{$viola-m});
+
+    h3 {
+      margin: 0 0 2px;
+      font-size: .98rem;
+      font-weight: 700;
+      color: $dark;
+    }
+
+    small {
+      font-size: .78rem;
+      color: $slate;
+    }
+  }
+
+  &__azioni {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+
+    button {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border: none;
+      border-radius: 50%;
+      background: rgba($dark, .55);
+      backdrop-filter: blur(6px);
+      color: $white;
+      cursor: pointer;
+
+      ion-icon { font-size: 1.15rem; }
+
+      &:hover { background: $viola; }
+    }
+  }
+}
+
+.badge-evidenza,
+.badge-etichetta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba($dark, .6);
+  backdrop-filter: blur(6px);
+  font-size: .72rem;
+  font-weight: 700;
+  color: $white;
+
+  ion-icon { font-size: .85rem; }
+}
+
+.pallino {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: $white;
+
+  &--branco { background: #5A9E2A; }
+  &--reparto { background: #B98A00; }
+  &--clan { background: #D8392F; }
+  &--gruppo { background: #E3C0FF; }
+}
+
+// ---------- Vuoto e caricamento ----------
+
+.vuoto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 34px 20px;
+  border-radius: 20px;
+  background: $white;
+  box-shadow: 0 14px 30px rgba($dark, .08);
+  text-align: center;
+
+  &--errore {
+    margin: 0;
+    font-weight: 600;
+    color: $red;
+  }
+
+  &__icona {
+    display: grid;
+    place-items: center;
+    width: 60px;
+    height: 60px;
+    margin-bottom: 8px;
+    border-radius: 50%;
+    background: rgba($viola-l, .14);
+    color: $viola;
+
+    ion-icon { font-size: 1.7rem; }
+  }
+
+  &__titolo {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: $dark;
+  }
+
+  &__testo {
+    max-width: 440px;
+    margin: 0;
+    font-size: .88rem;
+    color: $slate;
+  }
+}
+
+.scheletro {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+
+  @media (min-width: 620px) { grid-template-columns: 1fr 1fr; }
+
+  > div {
+    height: 240px;
+    border-radius: 20px;
+    background: linear-gradient(90deg, $slate-100 25%, $slate-200 50%, $slate-100 75%);
+    background-size: 200% 100%;
+    animation: luccichio 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes luccichio {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scheletro > div { animation: none; }
+}

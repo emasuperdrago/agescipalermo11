@@ -1,0 +1,313 @@
+@use '../../theme/variables' as *;
+
+// Colori delle branche: gli stessi di menu, etichette dei post e dettaglio.
+$colori-branca: (
+  branco: $green-d,
+  reparto: #B98A00,
+  clan: #D8392F,
+  gruppo: $viola-m,
+);
+
+.profilo {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+// ---------- Barra in alto (come nel dettaglio post) ----------
+
+.testata-pagina ion-toolbar {
+  --background: rgba(255, 255, 255, .94);
+  --border-width: 0;
+  --padding-start: 8px;
+  --padding-end: 16px;
+  --min-height: 64px;
+}
+
+.indietro {
+  --color: #{$viola};
+  --border-radius: 999px;
+  --padding-start: 12px;
+  --padding-end: 14px;
+  --background-hover: #{rgba($viola-l, .12)};
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.marchio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: $dark;
+  text-decoration: none;
+
+  img {
+    width: 38px;
+    height: 38px;
+    padding: 2px;
+    border: 1px solid $slate-200;
+    border-radius: 50%;
+    background: $white;
+  }
+
+  &__testo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.15;
+
+    strong {
+      font-size: .95rem;
+      font-weight: 800;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    small {
+      font-size: .62rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: $slate;
+    }
+  }
+}
+
+// ---------- Scheda profilo ----------
+
+.scheda-profilo {
+  position: relative;
+  --colore-tema: #{$viola-m};
+  // La barra in basso occupa già il fondo dello schermo.
+  padding-bottom: 40px;
+
+  @each $nome, $colore in $colori-branca {
+    &.tema--#{$nome} { --colore-tema: #{$colore}; }
+  }
+}
+
+.copertina {
+  height: 170px;
+  background-color: var(--colore-tema);
+  background-image:
+    radial-gradient(rgba(255, 255, 255, .16) 1.5px, transparent 1.7px),
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, .15) 100%);
+  background-size: 20px 20px, 100% 100%;
+
+  @media (min-width: 768px) {
+    height: 210px;
+  }
+}
+
+.intestazione {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: -84px;
+  padding: 0 16px;
+  text-align: center;
+
+  h1 {
+    margin: 16px 0 12px;
+    font-size: clamp(1.5rem, 5vw, 2rem);
+    font-weight: 800;
+    color: $dark;
+    overflow-wrap: anywhere;
+  }
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 152px;
+  height: 152px;
+  overflow: hidden;
+  border: 6px solid $white;
+  border-radius: 32px;
+  // Senza foto: omino su sfondo bianco.
+  background: $white;
+  box-shadow: 0 18px 44px rgba($dark, .16);
+  color: var(--colore-tema);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  ion-icon { font-size: 5rem; }
+}
+
+// Logout dei capi: in alto a destra, appena sotto la fascia colorata.
+.logout {
+  position: absolute;
+  top: 182px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border: 1.5px solid rgba($red, .4);
+  border-radius: 999px;
+  background: $white;
+  box-shadow: 0 6px 18px rgba($dark, .1);
+  font-family: inherit;
+  font-size: .86rem;
+  font-weight: 700;
+  color: $red;
+  cursor: pointer;
+  transition: background .15s;
+
+  ion-icon { font-size: 1.05rem; }
+
+  &:hover { background: rgba($red, .08); }
+
+  @media (min-width: 768px) {
+    top: 222px;
+    right: 24px;
+  }
+}
+
+.modifica {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 999px;
+  background: $sfumatura-viola;
+  box-shadow: 0 8px 20px rgba($viola, .28);
+  font-family: inherit;
+  font-size: .92rem;
+  font-weight: 700;
+  color: $white;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+
+  ion-icon { font-size: 1.05rem; }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba($viola, .38);
+  }
+}
+
+// ---------- Dati ----------
+
+.campi {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: calc(100% - 32px);
+  max-width: 520px;
+  margin: 32px auto 0;
+  padding: 0;
+  list-style: none;
+}
+
+.campo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  border-radius: 999px;
+  background: $white;
+  box-shadow: 0 6px 20px rgba($dark, .06);
+  border-left: 5px solid var(--colore-tema);
+
+  &__icona {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba($viola-l, .14);
+    color: $viola;
+
+    ion-icon { font-size: 1.2rem; }
+  }
+
+  &__testo {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__etichetta {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    color: $slate;
+  }
+
+  &__valore {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: $dark;
+    overflow-wrap: anywhere;
+  }
+
+  // "Cambia" accanto all'email.
+  &__azione {
+    flex-shrink: 0;
+    margin-left: auto;
+    padding: 7px 14px;
+    border: 1.5px solid rgba($viola-m, .35);
+    border-radius: 999px;
+    background: $white;
+    font-family: inherit;
+    font-size: .8rem;
+    font-weight: 700;
+    color: $viola;
+    cursor: pointer;
+
+    &:hover { background: rgba($viola-l, .1); }
+  }
+}
+
+.pallino {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+
+  @each $nome, $colore in $colori-branca {
+    &--#{$nome} { background: $colore; }
+  }
+}
+
+// ---------- Visitatore ----------
+
+.visitatore {
+  width: calc(100% - 32px);
+  max-width: 440px;
+  margin: 24px auto 0;
+  padding: 28px 24px;
+  border-radius: 20px;
+  background: $white;
+  box-shadow: 0 10px 30px rgba($dark, .06);
+  text-align: center;
+  color: $slate-600;
+
+  p { margin: 0 0 8px; }
+}
+
+.accedi {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 12px 30px;
+  border-radius: 999px;
+  background: $sfumatura-viola;
+  box-shadow: 0 8px 20px rgba($viola, .28);
+  font-weight: 700;
+  color: $white;
+  text-decoration: none;
+}

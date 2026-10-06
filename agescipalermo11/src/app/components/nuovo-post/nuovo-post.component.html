@@ -1,0 +1,187 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>{{ modifica ? 'Modifica post' : 'Nuovo post' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="chiudi()" aria-label="Chiudi">
+        <ion-icon slot="icon-only" [icon]="icone.chiudi"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="nuovo-post">
+  <form class="modulo" (ngSubmit)="pubblica()">
+    <p class="obbligatori">I campi con <strong>*</strong> sono obbligatori.</p>
+
+    <div class="campo">
+      <span class="etichetta">Foto * <small>(fino a {{ maxFoto }})</small></span>
+      @if (!fotoElenco.length) {
+        <label class="foto">
+          <input type="file" accept="image/*" multiple (change)="scegliFoto($event)" />
+          <ion-icon [icon]="icone.foto" aria-hidden="true"></ion-icon>
+          <span>{{ preparandoFoto ? 'Preparazione delle foto…' : 'Scegli una o più foto' }}</span>
+        </label>
+      } @else {
+        <!-- La prima è la copertina; con le frecce si cambia l'ordine. -->
+        <div class="galleria">
+          @for (f of fotoElenco; track f.anteprima; let i = $index; let primo = $first; let ultimo = $last) {
+            <div class="galleria__foto" [class.galleria__foto--copertina]="primo">
+              <img [src]="f.anteprima" [alt]="'Foto ' + (i + 1)" />
+              @if (primo) { <span class="galleria__copertina">Copertina</span> }
+              <button type="button" class="galleria__togli" (click)="togliFoto(i)"
+                      [attr.aria-label]="'Togli la foto ' + (i + 1)">
+                <ion-icon [icon]="icone.chiudi" aria-hidden="true"></ion-icon>
+              </button>
+              <div class="galleria__frecce">
+                <button type="button" (click)="sposta(i, -1)" [disabled]="primo"
+                        [attr.aria-label]="'Sposta prima la foto ' + (i + 1)">
+                  <ion-icon [icon]="icone.prima" aria-hidden="true"></ion-icon>
+                </button>
+                <button type="button" (click)="sposta(i, 1)" [disabled]="ultimo"
+                        [attr.aria-label]="'Sposta dopo la foto ' + (i + 1)">
+                  <ion-icon [icon]="icone.dopo" aria-hidden="true"></ion-icon>
+                </button>
+              </div>
+            </div>
+          }
+          @if (fotoElenco.length < maxFoto) {
+            <label class="galleria__aggiungi">
+              <input type="file" accept="image/*" multiple (change)="scegliFoto($event)" />
+              <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+              <span>{{ preparandoFoto ? 'Preparo…' : 'Aggiungi' }}</span>
+            </label>
+          }
+        </div>
+        <small class="aiuto-foto">La prima è la copertina che si vede nella home: spostale con le frecce.</small>
+      }
+    </div>
+
+    <label class="campo">
+      <span class="etichetta">Didascalia *</span>
+      <textarea name="didascalia" [(ngModel)]="didascalia" rows="2" [attr.maxlength]="maxDidascalia"
+                placeholder="Es. Il Reparto al campo estivo di Capo d'Orlando"></textarea>
+      <small class="contatore">{{ didascalia.length }}/{{ maxDidascalia }}</small>
+    </label>
+
+    <fieldset class="campo">
+      <legend class="etichetta">Etichetta *</legend>
+      <div class="etichette">
+        @for (e of etichette; track e.valore) {
+          <label class="scelta-etichetta" [class]="'scelta-etichetta--' + e.valore"
+                 [class.scelta-etichetta--scelta]="etichetta === e.valore">
+            <input type="radio" name="etichetta" [value]="e.valore" [(ngModel)]="etichetta" />
+            {{ e.nome }}
+          </label>
+        }
+      </div>
+    </fieldset>
+
+    <fieldset class="campo">
+      <legend class="etichetta">Colore del post *</legend>
+      <div class="colori">
+        @for (c of colori; track c.valore) {
+          <label class="colore" [style.--colore]="c.valore" [class.colore--scelto]="colore === c.valore">
+            <input type="radio" name="colore" [value]="c.valore" [(ngModel)]="colore" />
+            <span class="colore__campione" aria-hidden="true"></span>
+            <span class="colore__nome">{{ c.nome }}</span>
+          </label>
+        }
+      </div>
+    </fieldset>
+
+    <!-- Video: link a YouTube o Instagram, oppure video corti caricati qui. -->
+    <fieldset class="campo">
+      <legend class="etichetta">Video <small>(facoltativi)</small></legend>
+
+      <span class="sottoetichetta">Link a YouTube o Instagram</span>
+      <div class="riga-link">
+        <input name="nuovoLink" [(ngModel)]="nuovoLink" type="url" inputmode="url" autocomplete="off"
+               placeholder="https://youtu.be/… oppure https://www.instagram.com/reel/…"
+               (keydown.enter)="$event.preventDefault(); aggiungiLink()" />
+        <button type="button" class="riga-link__aggiungi" (click)="aggiungiLink()" aria-label="Aggiungi il link"
+                [disabled]="videoLink.length >= maxLink">
+          <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+        </button>
+      </div>
+      @if (videoLink.length) {
+        <ul class="elenco-video">
+          @for (l of videoLink; track l; let i = $index) {
+            <li>
+              <ion-icon [icon]="icone.link" aria-hidden="true"></ion-icon>
+              <span>{{ l }}</span>
+              <button type="button" (click)="togliLink(i)" [attr.aria-label]="'Togli il link ' + (i + 1)">
+                <ion-icon [icon]="icone.chiudi" aria-hidden="true"></ion-icon>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+
+      <span class="sottoetichetta">Video corti dal telefono <small>(MP4, MOV o WebM, fino a 50 MB, al massimo {{ maxVideo }})</small></span>
+      @if (videoEsistenti.length || videoNuovi.length) {
+        <ul class="elenco-video">
+          @for (v of videoEsistenti; track v.id) {
+            <li [class.elenco-video__tolto]="videoDaTogliere.has(v.id)">
+              <ion-icon [icon]="icone.video" aria-hidden="true"></ion-icon>
+              <span>{{ v.nome }} <small>{{ videoDaTogliere.has(v.id) ? 'verrà tolto' : megabyte(v.dimensione) }}</small></span>
+              <button type="button" (click)="alternaVideoEsistente(v)"
+                      [attr.aria-label]="(videoDaTogliere.has(v.id) ? 'Tieni ' : 'Togli ') + v.nome">
+                <ion-icon [icon]="videoDaTogliere.has(v.id) ? icone.aggiungi : icone.chiudi" aria-hidden="true"></ion-icon>
+              </button>
+            </li>
+          }
+          @for (f of videoNuovi; track f; let i = $index) {
+            <li class="elenco-video__nuovo">
+              <ion-icon [icon]="icone.video" aria-hidden="true"></ion-icon>
+              <span>{{ f.name }} <small>nuovo · {{ megabyte(f.size) }}</small></span>
+              <button type="button" (click)="togliVideoNuovo(i)" [attr.aria-label]="'Togli ' + f.name">
+                <ion-icon [icon]="icone.chiudi" aria-hidden="true"></ion-icon>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+      @if (quantiVideo < maxVideo) {
+        <label class="carica-video">
+          <input type="file" [accept]="accettatiVideo" multiple (change)="scegliVideo($event)" />
+          <ion-icon [icon]="icone.video" aria-hidden="true"></ion-icon>
+          Aggiungi un video
+        </label>
+      }
+      <small class="aiuto-foto">
+        Per i video lunghi usa il link: caricalo su YouTube anche come "non in elenco", lo vede solo chi ha il link.
+      </small>
+    </fieldset>
+
+    <label class="campo">
+      <span class="etichetta">Testo</span>
+      <textarea name="testo" [(ngModel)]="testo" rows="6" placeholder="Racconta com'è andata…"></textarea>
+    </label>
+
+    @if (anteprimaFoto || didascalia.trim() || colore) {
+      <div class="campo">
+        <span class="etichetta">Anteprima</span>
+        <div class="anteprima" [style.--colore-post]="colore || '#94A3B8'">
+          @if (anteprimaFoto) {
+            <img [src]="anteprimaFoto" alt="" />
+          } @else {
+            <div class="anteprima__vuota">Foto</div>
+          }
+          <p>{{ didascalia.trim() || 'La tua didascalia' }}</p>
+        </div>
+      </div>
+    }
+
+    @if (errore) {
+      <p class="errore" role="alert">{{ errore }}</p>
+    }
+
+    <button type="submit" class="pubblica" [disabled]="pubblicando || preparandoFoto">
+      @if (pubblicando) {
+        {{ avanzamento || 'Salvataggio in corso…' }}
+      } @else {
+        {{ modifica ? 'Salva modifiche' : 'Pubblica' }}
+      }
+    </button>
+  </form>
+</ion-content>

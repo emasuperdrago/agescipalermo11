@@ -1,0 +1,157 @@
+@use '../../../theme/variables' as *;
+
+// Stessa impostazione degli altri pop-up (eventi, posti, canti).
+
+.ragazzo-editor {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+.modulo {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 20px 16px calc(28px + env(safe-area-inset-bottom));
+}
+
+.coppia {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  @media (min-width: 600px) {
+    flex-direction: row;
+
+    > .campo { flex: 1; }
+  }
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+
+  input {
+    width: 100%;
+    min-height: 48px;
+    padding: 11px 14px;
+    border: 1.5px solid $slate-200;
+    border-radius: 12px;
+    background: $white;
+    font-family: inherit;
+    font-size: .95rem;
+    color: $dark;
+    outline: none;
+
+    &:focus {
+      border-color: $viola-m;
+      box-shadow: 0 0 0 4px rgba($viola-l, .2);
+    }
+  }
+}
+
+.etichetta {
+  padding: 0;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $slate-600;
+}
+
+.aiuto {
+  margin: 0;
+  font-size: .76rem;
+  color: $slate;
+}
+
+.scelte {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pasticca {
+  --colore-branca: #{$viola-m};
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1.5px solid $slate-200;
+  border-radius: 999px;
+  background: $white;
+  font-family: inherit;
+  font-size: .85rem;
+  font-weight: 700;
+  color: $slate-600;
+  cursor: pointer;
+
+  &:hover { border-color: var(--colore-branca); }
+
+  &--scelta {
+    border-color: var(--colore-branca);
+    background: var(--colore-branca);
+    color: var(--su-branca, #{$white});
+  }
+}
+
+.errore {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba($red, .1);
+  font-size: .85rem;
+  font-weight: 600;
+  color: $red;
+}
+
+.salva {
+  min-height: 52px;
+  border: none;
+  border-radius: 16px;
+  background: $sfumatura-viola;
+  box-shadow: 0 10px 24px rgba($viola, .3);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  color: $white;
+  cursor: pointer;
+
+  &:disabled { opacity: .7; cursor: default; }
+}
+
+// Spunta del tesoriere: compare solo per il clan, sotto l'anno di percorso.
+.tesoriere {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid $slate-200;
+  border-radius: 14px;
+  background: $white;
+  cursor: pointer;
+
+  &:hover { border-color: $blue-d; }
+
+  input {
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    accent-color: $blue-d;
+  }
+
+  strong {
+    display: block;
+    font-size: .92rem;
+    font-weight: 700;
+    color: $blue-dk;
+  }
+
+  small {
+    font-size: .78rem;
+    color: $slate;
+  }
+}

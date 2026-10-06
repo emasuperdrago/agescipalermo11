@@ -1,0 +1,64 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Modifica profilo</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="chiudi()" aria-label="Chiudi">
+        <ion-icon slot="icon-only" [icon]="icone.chiudi"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="modifica-profilo">
+  <form class="modulo" (ngSubmit)="salva()">
+
+    <div class="foto">
+      <div class="foto__riquadro">
+        @if (anteprima) {
+          <img [src]="anteprima" alt="Anteprima della foto profilo" />
+        } @else {
+          <ion-icon [icon]="icone.avatar" aria-hidden="true"></ion-icon>
+        }
+      </div>
+
+      <div class="foto__azioni">
+        <label class="pulsante-foto">
+          <input type="file" accept="image/*" (change)="scegliFoto($event)" />
+          <ion-icon [icon]="icone.foto" aria-hidden="true"></ion-icon>
+          @if (preparandoFoto) {
+            Preparazione…
+          } @else {
+            {{ anteprima ? 'Cambia foto' : 'Aggiungi foto' }}
+          }
+        </label>
+        @if (anteprima) {
+          <button type="button" class="rimuovi-foto" (click)="rimuoviFoto()">
+            <ion-icon [icon]="icone.rimuovi" aria-hidden="true"></ion-icon>
+            Rimuovi
+          </button>
+        }
+      </div>
+      <p class="foto__nota">La foto viene ritagliata quadrata al centro.</p>
+    </div>
+
+    <p class="obbligatori">I campi con <strong>*</strong> sono obbligatori.</p>
+
+    <label class="campo">
+      <span class="etichetta">Nome *</span>
+      <input name="nome" [(ngModel)]="nome" [attr.maxlength]="maxNome" autocomplete="given-name" />
+    </label>
+
+    <label class="campo">
+      <span class="etichetta">Cognome *</span>
+      <input name="cognome" [(ngModel)]="cognome" [attr.maxlength]="maxNome" autocomplete="family-name" />
+    </label>
+
+    @if (errore) {
+      <p class="errore" role="alert">{{ errore }}</p>
+    }
+
+    <button type="submit" class="salva" [disabled]="salvando || preparandoFoto">
+      {{ salvando ? 'Salvataggio in corso…' : 'Salva modifiche' }}
+    </button>
+  </form>
+</ion-content>

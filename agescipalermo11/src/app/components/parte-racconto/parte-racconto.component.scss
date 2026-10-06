@@ -1,0 +1,163 @@
+@use '../../../theme/variables' as *;
+
+// Una parte scritta dai capi: ha lo stesso aspetto delle schede della pagina.
+
+$colori-branca: (
+  branco: $green-d,
+  reparto: #B98A00,
+  clan: #D8392F,
+);
+
+:host { display: block; }
+
+.scheda {
+  padding: 18px 16px 20px;
+  border-radius: 22px;
+  background: $white;
+  box-shadow: 0 20px 50px rgba($dark, .1);
+
+  @media (min-width: 768px) { padding: 22px 24px; }
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: $dark;
+
+    ion-icon {
+      font-size: 1.3rem;
+      color: $viola-m;
+    }
+  }
+}
+
+.testo {
+  margin: 0 0 10px;
+  font-size: .94rem;
+  line-height: 1.65;
+  color: $slate-600;
+  white-space: pre-line;
+
+  &:last-child { margin-bottom: 0; }
+
+  strong { color: $dark; }
+}
+
+// ---------- Le tre branche ----------
+
+.branche {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.branca {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 6px;
+  border-radius: 16px;
+  text-decoration: none;
+  transition: transform .15s;
+
+  strong {
+    font-size: 1.05rem;
+    font-weight: 800;
+  }
+
+  span {
+    font-size: .78rem;
+    font-weight: 600;
+  }
+
+  &:hover { transform: translateY(-2px); }
+
+  @each $chiave, $colore in $colori-branca {
+    &--#{$chiave} {
+      background: rgba($colore, .12);
+      color: $colore;
+    }
+  }
+}
+
+// ---------- La frase in evidenza ----------
+
+.evidenza {
+  margin: 12px 0 0;
+  padding: 14px 16px;
+  border-left: 4px solid $viola-m;
+  border-radius: 0 16px 16px 0;
+  background: rgba($viola-l, .09);
+  font-size: .94rem;
+  line-height: 1.65;
+  color: $dark;
+}
+
+// ---------- Le etichette ----------
+
+.etichette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba($viola-l, .12);
+    font-size: .8rem;
+    font-weight: 700;
+    color: $viola;
+  }
+}
+
+// ---------- Per i capi ----------
+
+.comandi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1.5px dashed $slate-200;
+
+  &__tasto {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 34px;
+    padding: 0 12px;
+    border: 1.4px solid rgba($slate, .3);
+    border-radius: 999px;
+    background: $white;
+    font-family: inherit;
+    font-size: .76rem;
+    font-weight: 700;
+    color: $slate-600;
+    cursor: pointer;
+
+    ion-icon { font-size: .95rem; }
+
+    &:hover:not(:disabled) {
+      border-color: rgba($viola-m, .5);
+      color: $viola;
+    }
+
+    &:disabled {
+      opacity: .4;
+      cursor: default;
+    }
+
+    &--togli:hover:not(:disabled) {
+      border-color: rgba($red, .45);
+      color: $red;
+    }
+  }
+}

@@ -1,0 +1,478 @@
+@use '../../theme/variables' as *;
+@use '../../theme/testata' as *;
+
+@include testata-pagina;
+
+.ragazzi {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+// ---------- Copertina ----------
+
+.copertina {
+  padding: 18px 20px 62px;
+  color: $white;
+  background-color: $viola-m;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, .16) 1.5px, transparent 1.7px),
+    $sfumatura-viola;
+  background-size: 20px 20px, 100% 100%;
+
+  @media (min-width: 768px) { padding: 26px 32px 78px; }
+
+  &__contenuto {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    margin: 0 0 2px;
+    font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0;
+    font-size: .85rem;
+    text-transform: capitalize;
+    opacity: .9;
+  }
+}
+
+.corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1100px;
+  margin: -44px auto 0;
+  padding: 0 12px 32px;
+
+  @media (min-width: 768px) {
+    margin-top: -56px;
+    padding: 0 24px 48px;
+  }
+}
+
+.branche {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pasticca {
+  --colore-branca: #{$viola-m};
+  min-height: 38px;
+  padding: 8px 16px;
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  background: $white;
+  box-shadow: 0 8px 20px rgba($dark, .08);
+  font-family: inherit;
+  font-size: .85rem;
+  font-weight: 700;
+  color: $slate-600;
+  cursor: pointer;
+
+  &--scelta {
+    background: var(--colore-branca);
+    color: var(--su-branca, #{$white});
+  }
+}
+
+.scheda {
+  padding: 18px 16px 20px;
+  border-radius: 22px;
+  background: $white;
+  box-shadow: 0 20px 50px rgba($dark, .1);
+
+  @media (min-width: 768px) { padding: 22px 24px; }
+
+  h2 {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: $dark;
+
+    ion-icon {
+      font-size: 1.3rem;
+      color: $viola-m;
+    }
+  }
+}
+
+.conta {
+  min-width: 24px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba($viola-l, .18);
+  font-size: .78rem;
+  font-weight: 800;
+  color: $viola;
+}
+
+// Chi è entrato prima del censimento: si nota, ma senza allarmare.
+.senza-codice {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba($amber, .18);
+  font-size: .7rem !important;
+  font-weight: 800;
+  color: #92610A !important;
+}
+
+// Chi tiene la cassa di clan: si vede accanto al codice censimento.
+.riga-codice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tesoriere {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba($blue-d, .16);
+  font-size: .7rem !important;
+  font-weight: 800;
+  color: $blue-dk !important;
+}
+
+.nuovo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 999px;
+  background: $sfumatura-viola;
+  box-shadow: 0 8px 18px rgba($viola, .25);
+  font-family: inherit;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $white;
+  cursor: pointer;
+
+  ion-icon { font-size: 1.05rem; }
+
+  &:hover { filter: brightness(1.08); }
+}
+
+.scarica {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1.5px solid rgba($viola-m, .45);
+  border-radius: 999px;
+  background: $white;
+  font-family: inherit;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $viola;
+  cursor: pointer;
+
+  ion-icon { font-size: 1.05rem; }
+
+  &:hover { background: rgba($viola-l, .12); }
+  &:disabled { opacity: .5; cursor: default; }
+}
+
+.nota {
+  margin: 10px 0 0;
+  font-size: .82rem;
+  color: $slate;
+}
+
+.avviso--errore {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba($red, .1);
+  font-size: .85rem;
+  font-weight: 600;
+  color: $red;
+}
+
+// ---------- Attività ----------
+
+.attivita {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid $slate-200;
+    border-left: 5px solid $viola-m;
+    border-radius: 12px;
+  }
+
+  &__nome {
+    flex: 1;
+    min-width: 120px;
+    font-size: .92rem;
+    font-weight: 700;
+    color: $dark;
+  }
+
+  &__importo {
+    font-size: .88rem;
+    font-weight: 800;
+    color: $viola;
+  }
+
+  &__raccolto {
+    font-size: .78rem;
+    color: $slate;
+  }
+}
+
+.nuova {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  input {
+    flex: 1;
+    min-width: 120px;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1.5px solid $slate-200;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: .9rem;
+    color: $dark;
+    outline: none;
+
+    &:focus {
+      border-color: $viola-m;
+      box-shadow: 0 0 0 4px rgba($viola-l, .2);
+    }
+
+    &[type='number'] { max-width: 110px; }
+  }
+}
+
+.aggiungi {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 12px;
+  background: $sfumatura-viola;
+  font-family: inherit;
+  font-size: .88rem;
+  font-weight: 700;
+  color: $white;
+  cursor: pointer;
+
+  ion-icon { font-size: 1.15rem; }
+
+  &:hover { filter: brightness(1.08); }
+}
+
+// ---------- Tabella ----------
+
+.tabella {
+  overflow-x: auto;
+  border: 1px solid $slate-200;
+  border-radius: 14px;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .85rem;
+  }
+
+  th,
+  td {
+    padding: 9px 12px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  thead th {
+    background: $slate-100;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    color: $slate-600;
+  }
+
+  tbody tr + tr td { border-top: 1px solid $slate-200; }
+
+  tbody tr:hover { background: rgba($viola-l, .06); }
+}
+
+.colonna-quota small {
+  display: block;
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: none;
+  color: $slate-400;
+}
+
+.chi {
+  strong {
+    display: block;
+    font-weight: 700;
+    color: $dark;
+  }
+
+  small {
+    font-size: .74rem;
+    color: $slate-400;
+  }
+}
+
+.totale {
+  font-weight: 800;
+  color: $dark;
+
+  small {
+    display: block;
+    font-size: .72rem;
+    font-weight: 600;
+    color: $slate-400;
+  }
+}
+
+// Casella della quota: grigia se non c'è niente, ambra se manca qualcosa, verde se è tutto pagato.
+.quota {
+  min-width: 74px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1.5px solid $slate-200;
+  border-radius: 10px;
+  background: $white;
+  font-family: inherit;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $slate-400;
+  cursor: pointer;
+
+  &:hover { border-color: $viola-m; }
+
+  &--parziale {
+    border-color: rgba($amber, .6);
+    background: rgba($amber, .14);
+    color: #92610A;
+  }
+
+  &--pagata {
+    border-color: rgba($green-d, .5);
+    background: rgba($green-d, .14);
+    color: $green-d;
+  }
+
+  // Chi non partecipa: casella spenta e barrata, non deve niente.
+  &--fuori {
+    border-style: dashed;
+    background: $slate-100;
+    color: $slate-400;
+    text-decoration: line-through;
+  }
+}
+
+.azioni {
+  display: flex;
+  gap: 6px;
+}
+
+.icona {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid $slate-200;
+  border-radius: 10px;
+  background: $white;
+  color: $slate-600;
+  cursor: pointer;
+
+  ion-icon { font-size: 1.05rem; }
+
+  &:hover { border-color: $viola-m; color: $viola; }
+
+  &--elimina {
+    color: $red;
+
+    &:hover { border-color: $red; color: $red; }
+  }
+}
+
+.vuoto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 28px 16px;
+  border: 1px dashed $slate-200;
+  border-radius: 16px;
+  text-align: center;
+
+  &__icona {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    margin-bottom: 8px;
+    border-radius: 50%;
+    background: rgba($viola-l, .14);
+    color: $viola;
+
+    ion-icon { font-size: 1.6rem; }
+  }
+
+  &__titolo {
+    margin: 0;
+    font-weight: 700;
+    color: $dark;
+  }
+
+  &__testo {
+    max-width: 420px;
+    margin: 0;
+    font-size: .85rem;
+    color: $slate;
+  }
+}
+
+.scheletro {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  > div {
+    height: 90px;
+    border-radius: 14px;
+    background: linear-gradient(90deg, $slate-100 25%, $slate-200 50%, $slate-100 75%);
+    background-size: 200% 100%;
+    animation: luccichio 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes luccichio {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scheletro > div { animation: none; }
+}

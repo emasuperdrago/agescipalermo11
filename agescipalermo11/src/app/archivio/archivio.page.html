@@ -1,0 +1,117 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/home" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Home
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="archivio">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      <h1>Archivio</h1>
+      <p>Le notizie di una volta: ci finiscono i post più vecchi quando la home si riempie.</p>
+    </div>
+  </header>
+
+  <div class="corpo">
+
+    <!-- Filtro per branca: gli stessi colori dei post nella home. -->
+    <div class="filtri" role="group" aria-label="Filtra per branca">
+      <button type="button" class="filtro filtro--tutte" [class.filtro--scelto]="!etichetta"
+              [attr.aria-pressed]="!etichetta" (click)="filtra(null)">
+        Tutte
+      </button>
+      @for (e of etichette; track e.valore) {
+        <button type="button" class="filtro" [class.filtro--scelto]="etichetta === e.valore"
+                [attr.aria-pressed]="etichetta === e.valore" (click)="filtra(e.valore)">
+          <span class="pallino pallino--{{ e.valore }}" aria-hidden="true"></span>
+          {{ e.nome }}
+        </button>
+      }
+    </div>
+
+    @if (errore) {
+      <p class="vuoto vuoto--errore">{{ errore }}</p>
+    } @else if (caricamento) {
+      <div class="scheletro" aria-busy="true"><div></div><div></div></div>
+    } @else if (!anni.length) {
+      <div class="vuoto">
+        <span class="vuoto__icona" aria-hidden="true">
+          <ion-icon [icon]="icone.archivio"></ion-icon>
+        </span>
+        @if (etichetta) {
+          <p class="vuoto__titolo">Niente di {{ nomeEtichetta(etichetta) }} in archivio</p>
+          <p class="vuoto__testo">Prova con un'altra branca, oppure guarda tutte.</p>
+        } @else {
+          <p class="vuoto__titolo">L'archivio è vuoto</p>
+          <p class="vuoto__testo">
+            Qui arriveranno i post più vecchi quando nella home ce ne saranno più di 50,
+            e quelli che i capi mettono da parte.
+          </p>
+        }
+      </div>
+    } @else {
+      <p class="conteggio">
+        {{ quanti }} post in archivio@if (etichetta) { · {{ nomeEtichetta(etichetta) }}}
+      </p>
+
+      @for (gruppo of anni; track gruppo.anno) {
+        <section class="anno" [attr.aria-label]="'Anno ' + gruppo.anno">
+          <h2 class="anno__titolo">Anno {{ gruppo.anno }}</h2>
+
+          <div class="storie">
+            @for (p of gruppo.post; track p.id) {
+              <article class="storia" [style.--colore-post]="p.colore">
+                <a class="storia__link" [routerLink]="['/dettaglio-post', p.id]">
+                  <div class="storia__media">
+                    <img class="storia__foto" [src]="urlFoto(p)" alt="" loading="lazy" />
+                    <div class="storia__badge">
+                      @if (p.in_evidenza) {
+                        <span class="badge-evidenza">
+                          <ion-icon [icon]="icone.evidenza" aria-hidden="true"></ion-icon>
+                          In evidenza
+                        </span>
+                      }
+                      <span class="badge-etichetta">
+                        <span class="pallino pallino--{{ p.etichetta }}" aria-hidden="true"></span>
+                        {{ nomeEtichetta(p.etichetta) }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="storia__corpo">
+                    <h3>{{ p.didascalia }}</h3>
+                    <small>{{ dataPerEsteso(p.data_creazione) }}</small>
+                  </div>
+                </a>
+
+                @if (puoGestire) {
+                  <div class="storia__azioni">
+                    <button type="button" (click)="riporta(p)" title="Riporta nella home"
+                            aria-label="Riporta nella home">
+                      <ion-icon [icon]="icone.ripristina"></ion-icon>
+                    </button>
+                  </div>
+                }
+              </article>
+            }
+          </div>
+        </section>
+      }
+    }
+  </div>
+
+</ion-content>
+
+<app-barra-inferiore />

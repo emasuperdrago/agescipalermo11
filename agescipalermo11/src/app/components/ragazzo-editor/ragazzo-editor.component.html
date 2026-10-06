@@ -1,0 +1,106 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>{{ titolo }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="chiudi()" aria-label="Chiudi" [disabled]="salvando">
+        <ion-icon slot="icon-only" [icon]="icone.chiudi"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ragazzo-editor">
+  <form class="modulo" (ngSubmit)="salva()" (input)="errore = ''">
+
+    <div class="coppia">
+      <label class="campo">
+        <span class="etichetta">Nome *</span>
+        <input name="nome" [(ngModel)]="dati.nome" maxlength="60" />
+      </label>
+      <label class="campo">
+        <span class="etichetta">Cognome *</span>
+        <input name="cognome" [(ngModel)]="dati.cognome" maxlength="60" />
+      </label>
+    </div>
+
+    <label class="campo">
+      <span class="etichetta">Codice censimento</span>
+      <input name="codice" [(ngModel)]="dati.codice_censimento" inputmode="numeric" maxlength="10"
+             placeholder="Lascialo vuoto se non ce l'ha ancora" />
+      <p class="aiuto">
+        Chi entra adesso spesso non ce l'ha: glielo metti tu appena arriva, oppure arriva da solo
+        col prossimo file del censimento.
+      </p>
+    </label>
+
+    <fieldset class="campo">
+      <legend class="etichetta">Data di nascita</legend>
+      <app-selettore-data [valore]="dati.data_nascita" (valoreChange)="dati.data_nascita = $event" />
+      <p class="aiuto">
+        L'età si aggiorna da sola a ogni compleanno.
+        @if (nuovo || !dati.codice_censimento) {
+          Mettila anche se il codice censimento manca: serve a riconoscerlo quando arriverà
+          il file del censimento.
+        }
+      </p>
+    </fieldset>
+
+    @if (puoSpostare) {
+      <fieldset class="campo">
+        <legend class="etichetta">Branca</legend>
+        <div class="scelte">
+          @for (b of branche; track b.valore) {
+            <button type="button" class="pasticca" [style]="stiliBranca(b.valore)"
+                    [class.pasticca--scelta]="dati.branca === b.valore"
+                    [attr.aria-pressed]="dati.branca === b.valore" (click)="scegliBranca(b.valore)">
+              {{ b.nome }}
+            </button>
+          }
+        </div>
+      </fieldset>
+    }
+
+    <fieldset class="campo">
+      <legend class="etichetta">Anno di percorso</legend>
+      <div class="scelte">
+        @for (a of anniPossibili; track a) {
+          <button type="button" class="pasticca" [class.pasticca--scelta]="dati.anno_branca === a"
+                  [attr.aria-pressed]="dati.anno_branca === a" (click)="scegliAnno(a)">
+            {{ tappaDi(dati.branca, a) || a }}
+          </button>
+        }
+      </div>
+      <p class="aiuto">Serve al capogruppo quando apre l'anno: senza, il ragazzo non avanza.</p>
+
+      @if (dati.branca === 'clan') {
+        <!-- Il tesoriere tiene la cassa di clan insieme ai capi clan. -->
+        <label class="tesoriere">
+          <input type="checkbox" name="tesoriere" [(ngModel)]="dati.tesoriere" />
+          <span>
+            <strong>Tesoriere</strong>
+            <small>Può scrivere nella cassa di clan, come i capi clan.</small>
+          </span>
+        </label>
+      }
+    </fieldset>
+
+    <div class="coppia">
+      <label class="campo">
+        <span class="etichetta">Telefono</span>
+        <input type="tel" name="telefono" [(ngModel)]="dati.telefono" maxlength="20" placeholder="Es. 333 1234567" />
+      </label>
+      <label class="campo">
+        <span class="etichetta">Email</span>
+        <input type="email" name="email" [(ngModel)]="dati.email" maxlength="120" placeholder="Es. nome@email.it" />
+      </label>
+    </div>
+
+    @if (errore) {
+      <p class="errore" role="alert">{{ errore }}</p>
+    }
+
+    <button type="submit" class="salva" [disabled]="salvando">
+      {{ salvando ? 'Salvataggio in corso…' : (nuovo ? 'Aggiungi al gruppo' : 'Salva') }}
+    </button>
+  </form>
+</ion-content>

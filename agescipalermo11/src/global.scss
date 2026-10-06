@@ -1,0 +1,715 @@
+@use './theme/variables' as *;
+@import 'leaflet/dist/leaflet.css';
+
+
+@import "@ionic/angular/css/core.css";
+
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+// Colore primario di Ionic = viola del logo (pulsanti, back button, link nelle toolbar).
+:root {
+  --ion-color-primary: #{$viola};
+  --ion-color-primary-rgb: 70, 38, 120;
+  --ion-color-primary-contrast: #{$white};
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #3E216A;
+  --ion-color-primary-tint: #593C86;
+}
+
+// I pulsanti Ionic pieni usano la stessa sfumatura dei pulsanti principali.
+ion-button.button-solid {
+  --background: #{$sfumatura-viola};
+  --background-activated: #{$viola-d};
+  --box-shadow: 0 8px 20px rgba($viola, .28);
+}
+
+html,
+body {
+  height: 100% !important;
+  min-height: 100% !important;
+  overflow: hidden !important;
+}
+
+ion-app {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 100% !important;
+}
+
+ion-router-outlet {
+  position: relative !important;
+  flex: 1 1 auto !important;
+  height: 100% !important;
+}
+
+.ion-page {
+  position: absolute !important;
+  inset: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  contain: layout size style !important;
+}
+
+// La regola sopra (display: flex !important) scavalcava quella di Ionic che nasconde le pagine
+// non attive: restavano disegnate sotto quella attuale e si vedevano attraverso le barre trasparenti.
+.ion-page.ion-page-hidden {
+  display: none !important;
+}
+
+ion-content {
+  --overflow: auto;
+  flex: 1 1 auto !important;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+ion-alert {
+  --background: #{$white};
+  --border-radius: 24px;
+  --box-shadow: 0 32px 80px rgba($dark, .2);
+  --backdrop-opacity: 0.6;
+  --min-width: 380px;
+}
+
+ion-alert .alert-wrapper {
+  background: #{$white} !important;
+  border: none !important;
+  border-radius: 24px !important;
+  overflow: hidden !important;
+  box-shadow: 0 0 0 1px rgba($green, .08), 0 32px 80px rgba($dark, .18) !important;
+}
+
+ion-alert .alert-head {
+  background: linear-gradient(135deg, rgba($green, .04) 0%, rgba($blue, .04) 100%) !important;
+  padding: 28px 28px 10px !important;
+  position: relative;
+  &::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, $green, $blue);
+  }
+}
+
+ion-alert .alert-title {
+  color: #{$dark} !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 1.35rem !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.4px !important;
+}
+
+ion-alert .alert-message {
+  color: #{$mid} !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: .95rem !important;
+  line-height: 1.6 !important;
+  padding: 8px 28px 22px !important;
+  background: #{$white} !important;
+}
+
+ion-alert .alert-input-group {
+  background: #{$white} !important;
+  padding: 0 22px 16px !important;
+}
+
+ion-alert .alert-input {
+  background: rgba($dark, .03) !important;
+  color: #{$dark} !important;
+  border: 1.5px solid #{$brd-light} !important;
+  border-radius: 14px !important;
+  padding: 13px 16px !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: .95rem !important;
+  margin: 0 !important;
+  caret-color: #{$blue} !important;
+}
+
+ion-alert .alert-input::placeholder {
+  color: rgba($dark, .35) !important;
+}
+
+ion-alert .alert-button-group {
+  background: #{$page} !important;
+  border-top: 1px solid #{$brd-light} !important;
+  padding: 14px 16px 16px !important;
+  display: flex !important;
+  gap: 10px !important;
+  flex-wrap: nowrap !important;
+}
+
+ion-alert .alert-button {
+  background: rgba($dark, .04) !important;
+  color: #{$mid} !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-size: .95rem !important;
+  font-weight: 700 !important;
+  border-radius: 14px !important;
+  flex: 1 !important;
+  min-height: 48px !important;
+  border: none !important;
+  letter-spacing: 0.2px;
+}
+
+ion-alert .alert-button .alert-button-inner {
+  color: #{$mid} !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 700 !important;
+  justify-content: center !important;
+}
+
+ion-alert .alert-button.alert-button-role-cancel,
+ion-alert .alert-button[data-role="cancel"] {
+  background: rgba($dark, .02) !important;
+  color: rgba($dark, .5) !important;
+}
+
+ion-alert .alert-button.alert-button-role-cancel .alert-button-inner {
+  color: rgba($dark, .5) !important;
+}
+
+ion-alert .alert-button:not(.alert-button-role-cancel):not(.alert-button-role-destructive) {
+  background: #{$sfumatura-viola} !important;
+  box-shadow: 0 6px 20px rgba($viola, .28) !important;
+  transition: transform .2s, box-shadow .2s;
+}
+
+ion-alert .alert-button:not(.alert-button-role-cancel):not(.alert-button-role-destructive):active {
+  transform: scale(.97);
+}
+
+ion-alert .alert-button:not(.alert-button-role-cancel):not(.alert-button-role-destructive) .alert-button-inner {
+  color: #{$white} !important;
+}
+
+ion-alert .alert-button.alert-button-role-destructive {
+  background: rgba(220,60,60,.08) !important;
+  border: 1px solid rgba(220,60,60,.15) !important;
+}
+
+ion-alert .alert-button.alert-button-role-destructive .alert-button-inner {
+  color: #f87171 !important;
+}
+
+ion-alert.peekbox-alert--slim {
+  --min-width: 320px;
+
+  .alert-wrapper {
+    border-radius: 18px !important;
+  }
+
+  .alert-head {
+    padding: 18px 20px 6px !important;
+
+    &::after { height: 2px; }
+  }
+
+  .alert-title {
+    font-size: 1.1rem !important;
+  }
+
+  .alert-message {
+    padding: 4px 20px 12px !important;
+    font-size: .85rem !important;
+  }
+
+  .alert-input-group {
+    padding: 0 16px 12px !important;
+  }
+
+  .alert-input {
+    padding: 10px 14px !important;
+    font-size: .85rem !important;
+  }
+
+  .alert-button-group {
+    padding: 10px 14px 12px !important;
+    gap: 8px !important;
+  }
+
+  .alert-button {
+    min-height: 32px !important;
+    padding: 4px 14px !important;
+    font-size: .8rem !important;
+    border-radius: 10px !important;
+  }
+}
+
+ion-toast {
+  --background: #{$white};
+  --color: #{$dark};
+  --border-radius: 14px;
+  --box-shadow: 0 8px 32px rgba($dark, .08);
+  --border: 1px solid #{$brd-light};
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+}
+
+ion-toast::part(message) {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: $mid;
+}
+
+ion-toast::part(header) {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 0.92rem;
+  color: $dark;
+}
+
+ion-toast[color="danger"] {
+  --color: #{$white};
+}
+ion-toast[color="danger"]::part(message) {
+  color: $white;
+}
+ion-toast[color="danger"]::part(header) {
+  color: $white;
+}
+ion-toast[color="warning"] {
+  --color: #{$white};
+}
+ion-toast[color="warning"]::part(message) {
+  color: $white;
+}
+ion-toast[color="warning"]::part(header) {
+  color: $white;
+}
+
+ion-toast.peekbox-toast {
+  --border: none;
+  --box-shadow: 0 12px 40px rgba($dark, 0.12);
+  padding-left: 0;
+  overflow: hidden;
+
+  &::part(container) {
+    border-left: 4px solid $mid;
+    border-radius: 14px;
+    padding-left: 14px;
+  }
+
+  &--success::part(container) {
+    border-left-color: $green;
+  }
+
+  &--danger::part(container) {
+    border-left-color: $red;
+  }
+
+  &--warning::part(container) {
+    border-left-color: $amber;
+  }
+
+  &--info::part(container) {
+    border-left-color: $blue;
+  }
+}
+
+
+.floating-nav {
+  position: fixed;
+  bottom: 18px; left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px); max-width: 520px; height: 66px;
+  background: rgba($white, 0.78);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border-radius: 40px;
+  border: 1px solid rgba($white, 0.95);
+  box-shadow: 0 8px 32px rgba($blue, 0.13), 0 2px 8px rgba(0,0,0,0.06);
+  display: flex; align-items: center; justify-content: space-around;
+  padding: 0 8px; z-index: 1000;
+
+  .nav-glow {
+    position: absolute; bottom: -12px; left: 50%;
+    transform: translateX(-50%);
+    width: 55%; height: 22px;
+    background: radial-gradient(ellipse, rgba($blue, 0.22), transparent 70%);
+    pointer-events: none; z-index: -1;
+  }
+
+  .nav-item {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 3px;
+    cursor: pointer; padding: 5px 10px; border-radius: 18px;
+    color: $slate;
+    transition: background 0.2s, color 0.2s;
+    text-decoration: none;
+
+    ion-icon { font-size: 1.35rem; transition: color 0.2s; }
+    span {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      color: rgba($blue, 0.55);
+    }
+
+    &.active {
+      color: $blue;
+      ion-icon { color: $blue; }
+      span { color: $blue; }
+    }
+    &:not(.active):hover { background: rgba(0,0,0,0.04); }
+  }
+
+  .nav-fab-wrapper {
+    display: flex; align-items: center;
+    justify-content: center; margin-top: -26px;
+
+    .nav-fab {
+      width: 58px; height: 58px;
+      border-radius: 50%; border: none !important;
+      background: linear-gradient(135deg, $green-l, $green) !important;
+      color: $white; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 10px 25px rgba($green, 0.4) !important;
+      transition: transform 0.2s, box-shadow 0.2s;
+
+      ion-icon { font-size: 1.7rem; color: $white !important; }
+
+      &:hover {
+        transform: scale(1.1) translateY(-3px);
+        box-shadow: 0 15px 30px rgba($green, 0.5) !important;
+      }
+      &:active { transform: scale(0.95); }
+    }
+  }
+
+  .avatar-circle {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, $blue, $green);
+    color: $white; font-size: 0.8rem; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba($blue, 0.3);
+  }
+
+  .avatar-circle-nav {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: #E2EAF0;
+    color: $slate;
+    font-size: 0.8rem; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+
+    &.active {
+      background: linear-gradient(135deg, $blue, $green);
+      color: $white;
+      box-shadow: 0 2px 8px rgba($blue, 0.4);
+    }
+  }
+}
+
+.floating-nav .nav-item ion-icon {
+  color: $blue !important;
+}
+
+.floating-nav .nav-item span {
+  color: $blue !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
+}
+
+.floating-nav .nav-item:not(.active) ion-icon {
+  color: rgba($blue, 0.5) !important;
+}
+
+.floating-nav .nav-item:not(.active) span {
+  color: rgba($blue, 0.5) !important;
+}
+
+.floating-nav .avatar-circle {
+  background: rgba($blue, 0.15) !important;
+  color: $blue !important;
+  border: 2px solid $blue !important;
+  box-shadow: 0 2px 8px rgba($blue, 0.25) !important;
+}
+
+
+ion-tab-button {
+  opacity: 1 !important;
+}
+
+ion-tab-button ion-icon,
+ion-tab-button ion-label {
+  color: $sky !important;
+  opacity: 1 !important;
+}
+
+
+ion-tab-bar {
+  --color: $blue !important;
+  --color-selected: $blue !important;
+}
+
+ion-tab-button {
+  --color: $blue !important;
+  --color-selected: $blue !important;
+  opacity: 1 !important;
+}
+
+ion-tab-button::part(native) {
+  color: $blue !important;
+  opacity: 1 !important;
+}
+
+ion-tab-button ion-icon,
+ion-tab-button ion-label {
+  opacity: 1 !important;
+  color: $blue !important;
+  fill: $blue !important;
+}
+
+
+ion-tab-bar {
+  --color: $sky !important;
+  --color-selected: $sky !important;
+}
+
+ion-tab-button {
+  --color: $sky !important;
+  --color-selected: $sky !important;
+  --opacity: 1 !important;
+  opacity: 1 !important;
+}
+
+ion-tab-button::part(native) {
+  color: $sky !important;
+  opacity: 1 !important;
+}
+
+ion-tab-button ion-icon {
+  color: $sky !important;
+  fill: $sky !important;
+  opacity: 1 !important;
+}
+
+ion-tab-button ion-label {
+  color: $sky !important;
+  opacity: 1 !important;
+}
+
+
+.peekbox-photo-sheet {
+  .action-sheet-container {
+    padding: 0 12px 16px;
+  }
+
+  .action-sheet-group {
+    background: $white !important;
+    border-radius: 20px !important;
+    margin-bottom: 10px !important;
+    overflow: hidden !important;
+    box-shadow: 0 8px 32px rgba($dark, 0.12) !important;
+    border: 1px solid rgba($blue, 0.15) !important;
+  }
+
+  .action-sheet-title {
+    background: $white !important;
+    color: $blue-dk !important;
+    font-size: 0.95rem !important;
+    font-weight: 800 !important;
+    padding: 18px 20px 14px !important;
+    border-bottom: 1px solid rgba($blue, 0.12) !important;
+    font-family: 'Poppins', sans-serif !important;
+    letter-spacing: -0.2px !important;
+  }
+
+  .sheet-btn-camera {
+    .action-sheet-button-inner {
+      color: $blue !important;
+      font-weight: 700 !important;
+      font-size: 0.95rem !important;
+      font-family: 'Poppins', sans-serif !important;
+    }
+    background: rgba($blue, 0.04) !important;
+    border-bottom: 1px solid rgba($blue, 0.08) !important;
+
+    &:hover, &:active {
+      background: rgba($blue, 0.10) !important;
+    }
+  }
+
+  .sheet-btn-gallery {
+    .action-sheet-button-inner {
+      color: $blue-d !important;
+      font-weight: 700 !important;
+      font-size: 0.95rem !important;
+      font-family: 'Poppins', sans-serif !important;
+    }
+    background: $white !important;
+
+    &:hover, &:active {
+      background: rgba($blue, 0.06) !important;
+    }
+  }
+
+  .sheet-btn-cancel {
+    .action-sheet-button-inner {
+      color: $mid !important;
+      font-weight: 600 !important;
+      font-size: 0.88rem !important;
+      font-family: 'Poppins', sans-serif !important;
+    }
+    background: $white !important;
+  }
+
+  .action-sheet-backdrop {
+    opacity: 0.45 !important;
+  }
+}
+
+
+.empty-icon,
+.empty-emoji,
+.action-emoji,
+.inventory-emoji,
+.item-emoji,
+.item-fragile-badge,
+.photo-emoji,
+.sat-emoji,
+.notes-header span:first-child,
+.geo-info-bullet {
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji',
+               'Android Emoji', 'EmojiSymbols', sans-serif !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  line-height: 1 !important;
+}
+
+
+@media (max-width: 399px) {
+  .floating-nav {
+    height: 58px !important;
+    width: calc(100% - 20px) !important;
+    bottom: 12px !important;
+    .nav-item {
+      padding: 4px 8px !important;
+      ion-icon { font-size: 1.2rem !important; }
+      span { font-size: 0.58rem !important; }
+    }
+    .nav-fab-wrapper .nav-fab {
+      width: 50px !important;
+      height: 50px !important;
+      ion-icon { font-size: 1.5rem !important; }
+    }
+  }
+  ion-modal {
+    --border-radius: 16px;
+  }
+  ion-toast {
+    --min-width: 80vw;
+  }
+}
+
+@media (min-width: 768px) {
+  .floating-nav {
+    max-width: min(85vw, 700px) !important;
+    .nav-item {
+      padding: 6px 14px !important;
+      ion-icon { font-size: 1.45rem !important; }
+      span { font-size: 0.7rem !important; }
+    }
+  }
+  ion-modal {
+    --width: 80vw;
+    --max-width: min(85vw, 800px);
+    --border-radius: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .floating-nav {
+    max-width: min(75vw, 800px) !important;
+    height: 70px !important;
+    .nav-item {
+      padding: 8px 18px !important;
+      ion-icon { font-size: 1.5rem !important; }
+      span { font-size: 0.72rem !important; }
+    }
+    .nav-fab-wrapper .nav-fab {
+      width: 62px !important;
+      height: 62px !important;
+    }
+  }
+  ion-modal {
+    --width: 60vw;
+    --max-width: min(75vw, 1000px);
+    --border-radius: 28px;
+  }
+}
+
+
+// ---------- Mappa (Leaflet) ----------
+// Bandierine dei posti: disegnate in SVG, senza il riquadro bianco predefinito di Leaflet.
+.bandierina {
+  border: none;
+  background: none;
+
+  svg {
+    display: block;
+    overflow: visible;
+    filter: drop-shadow(0 2px 3px rgba(15, 23, 42, .3));
+    transition: transform .15s;
+    transform-origin: 20% 95%;
+  }
+
+  &:hover svg { transform: scale(1.15); }
+}
+
+.leaflet-container {
+  font-family: 'Poppins', sans-serif;
+}
+
+// Pulsante "Riposiziona" della mappa: porta alla sede del gruppo.
+.controllo-sede {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px 0 11px;
+  border: none;
+  border-radius: 999px;
+  background: $white;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, .2);
+  font-family: 'Poppins', sans-serif;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $viola;
+  cursor: pointer;
+
+  ion-icon { font-size: 1.15rem; }
+
+  &:hover { background: #F3EEFB; }
+  &:focus-visible { outline: 3px solid rgba(159, 123, 219, .5); }
+}
+
+.leaflet-tooltip.nome-posto {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, .18);
+  font-size: .78rem;
+  font-weight: 700;
+  color: $dark;
+}
+
+// Negli avvisi gli a capo scritti nel testo vanno a capo davvero.
+// (Il testo degli avvisi è sempre semplice: i tag HTML verrebbero mostrati come scritti.)
+ion-alert .alert-message {
+  white-space: pre-line;
+}
