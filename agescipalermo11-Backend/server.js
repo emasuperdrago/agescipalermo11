@@ -2993,7 +2993,10 @@ async function elencoRagazzi(branca) {
     const ragazzi = await dbAll(`SELECT id, codice_censimento, nome, cognome, eta, data_nascita, branca, anno_branca,
                                         telefono, email, tesoriere, (password IS NOT NULL)::int AS attivato
                                  FROM utenti WHERE ruolo = 'ragazzo' ${dove}
-                                 ORDER BY lower(cognome), lower(nome)`, branca ? [branca] : []);
+                                 -- Prima i più grandi (ultimo anno di branca), poi a scendere;
+                                 -- chi non ha ancora l'anno segnato va in fondo.
+                                 ORDER BY anno_branca DESC NULLS LAST, lower(cognome), lower(nome)`,
+                                 branca ? [branca] : []);
     const attivita = anno ? await dbAll(`SELECT * FROM attivita_quota WHERE rif_anno = ? ${branca ? 'AND branca = ?' : ''}
                                          ORDER BY ordine, id`, branca ? [anno.id, branca] : [anno.id]) : [];
     const pagamenti = attivita.length
