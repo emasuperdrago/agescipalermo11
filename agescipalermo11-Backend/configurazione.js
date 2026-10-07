@@ -79,6 +79,12 @@ function chiaveDelDatabase() {
         console.error('   Rimetti nel .env la riga DB_KEY=... che avevi salvato.');
         process.exit(1);
     }
+    // Online i dati arrivano già cifrati con la chiave del Mac: una chiave nuova inventata qui
+    // li renderebbe illeggibili. Sul server la DB_KEY si mette sempre a mano.
+    if (process.env.NODE_ENV === 'production') {
+        console.error('❌ Manca DB_KEY: sul server va messa a mano nel file .env (la stessa del Mac).');
+        process.exit(1);
+    }
 
     const nuova = crypto.randomBytes(32).toString('hex');
     try {
