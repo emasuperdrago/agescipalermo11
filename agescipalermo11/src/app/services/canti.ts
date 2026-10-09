@@ -22,21 +22,45 @@ export function coloreSezione(sezione: SezioneCanto): string {
   return SEZIONI_CANTO.find(s => s.valore === sezione)?.colore ?? '#7D57C2';
 }
 
-const NOTE = ['DO', 'RE', 'MI', 'FA', 'SOL', 'LA', 'SI'];
+/**
+ * Un accordo è una nota con, al massimo, quello che la completa: RE, SOLm7, FA#-, SIb, LA/DO#.
+ * "lalalala" o "Signor" cominciano con una nota ma non sono accordi. (Stessa regola nel backend.)
+ */
+const NOTA = '(DO|RE|MI|FA|SOL|LA|SI)(#|b)?';
+const NUCLEO = `${NOTA}(m|min|maj|ma|dim|aug|sus[0-9]?|add[0-9]?|[0-9]{1,2}|\\+|-|°)*`;
+const ACCORDO = new RegExp(`^${NUCLEO}(/(${NOTA})?)?\\\\?$`, 'i');
+/** Accordi attaccati senza spazio ("FA#-MI-"): solo in maiuscolo, se no "lalala" sembrerebbe LA LA LA. */
+const ACCORDI_UNITI = new RegExp(`^(${NUCLEO}){2,}$`);
+/** Un pezzetto staccato che completa l'accordo prima: "DO m", "LA 7". */
+const CODA = /^(m|min|maj|dim|aug|sus[0-9]?|add[0-9]?|[0-9]{1,2}|[+#b-]+)$/i;
+
+/**
+ * Segni da mettere all'inizio di una riga quando la regola da sola non basta
+ * (es. "La la la la", che sono parole ma anche accordi): chi legge il canto non li vede.
+ */
+export const SEGNO_TESTO = '~';
+export const SEGNO_ACCORDI = '^';
+
+/** La riga senza il segno iniziale, e che cosa diceva il segno (se c'era). */
+export function segnoRiga(riga: string): { forzata: 'testo' | 'accordi' | null; riga: string } {
+  if (riga.startsWith(SEGNO_TESTO)) return { forzata: 'testo', riga: riga.slice(SEGNO_TESTO.length) };
+  if (riga.startsWith(SEGNO_ACCORDI)) return { forzata: 'accordi', riga: riga.slice(SEGNO_ACCORDI.length) };
+  return { forzata: null, riga };
+}
 
 /**
  * Righe come "RE   SOL   LA": solo accordi, senza parole. Servono per poterli nascondere
  * a chi vuole leggere il testo e basta.
  */
 export function rigaDiAccordi(riga: string): boolean {
+  const { forzata, riga: senzaSegno } = segnoRiga(riga);
+  if (forzata) return forzata === 'accordi';
   // Si tolgono i segni del grassetto, le parentesi e la punteggiatura: "(Sol)" o "RE-|" restano accordi.
-  const parole = senzaSegniGrassetto(riga).trim().split(/\s+/)
+  const parole = senzaSegniGrassetto(senzaSegno).trim().split(/\s+/)
     .map(p => p.replace(/[()[\]|,.:]/g, '')).filter(Boolean);
   if (!parole.length) return false;
-  // Un accordo è una nota (RE, SOLm7…) o un pezzetto staccato che la completa ("DO m", "LA 7").
-  const accordo = (p: string) => p.length <= 8 && NOTE.some(n => p.toUpperCase().startsWith(n));
-  const coda = (p: string) => /^(m|min|maj|dim|aug|sus[0-9]?|add[0-9]?|[0-9]{1,2}|[+#b-]+)$/i.test(p);
-  return parole.some(accordo) && parole.every(p => accordo(p) || coda(p));
+  const accordo = (p: string) => ACCORDO.test(p) || ACCORDI_UNITI.test(p);
+  return parole.some(accordo) && parole.every(p => accordo(p) || CODA.test(p));
 }
 
 /**
@@ -51,7 +75,8 @@ export function senzaSegniGrassetto(testo: string): string {
 
 /** Toglie dal testo le righe dei soli accordi. */
 export function senzaAccordi(testo: string): string {
-  return testo.split('\n').filter(r => !rigaDiAccordi(r)).join('\n').replace(/\n{3,}/g, '\n\n');
+  return testo.split('\n').filter(r => !rigaDiAccordi(r)).map(r => segnoRiga(r).riga)
+    .join('\n').replace(/\n{3,}/g, '\n\n');
 }
 
 /** Un pezzo di riga: il testo e se va in grassetto. */
@@ -87,11 +112,14 @@ export function righeCanto(testo: string, conAccordi = true): RigaCanto[] {
   const righe = conAccordi
     ? testo.split('\n')
     : testo.split('\n').filter(r => !rigaDiAccordi(r));
-  return righe.map(r => ({
-    accordi: rigaDiAccordi(r),
-    testo: senzaSegniGrassetto(r),
-    pezzi: pezziRiga(r),
-  }));
+  return righe.map(r => {
+    const senzaSegno = segnoRiga(r).riga;
+    return {
+      accordi: rigaDiAccordi(r),
+      testo: senzaSegniGrassetto(senzaSegno),
+      pezzi: pezziRiga(senzaSegno),
+    };
+  });
 }
 
 @Injectable({

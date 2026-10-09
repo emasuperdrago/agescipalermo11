@@ -2225,8 +2225,25 @@ const SEZIONI_CANTO = ['preghiere', 'branco', 'reparto', 'clan', 'liturgici', 'f
 const MAX_TITOLO_CANTO = 120;
 const MAX_TESTO_CANTO = 20000;
 const MAX_CANTI_PDF = 150;
-/** Righe di anteprima nell'elenco: si saltano quelle dei soli accordi. */
-const NOTE = ['DO', 'RE', 'MI', 'FA', 'SOL', 'LA', 'SI'];
+// Un accordo è una nota con, al massimo, quello che la completa: RE, SOLm7, FA#-, SIb, LA/DO#.
+// "lalalala" o "Signor" cominciano con una nota ma non sono accordi. (Stessa regola del sito.)
+const NOTA = '(DO|RE|MI|FA|SOL|LA|SI)(#|b)?';
+const NUCLEO = `${NOTA}(m|min|maj|ma|dim|aug|sus[0-9]?|add[0-9]?|[0-9]{1,2}|\\+|-|°)*`;
+const ACCORDO = new RegExp(`^${NUCLEO}(/(${NOTA})?)?\\\\?$`, 'i');
+// Accordi attaccati senza spazio ("FA#-MI-"): solo in maiuscolo, se no "lalala" sembrerebbe LA LA LA.
+const ACCORDI_UNITI = new RegExp(`^(${NUCLEO}){2,}$`);
+// Un pezzetto staccato che completa l'accordo prima: "DO m", "LA 7".
+const CODA = /^(m|min|maj|dim|aug|sus[0-9]?|add[0-9]?|[0-9]{1,2}|[+#b-]+)$/i;
+
+// Segni a inizio riga per quando la regola da sola non basta ("La la la la" sono parole ma
+// anche accordi): "~" = è testo, "^" = sono accordi. Chi legge il canto non li vede.
+const SEGNO_TESTO = '~';
+const SEGNO_ACCORDI = '^';
+function segnoRiga(riga) {
+    if (riga.startsWith(SEGNO_TESTO)) return { forzata: 'testo', riga: riga.slice(SEGNO_TESTO.length) };
+    if (riga.startsWith(SEGNO_ACCORDI)) return { forzata: 'accordi', riga: riga.slice(SEGNO_ACCORDI.length) };
+    return { forzata: null, riga };
+}
 
 // Nel testo dei canti il grassetto si scrive tra asterischi: **così**.
 function senzaSegniGrassetto(testo) {
@@ -2245,20 +2262,20 @@ function pezziRiga(riga) {
 }
 
 function rigaDiAccordi(riga) {
+    const { forzata, riga: senzaSegno } = segnoRiga(riga);
+    if (forzata) return forzata === 'accordi';
     // Si tolgono i segni del grassetto, le parentesi e la punteggiatura.
-    const parole = senzaSegniGrassetto(riga).trim().split(/\s+/)
+    const parole = senzaSegniGrassetto(senzaSegno).trim().split(/\s+/)
         .map(p => p.replace(/[()[\]|,.:]/g, '')).filter(Boolean);
     if (!parole.length) return false;
-    // Un accordo è una nota (RE, SOLm7…) o un pezzetto staccato che la completa ("DO m", "LA 7").
-    const accordo = (p) => p.length <= 8 && NOTE.some(n => p.toUpperCase().startsWith(n));
-    const coda = (p) => /^(m|min|maj|dim|aug|sus[0-9]?|add[0-9]?|[0-9]{1,2}|[+#b-]+)$/i.test(p);
-    return parole.some(accordo) && parole.every(p => accordo(p) || coda(p));
+    const accordo = (p) => ACCORDO.test(p) || ACCORDI_UNITI.test(p);
+    return parole.some(accordo) && parole.every(p => accordo(p) || CODA.test(p));
 }
 
 /** Prima riga cantata del canto, per far capire di quale si tratta nell'elenco. */
 function anteprimaCanto(testo) {
-    const riga = testo.split('\n').map(r => r.trim()).find(r => r && !rigaDiAccordi(r));
-    return riga ? senzaSegniGrassetto(riga).slice(0, 120) : '';
+    const riga = testo.split('\n').find(r => r.trim() && !rigaDiAccordi(r));
+    return riga ? senzaSegniGrassetto(segnoRiga(riga).riga).trim().slice(0, 120) : '';
 }
 
 function cantoPubblico(c, conTesto = true) {
@@ -2445,13 +2462,14 @@ function creaPdfCanzoniere(canti, conAccordi, res) {
         for (const riga of righe) {
             if (doc.y > doc.page.height - MARGINE - 24) doc.addPage();
             const accordi = rigaDiAccordi(riga);
-            const pulita = senzaSegniGrassetto(riga);
+            const senzaSegno = segnoRiga(riga).riga;
+            const pulita = senzaSegniGrassetto(senzaSegno);
             // Le pochissime righe più larghe della pagina vanno a capo, invece di sforare.
             const troppoLunga = pulita.length * LARGHEZZA_LETTERA > larghezza;
             const opzioni = troppoLunga ? { width: larghezza } : { lineBreak: false, width: larghezza * 2 };
             // Gli accordi sono già tutti in neretto; i versi seguono gli **asterischi**.
             // Courier normale e grassetto sono larghi uguali, quindi l'allineamento non cambia.
-            const pezzi = accordi ? [{ grassetto: true, testo: pulita || ' ' }] : pezziRiga(riga || ' ');
+            const pezzi = accordi ? [{ grassetto: true, testo: pulita || ' ' }] : pezziRiga(senzaSegno || ' ');
             const partenza = doc.y;
             doc.fontSize(DIMENSIONE_TESTO).fillColor(accordi ? colore : '#0F172A');
             pezzi.forEach((pezzo, indice) => {

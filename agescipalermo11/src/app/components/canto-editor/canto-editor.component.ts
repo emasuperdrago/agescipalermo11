@@ -5,7 +5,9 @@ import {
   IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, IonIcon, ModalController
 } from '@ionic/angular/standalone';
 import { closeOutline } from 'ionicons/icons';
-import { CantiService, SEGNO_GRASSETTO, SEZIONI_CANTO, senzaSegniGrassetto } from '../../services/canti';
+import {
+  CantiService, SEGNO_ACCORDI, SEGNO_GRASSETTO, SEGNO_TESTO, SEZIONI_CANTO, segnoRiga, senzaSegniGrassetto
+} from '../../services/canti';
 import { Canto, DatiCanto, SezioneCanto } from '../../../types/models';
 
 /** Pop-up per aggiungere un canto o, se riceve `canto`, modificarlo. Si chiude con role "salvato". */
@@ -25,6 +27,8 @@ export class CantoEditorComponent implements OnInit {
 
   readonly sezioni = SEZIONI_CANTO;
   readonly icone = { chiudi: closeOutline };
+  readonly segnoTesto = SEGNO_TESTO;
+  readonly segnoAccordi = SEGNO_ACCORDI;
 
   titolo = '';
   sezione: SezioneCanto | '' = '';
@@ -109,6 +113,37 @@ export class CantoEditorComponent implements OnInit {
 
     this.testo = prima + nuovoScelto + dopo;
     this.rimettiCursore(area, inizio, inizio + nuovoScelto.length);
+  }
+
+  /**
+   * Segna le righe dove sta il cursore (o quelle scelte) come testo o come accordi, quando il
+   * sito da solo sbaglierebbe: es. "La la la la", che sono parole e non l'accordo LA.
+   * Il segno va all'inizio della riga e chi legge il canto non lo vede. Se le righe avevano
+   * già quel segno, si toglie.
+   */
+  segnaRighe(tipo: 'testo' | 'accordi') {
+    const area = this.areaTesto?.nativeElement;
+    if (!area) return;
+    const segno = tipo === 'testo' ? SEGNO_TESTO : SEGNO_ACCORDI;
+    // Dall'inizio della prima riga toccata alla fine dell'ultima.
+    const inizio = this.testo.lastIndexOf('\n', area.selectionStart - 1) + 1;
+    const fineScelta = area.selectionEnd > area.selectionStart && this.testo[area.selectionEnd - 1] === '\n'
+      ? area.selectionEnd - 1 : area.selectionEnd;
+    const a = this.testo.indexOf('\n', fineScelta);
+    const fine = a === -1 ? this.testo.length : a;
+
+    const righe = this.testo.slice(inizio, fine).split('\n');
+    const piene = righe.filter(r => segnoRiga(r).riga.trim());
+    if (!piene.length) return;
+    const giaSegnate = piene.every(r => segnoRiga(r).forzata === tipo);
+    const nuove = righe.map(r => {
+      const pulita = segnoRiga(r).riga;
+      if (!pulita.trim()) return pulita;
+      return giaSegnate ? pulita : segno + pulita;
+    }).join('\n');
+
+    this.testo = this.testo.slice(0, inizio) + nuove + this.testo.slice(fine);
+    this.rimettiCursore(area, inizio, inizio + nuove.length);
   }
 
   /** Il cursore resta sulla parte scelta, pronta da continuare a scrivere. */

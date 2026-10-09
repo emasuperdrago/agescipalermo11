@@ -38,7 +38,15 @@
                 title="Grassetto (Cmd/Ctrl + B)" aria-label="Metti in grassetto la parte scelta">
           G
         </button>
-        <span class="strumenti__aiuto">Scegli una parte del testo, anche su più righe, e tocca G</span>
+        <button type="button" class="segna" (click)="segnaRighe('testo')"
+                title="Il sito la mostra come testo, anche se sembra fatta di accordi (es. La la la)">
+          <span class="segna__segno" aria-hidden="true">{{ segnoTesto }}</span> È testo
+        </button>
+        <button type="button" class="segna" (click)="segnaRighe('accordi')"
+                title="Il sito la mostra come accordi, anche se non li riconosce da solo">
+          <span class="segna__segno" aria-hidden="true">{{ segnoAccordi }}</span> Sono accordi
+        </button>
+        <span class="strumenti__aiuto">Scegli una parte del testo, anche su più righe, e tocca un pulsante</span>
       </div>
       <textarea #areaTesto name="testo" [(ngModel)]="testo" rows="16" maxlength="20000"
                 (keydown.control.b)="$event.preventDefault(); alternaGrassetto()"
@@ -47,6 +55,9 @@
       <small class="aiuto">
         Gli spazi e gli a capo restano come li scrivi, così gli accordi si vedono sopra le parole giuste.
         Lascia una riga vuota tra una strofa e l'altra. Il grassetto si scrive tra asterischi: **così**.
+        Gli accordi il sito li riconosce da solo; se sbaglia (es. "La la la" cantato), metti il cursore
+        sulla riga e tocca "È testo" o "Sono accordi": compare un {{ segnoTesto }} o un {{ segnoAccordi }}
+        a inizio riga, che chi legge non vede.
       </small>
     </label>
 

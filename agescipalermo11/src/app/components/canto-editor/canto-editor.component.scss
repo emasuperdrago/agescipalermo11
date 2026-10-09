@@ -77,8 +77,9 @@
 // Pulsanti sopra il testo del canto.
 .strumenti {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 8px 10px;
 
   &__aiuto {
     font-size: .76rem;
@@ -102,6 +103,35 @@
   &:hover {
     border-color: $viola-m;
     background: rgba($viola-l, .12);
+  }
+}
+
+// "È testo" e "Sono accordi": per le righe che il sito da solo legge male.
+.segna {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1.5px solid $slate-200;
+  border-radius: 10px;
+  background: $white;
+  font-family: inherit;
+  font-size: .8rem;
+  font-weight: 700;
+  color: $slate-600;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+
+  &:hover {
+    border-color: $viola-m;
+    background: rgba($viola-l, .12);
+  }
+
+  &__segno {
+    font-family: ui-monospace, Menlo, monospace;
+    font-weight: 800;
+    color: $viola;
   }
 }
 
