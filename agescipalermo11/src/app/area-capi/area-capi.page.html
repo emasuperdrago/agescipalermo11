@@ -294,6 +294,13 @@
                 </p>
               }
 
+              @if (r.catechismo) {
+                <p class="richiesta__catechismo">
+                  <ion-icon [icon]="icone.catechismo" aria-hidden="true"></ion-icon>
+                  Catechismo: {{ r.catechismo }}° anno
+                </p>
+              }
+
               <div class="contatti">
                 @if (r.telefono) {
                   <a class="contatto" [href]="'tel:' + r.telefono">

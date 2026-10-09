@@ -229,6 +229,77 @@
   }
 }
 
+// ---------- Catechismo ----------
+
+// Una riga da toccare per intero, con la casella disegnata a sinistra: la casella vera resta
+// (invisibile) per la tastiera e i lettori di schermo.
+.spunta {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1.5px solid $slate-200;
+  border-radius: 14px;
+  background: $white;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+
+  &:hover { border-color: $viola-m; }
+
+  input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+  }
+
+  &__casella {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border: 2px solid $slate-200;
+    border-radius: 7px;
+    background: $white;
+    color: transparent;
+    font-size: 15px;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+
+  input:focus-visible + &__casella {
+    outline: 2px solid $viola-m;
+    outline-offset: 2px;
+  }
+
+  &__testo {
+    font-size: .9rem;
+    font-weight: 700;
+    color: $slate-600;
+  }
+
+  &--attiva {
+    border-color: $viola-m;
+    background: rgba($viola-m, .06);
+
+    .spunta__casella {
+      border-color: $viola-m;
+      background: $viola-m;
+      color: $white;
+    }
+  }
+}
+
+.catechismo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
 // Branca e anno di percorso dell'anno scelto.
 .tappa {
   margin: 10px 0 0;
@@ -331,5 +402,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .anno { transition: none; }
+  .anno, .spunta, .spunta__casella { transition: none; }
 }

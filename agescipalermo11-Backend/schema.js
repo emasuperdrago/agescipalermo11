@@ -249,8 +249,12 @@ const TABELLE = [
         genitore1_nome TEXT,
         genitore1_cognome TEXT,
         genitore2_nome TEXT,
-        genitore2_cognome TEXT
+        genitore2_cognome TEXT,
+        catechismo TEXT
     )`,
+    // Anno di catechismo (1-5) se lo frequenta, cifrato come gli altri dati della richiesta;
+    // vuoto se non lo frequenta. Per le tabelle nate prima che ci fosse la domanda:
+    `ALTER TABLE richiesta_iscrizione ADD COLUMN IF NOT EXISTS catechismo TEXT`,
 
     `CREATE TABLE IF NOT EXISTS sfondo_home (
         id SERIAL PRIMARY KEY,

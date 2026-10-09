@@ -422,6 +422,8 @@ export interface RichiestaIscrizione {
   email: string | null;
   /** "Nome Cognome" dei genitori scritti nel modulo: almeno uno (le richieste vecchie possono non averne). */
   genitori: string[];
+  /** Anno di catechismo che frequenta (1-5); null se non lo frequenta o se la richiesta è di prima. */
+  catechismo: number | null;
   note: string | null;
   stato: StatoRichiesta;
   /** La decisione dei capi; null se non hanno ancora deciso. */
@@ -446,6 +448,8 @@ export interface DatiRichiestaIscrizione {
   telefono: string;
   email: string;
   note: string;
+  /** Anno di catechismo (1-5) se lo frequenta, altrimenti null. */
+  catechismo: number | null;
 }
 
 // ---------- Zona capi: anno scout, ragazzi, quote, casse ----------

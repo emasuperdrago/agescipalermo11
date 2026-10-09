@@ -107,6 +107,29 @@
           }
         </fieldset>
 
+        <!-- Catechismo: si spunta se lo frequenta, poi si sceglie l'anno. -->
+        <div class="campo">
+          <label class="spunta" [class.spunta--attiva]="frequentaCatechismo">
+            <input type="checkbox" name="catechismo" [ngModel]="frequentaCatechismo"
+                   (ngModelChange)="cambiaCatechismo($event)" />
+            <span class="spunta__casella" aria-hidden="true"><ion-icon [icon]="icone.spunta"></ion-icon></span>
+            <span class="spunta__testo">Frequenta il catechismo?</span>
+          </label>
+          @if (frequentaCatechismo) {
+            <div class="catechismo">
+              <p class="aiuto" id="aiuto-catechismo">Che anno sta facendo?</p>
+              <div class="scelte" role="group" aria-labelledby="aiuto-catechismo">
+                @for (n of anniCatechismo; track n) {
+                  <button type="button" class="anno" [class.anno--scelto]="dati.catechismo === n"
+                          [attr.aria-pressed]="dati.catechismo === n" (click)="scegliAnnoCatechismo(n)">
+                    {{ n }}° anno
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
         <!-- Almeno un genitore; il secondo si aggiunge se si vuole. -->
         <fieldset class="campo">
           <legend class="etichetta">Un genitore *</legend>

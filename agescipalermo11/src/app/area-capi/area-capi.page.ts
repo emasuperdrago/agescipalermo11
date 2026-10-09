@@ -6,7 +6,7 @@ import {
   IonRouterLinkWithHref, IonContent, ToastController
 } from '@ionic/angular/standalone';
 import {
-  archiveOutline, arrowBackOutline, arrowUndoOutline, calendarNumberOutline, callOutline,
+  archiveOutline, arrowBackOutline, bookOutline, arrowUndoOutline, calendarNumberOutline, callOutline,
   cashOutline, checkmarkCircleOutline, chevronForwardOutline, closeCircleOutline,
   cloudUploadOutline, downloadOutline, idCardOutline, imageOutline, mailOutline, mapOutline,
   musicalNotesOutline, newspaperOutline, notificationsOutline, peopleCircleOutline, peopleOutline,
@@ -41,6 +41,7 @@ export class AreaCapiPage {
   readonly icone = {
     indietro: arrowBackOutline, notifiche: notificationsOutline, iscrizione: personAddOutline,
     telefono: callOutline, email: mailOutline, scuola: schoolOutline, genitori: peopleCircleOutline,
+    catechismo: bookOutline,
     archivia: archiveOutline,
     ripristina: arrowUndoOutline, elimina: trashOutline, aggiorna: refreshOutline,
     censiti: idCardOutline, carica: cloudUploadOutline, apri: chevronForwardOutline,

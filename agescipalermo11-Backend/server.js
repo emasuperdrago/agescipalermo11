@@ -2608,12 +2608,21 @@ function validaRichiestaIscrizione(body) {
     if (!genitore1Nome || !genitore1Cognome) return { errore: "Scrivi nome e cognome di almeno un genitore." };
     if (!!genitore2Nome !== !!genitore2Cognome) return { errore: "Del secondo genitore servono sia il nome sia il cognome." };
 
+    // Catechismo: vuoto se non lo frequenta, altrimenti l'anno (dal 1° al 5°).
+    let catechismo = null;
+    if (body.catechismo !== null && body.catechismo !== undefined && body.catechismo !== '') {
+        catechismo = Number(body.catechismo);
+        if (!Number.isInteger(catechismo) || catechismo < 1 || catechismo > 5)
+            return { errore: "Scegli l'anno di catechismo, dal 1° al 5°." };
+    }
+
     return {
         dati: {
             genitore1_nome: genitore1Nome, genitore1_cognome: genitore1Cognome,
             genitore2_nome: genitore2Nome || null, genitore2_cognome: genitore2Cognome || null,
             nome, cognome, data_nascita: dataNascita, anno_scolastico: anno.valore, branca: anno.branca,
             telefono: telefono || null, email: email || null, note: testo(body.note, MAX_NOTE_RICHIESTA) || null,
+            catechismo,
         }
     };
 }
@@ -2633,6 +2642,8 @@ function richiestaPubblica(r) {
             [r.genitore1_nome, r.genitore1_cognome],
             [r.genitore2_nome, r.genitore2_cognome],
         ].filter(([n, c]) => n && c).map(([n, c]) => `${n} ${c}`),
+        // Anno di catechismo (1-5); null se non lo frequenta o se la richiesta è di prima.
+        catechismo: r.catechismo ? Number(r.catechismo) : null,
         note: r.note,
         stato: r.stato,
         // Accettata o rifiutata dai capi; vuoto se non hanno ancora deciso.
@@ -2686,12 +2697,14 @@ app.post('/api/richieste-iscrizione', async (req, res) => {
     if (errore) return res.status(400).json({ error: errore });
     try {
         await dbRun(`INSERT INTO richiesta_iscrizione (nome, cognome, data_nascita, anno_scolastico, branca,
-                     telefono, email, note, genitore1_nome, genitore1_cognome, genitore2_nome, genitore2_cognome)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            // Data di nascita, contatti, note e genitori si salvano cifrati.
+                     telefono, email, note, genitore1_nome, genitore1_cognome, genitore2_nome, genitore2_cognome,
+                     catechismo)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            // Data di nascita, contatti, note, genitori e catechismo si salvano cifrati.
             [dati.nome, dati.cognome, cripta(dati.data_nascita), dati.anno_scolastico, dati.branca,
              cripta(dati.telefono), cripta(dati.email), cripta(dati.note), cripta(dati.genitore1_nome),
-             cripta(dati.genitore1_cognome), cripta(dati.genitore2_nome), cripta(dati.genitore2_cognome)]);
+             cripta(dati.genitore1_cognome), cripta(dati.genitore2_nome), cripta(dati.genitore2_cognome),
+             cripta(dati.catechismo === null ? null : String(dati.catechismo))]);
         res.status(201).json({ message: "Richiesta inviata! I capi ti ricontattano presto.", branca: dati.branca });
         // Le email ai capi partono dopo aver risposto: chi compila il modulo non aspetta Gmail.
         avvisaCapiNuovaRichiesta(dati.branca).catch(err => console.error('❌ Avviso ai capi:', err.message));
@@ -2827,7 +2840,8 @@ app.get('/api/richieste-iscrizione/excel', verificaRuolo('capo', 'admin'), async
         };
 
         // "Genitori" in fondo: caricando il file nei codici censimento quella colonna non si legge.
-        const intestazioni = ['Codice censimento', 'Cognome', 'Nome', 'Data di nascita', 'Anno', 'Branca', 'Contatti', 'Genitori'];
+        const intestazioni = ['Codice censimento', 'Cognome', 'Nome', 'Data di nascita', 'Anno', 'Branca', 'Contatti', 'Genitori',
+                              'Catechismo'];
         const contenuto = righe.map(r => {
             const scolastico = ANNI_SCOLASTICI.find(a => a.valore === r.anno_scolastico);
             let tappa = scolastico ? { branca: scolastico.branca, anno: scolastico.anno } : null;
@@ -2844,9 +2858,10 @@ app.get('/api/richieste-iscrizione/excel', verificaRuolo('capo', 'admin'), async
             }
 
             const contatti = [r.telefono, r.email].filter(Boolean).join(' · ');
-            const genitori = richiestaPubblica(r).genitori.join(' · ');
+            const { genitori, catechismo } = richiestaPubblica(r);
             return ['', r.cognome, r.nome, italiana(r.data_nascita), tappa ? String(tappa.anno) : '',
-                    tappa ? tappa.branca.charAt(0).toUpperCase() + tappa.branca.slice(1) : '', contatti, genitori];
+                    tappa ? tappa.branca.charAt(0).toUpperCase() + tappa.branca.slice(1) : '', contatti,
+                    genitori.join(' · '), catechismo ? `${catechismo}° anno` : ''];
         });
 
         const file = creaXlsx([intestazioni, ...contenuto], 'Censiti');

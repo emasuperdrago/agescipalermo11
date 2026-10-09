@@ -6,7 +6,7 @@ import {
   IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonRouterLink, IonRouterLinkWithHref, IonContent
 } from '@ionic/angular/standalone';
 import {
-  arrowBackOutline, checkmarkCircleOutline, homeOutline, paperPlaneOutline
+  arrowBackOutline, checkmarkCircleOutline, checkmarkOutline, homeOutline, paperPlaneOutline
 } from 'ionicons/icons';
 import { ANNI_SCOLASTICI, IscrizioniService, annoScolastico } from '../services/iscrizioni';
 import { AnnoScolastico, Branca, DatiRichiestaIscrizione } from '../../types/models';
@@ -33,12 +33,19 @@ export class RichiestaIscrizionePage {
   readonly stiliBranca = stiliBranca;
   readonly icone = {
     indietro: arrowBackOutline, invia: paperPlaneOutline, fatto: checkmarkCircleOutline, home: homeOutline,
+    spunta: checkmarkOutline,
   };
+  /** Gli anni di catechismo tra cui scegliere, se lo frequenta. */
+  readonly anniCatechismo = [1, 2, 3, 4, 5];
 
   dati: DatiRichiestaIscrizione = {
     nome: '', cognome: '', data_nascita: '', anno_scolastico: '', telefono: '', email: '', note: '',
     genitore1_nome: '', genitore1_cognome: '', genitore2_nome: '', genitore2_cognome: '',
+    catechismo: null,
   };
+
+  /** Spuntato "Frequenta il catechismo?": compare la scelta dell'anno. */
+  frequentaCatechismo = false;
 
   /** Se mostrare anche i campi del secondo genitore (facoltativo). */
   secondoGenitore = false;
@@ -106,6 +113,18 @@ export class RichiestaIscrizionePage {
     this.dati.genitore2_cognome = '';
   }
 
+  /** Togliendo la spunta si toglie anche l'anno scelto: non parte un catechismo "a metà". */
+  cambiaCatechismo(frequenta: boolean) {
+    this.frequentaCatechismo = frequenta;
+    if (!frequenta) this.dati.catechismo = null;
+    this.errore = '';
+  }
+
+  scegliAnnoCatechismo(anno: number) {
+    this.dati.catechismo = this.dati.catechismo === anno ? null : anno;
+    this.errore = '';
+  }
+
   scegliAnno(valore: AnnoScolastico) {
     this.dati.anno_scolastico = this.dati.anno_scolastico === valore ? '' : valore;
     // Scelto l'anno, l'avviso che lo chiedeva non ha più senso: va via subito.
@@ -133,6 +152,10 @@ export class RichiestaIscrizionePage {
       this.errore = 'Del secondo genitore servono sia il nome sia il cognome.';
       return;
     }
+    if (this.frequentaCatechismo && !this.dati.catechismo) {
+      this.errore = "Scegli l'anno di catechismo che frequenta.";
+      return;
+    }
     if (!this.dati.telefono.trim() && !this.dati.email.trim()) {
       this.errore = 'Lascia almeno un contatto: telefono o email.';
       return;
@@ -158,8 +181,10 @@ export class RichiestaIscrizionePage {
   nuovaRichiesta() {
     this.dati = {
       nome: '', cognome: '', data_nascita: '', anno_scolastico: '', telefono: '', email: '', note: '',
-    genitore1_nome: '', genitore1_cognome: '', genitore2_nome: '', genitore2_cognome: '',
+      genitore1_nome: '', genitore1_cognome: '', genitore2_nome: '', genitore2_cognome: '',
+      catechismo: null,
     };
+    this.frequentaCatechismo = false;
     this.inviata = false;
     this.inviando = false;
     this.brancaAssegnata = null;
