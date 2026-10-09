@@ -19,7 +19,7 @@ const db = require('./db');
 const { cripta, improntaEmail, emailDaSalvare, improntaCodice, codiceDaSalvare } = require('./cifratura');
 const { creaXlsx } = require('./excel');
 const {
-    postaPronta, controllaPosta, inviaEmail, emailDiConferma, emailRecuperoPassword, emailNuovaRichiesta,
+    postaPronta, controllaPosta, inviaEmail, descriviErrore, ATTESE_SOTTOFONDO, emailDiConferma, emailRecuperoPassword, emailNuovaRichiesta,
     emailCambioEmail, emailEmailCambiata,
 } = require('./posta');
 
@@ -635,7 +635,7 @@ app.post('/api/primo-accesso', (req, res) => {
             try {
                 inviata = await mandaConferma(utente, email);
             } catch (errPosta) {
-                console.error('❌ Email di conferma non partita:', errPosta.code || errPosta.message);
+                console.error('❌ Email di conferma non partita:', descriviErrore(errPosta));
                 return res.status(502).json({
                     error: "Registrazione salvata, ma l'email di conferma non è partita. Riprova tra poco con «Rimanda l'email».",
                     motivo: 'email-da-confermare',
@@ -688,7 +688,7 @@ app.post('/api/conferma-email/reinvia', (req, res) => {
                     : 'Le email non sono ancora impostate: il nuovo link è nel terminale del backend.',
             });
         } catch (errPosta) {
-            console.error('❌ Email di conferma non partita:', errPosta.code || errPosta.message);
+            console.error('❌ Email di conferma non partita:', descriviErrore(errPosta));
             res.status(502).json({ error: "L'email non è partita. Riprova tra poco." });
         }
     });
@@ -766,7 +766,7 @@ app.post('/api/password-dimenticata', async (req, res) => {
         }
         res.json(risposta);
     } catch (err) {
-        console.error('❌ Email per la nuova password non partita:', err.code || err.message);
+        console.error('❌ Email per la nuova password non partita:', descriviErrore(err));
         res.status(502).json({ error: "L'email non è partita. Riprova tra poco." });
     }
 });
@@ -940,7 +940,7 @@ app.post('/api/utenti/me/email', verificaUtenteCensito, async (req, res) => {
         });
     } catch (err) {
         if (err?.message === 'POSTA_NON_IMPOSTATA' || err?.code)
-            console.error('❌ Email per il cambio di indirizzo non partita:', err.code || err.message);
+            console.error('❌ Email per il cambio di indirizzo non partita:', descriviErrore(err));
         if (err?.code) return res.status(502).json({ error: "L'email non è partita. Riprova tra poco." });
         erroreInterno(res, err);
     }
@@ -978,8 +978,8 @@ app.post('/api/utenti/me/email/conferma', async (req, res) => {
 
         // L'avviso alla casella di prima parte dopo aver risposto.
         if (utente.email && postaPronta && utente.email.toLowerCase() !== nuova) {
-            inviaEmail({ a: utente.email, ...emailEmailCambiata({ nome: utente.nome, nuova }) })
-                .catch(errPosta => console.error("❌ Avviso di email cambiata non partito:", errPosta.code || errPosta.message));
+            inviaEmail({ a: utente.email, ...emailEmailCambiata({ nome: utente.nome, nuova }) }, ATTESE_SOTTOFONDO)
+                .catch(errPosta => console.error("❌ Avviso di email cambiata non partito:", descriviErrore(errPosta)));
         }
     } catch (err) {
         erroreInterno(res, err);
@@ -2683,9 +2683,10 @@ async function avvisaCapiNuovaRichiesta(branca) {
     const link = `${SITO_URL}/area-capi`;
     for (const capo of capi) {
         try {
-            await inviaEmail({ a: capo.email, ...emailNuovaRichiesta({ nome: capo.nome, branca: nomeBranca, link }) });
+            await inviaEmail({ a: capo.email, ...emailNuovaRichiesta({ nome: capo.nome, branca: nomeBranca, link }) },
+                             ATTESE_SOTTOFONDO);
         } catch (err) {
-            console.error(`❌ Avviso di nuova richiesta non partito (${nomeBranca}):`, err.code || err.message);
+            console.error(`❌ Avviso di nuova richiesta non partito (${nomeBranca}):`, descriviErrore(err));
         }
     }
 }

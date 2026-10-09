@@ -23,6 +23,10 @@ const trasporto = postaPronta
         secure: PORTA === 465,
         requireTLS: PORTA !== 465,
         auth: { user: UTENTE, pass: PASSWORD },
+        // Se la rete non risponde ci si arrende presto (di suo aspetterebbe minuti) e si riprova.
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 60000,
         // Niente file o indirizzi web dentro le email: si manda solo il testo che scriviamo noi.
         disableFileAccess: true,
         disableUrlAccess: true,
@@ -39,15 +43,51 @@ async function controllaPosta() {
         await trasporto.verify();
         console.log(`✉️  Email pronte: si inviano da ${UTENTE}`);
     } catch (err) {
-        console.error(`❌ Il server di posta non accetta l'accesso (${err.code || err.message}). Controlla SMTP_UTENTE e SMTP_PASSWORD nel .env.`);
+        if (erroreDiRete(err))
+            console.error(`❌ Il server di posta non è raggiungibile adesso (${descriviErrore(err)}): controlla la connessione a internet.`);
+        else
+            console.error(`❌ Il server di posta non accetta l'accesso (${descriviErrore(err)}). Controlla SMTP_UTENTE e SMTP_PASSWORD nel .env.`);
     }
 }
 
-/** Manda un'email. Se la posta non è impostata lancia un errore: chi chiama decide cosa dire. */
-async function inviaEmail({ a, oggetto, testo, html }) {
-    if (!trasporto) throw new Error('POSTA_NON_IMPOSTATA');
-    await trasporto.sendMail({ from: MITTENTE, to: a, subject: oggetto, text: testo, html });
+// Errori della rete (connessione caduta, Wi-Fi che si riconnette, server che non risponde):
+// passano da soli, quindi si riprova. Gli altri (password sbagliata, indirizzo rifiutato) no.
+const ERRORI_DI_RETE = new Set(['ESOCKET', 'ECONNECTION', 'ETIMEDOUT', 'EDNS', 'ECONNRESET', 'ENETUNREACH',
+                                'EHOSTUNREACH', 'ECONNREFUSED', 'EAI_AGAIN', 'ENOTFOUND']);
+function erroreDiRete(err) {
+    return !err.responseCode && (ERRORI_DI_RETE.has(err.code) || ERRORI_DI_RETE.has(err.cause?.code));
 }
+
+/** L'errore per il terminale: codice, fase e messaggio, senza gli indirizzi email. */
+function descriviErrore(err) {
+    const parti = [err.code, err.command && `durante ${err.command}`, err.message];
+    return parti.filter(Boolean).join(' · ').replace(/[^\s@<>"']+@[^\s@<>"']+/g, '[email]');
+}
+
+const aspetta = (ms) => new Promise(fatto => setTimeout(fatto, ms));
+
+/**
+ * Manda un'email. Se la posta non è impostata lancia un errore: chi chiama decide cosa dire.
+ * Se cade la rete riprova dopo le attese indicate: brevi per chi sta aspettando la risposta
+ * sul sito (conferme, password), più lunghe per gli avvisi che partono in sottofondo.
+ */
+async function inviaEmail({ a, oggetto, testo, html }, attese = [2000]) {
+    if (!trasporto) throw new Error('POSTA_NON_IMPOSTATA');
+    for (let tentativo = 0; ; tentativo++) {
+        try {
+            await trasporto.sendMail({ from: MITTENTE, to: a, subject: oggetto, text: testo, html });
+            if (tentativo) console.log(`✉️  Email partita al tentativo n. ${tentativo + 1}.`);
+            return;
+        } catch (err) {
+            if (!erroreDiRete(err) || tentativo >= attese.length) throw err;
+            console.warn(`✉️  Email non partita (${descriviErrore(err)}): riprovo tra ${attese[tentativo] / 1000} s…`);
+            await aspetta(attese[tentativo]);
+        }
+    }
+}
+
+/** Per gli avvisi in sottofondo: si riprova più volte, fino a qualche minuto dopo. */
+const ATTESE_SOTTOFONDO = [5000, 30000, 120000];
 
 /** Il testo che finisce nell'HTML dell'email: niente tag dai nomi scritti dagli utenti. */
 function sicuro(testo) {
@@ -189,6 +229,6 @@ function emailEmailCambiata({ nome, nuova }) {
 }
 
 module.exports = {
-    postaPronta, controllaPosta, inviaEmail, emailDiConferma, emailRecuperoPassword, emailNuovaRichiesta,
+    postaPronta, controllaPosta, inviaEmail, descriviErrore, ATTESE_SOTTOFONDO, emailDiConferma, emailRecuperoPassword, emailNuovaRichiesta,
     emailCambioEmail, emailEmailCambiata,
 };
