@@ -91,8 +91,13 @@ const TABELLE = [
         testo TEXT NOT NULL,
         rif_autore INTEGER REFERENCES utenti(id) ON DELETE SET NULL,
         data_creazione TEXT NOT NULL DEFAULT ${ADESSO},
-        data_modifica TEXT NOT NULL DEFAULT ${ADESSO}
+        data_modifica TEXT NOT NULL DEFAULT ${ADESSO},
+        trasposizione SMALLINT NOT NULL DEFAULT 0 CHECK (trasposizione BETWEEN -11 AND 11)
     )`,
+    // La "tonalità del gruppo": di quanti semitoni i capi hanno spostato gli accordi rispetto
+    // al testo scritto (che resta sempre quello originale). Per le tabelle nate prima:
+    `ALTER TABLE canto ADD COLUMN IF NOT EXISTS trasposizione SMALLINT NOT NULL DEFAULT 0
+        CHECK (trasposizione BETWEEN -11 AND 11)`,
 
     `CREATE TABLE IF NOT EXISTS carta_clan (
         id SERIAL PRIMARY KEY,

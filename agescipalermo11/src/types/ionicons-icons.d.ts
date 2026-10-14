@@ -99,6 +99,7 @@ declare module 'ionicons/icons' {
   export const qrCodeOutline: string;
   export const refreshOutline: string;
   export const removeCircleOutline: string;
+  export const removeOutline: string;
   export const ribbonOutline: string;
   export const saveOutline: string;
   export const scan: string;

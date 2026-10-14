@@ -104,13 +104,149 @@ export function pezziRiga(riga: string): PezzoRiga[] {
   return pezzi.length ? pezzi : [{ grassetto: false, testo: riga }];
 }
 
+// ---------- Cambio di tonalità degli accordi (stessa regola del backend) ----------
+// Ogni nota diventa un numero da 0 a 11 (DO = 0 … SI = 11), si sposta di qualche semitono e si
+// riscrive col nome nuovo, nello stesso modo in cui era scritta (RE, Re o re). Il resto
+// dell'accordo (m, 7, sus4, -, /basso) resta com'è.
+
+/** Come scrivere le note alterate: in automatico secondo la tonalità, o sempre # / sempre b. */
+export type Alterazioni = 'auto' | 'diesis' | 'bemolle';
+
+const SEMITONI: Record<string, number> = { DO: 0, RE: 2, MI: 4, FA: 5, SOL: 7, LA: 9, SI: 11 };
+const NOMI_DIESIS = ['DO', 'DO#', 'RE', 'RE#', 'MI', 'FA', 'FA#', 'SOL', 'SOL#', 'LA', 'LA#', 'SI'];
+const NOMI_BEMOLLE = ['DO', 'REb', 'RE', 'MIb', 'MI', 'FA', 'SOLb', 'SOL', 'LAb', 'LA', 'SIb', 'SI'];
+const NOTA_INIZIO = /^(DO|RE|MI|FA|SOL|LA|SI)(#|b)?/i;
+// Quello che viene dopo la nota. "m" solo minuscola: in "FA#-MI-" la M è già la nota dopo.
+const FINALE_ACCORDO = /^(min|maj|ma|dim|aug|sus[0-9]?|add[0-9]?|[0-9]{1,2}|m|\+|-|°)/;
+// Le tonalità maggiori che si scrivono coi bemolle: FA, SIb, MIb, LAb, REb.
+const TONALITA_BEMOLLE = new Set([5, 10, 3, 8, 1]);
+const giro = (n: number) => ((n % 12) + 12) % 12;
+
+function semitonoDi(nota: string): number {
+  const [, lettere, alterazione] = nota.match(NOTA_INIZIO)!;
+  return giro(SEMITONI[lettere.toUpperCase()] + (alterazione === '#' ? 1 : alterazione ? -1 : 0));
+}
+
+/** Il nome della nota, scritto come l'originale: tutto maiuscolo, solo l'iniziale o tutto minuscolo. */
+function nomeNota(semitono: number, bemolle: boolean, comeEra: string): string {
+  const nome = (bemolle ? NOMI_BEMOLLE : NOMI_DIESIS)[giro(semitono)];
+  const lettere = comeEra.replace(/[#b]$/i, '');
+  const radice = nome.replace(/[#b]$/, '');
+  const segno = nome.slice(radice.length);
+  if (lettere === lettere.toUpperCase()) return radice + segno;
+  if (lettere[0] === lettere[0].toUpperCase()) return radice[0] + radice.slice(1).toLowerCase() + segno;
+  return radice.toLowerCase() + segno;
+}
+
+/** Un accordo spostato di `passo` semitoni; null se non si riesce a leggerlo (resta com'era). */
+function spostaAccordo(accordo: string, passo: number, bemolle: boolean): string | null {
+  let resto = accordo;
+  let fuori = '';
+  while (resto) {
+    const nota = resto.match(NOTA_INIZIO);
+    if (!nota) return null;
+    fuori += nomeNota(semitonoDi(nota[0]) + passo, bemolle, nota[0]);
+    resto = resto.slice(nota[0].length);
+    let finale: RegExpMatchArray | null;
+    while ((finale = resto.match(FINALE_ACCORDO))) {
+      fuori += finale[0];
+      resto = resto.slice(finale[0].length);
+    }
+    if (resto.startsWith('/')) {
+      fuori += '/';
+      resto = resto.slice(1);
+      const basso = resto.match(NOTA_INIZIO);
+      if (basso) {
+        fuori += nomeNota(semitonoDi(basso[0]) + passo, bemolle, basso[0]);
+        resto = resto.slice(basso[0].length);
+      }
+    }
+    if (resto.startsWith('\\')) {
+      fuori += '\\';
+      resto = resto.slice(1);
+    }
+  }
+  return fuori;
+}
+
+/** Il primo accordo del canto: da lì si capisce la tonalità (e se è minore). */
+function primoAccordo(testo: string): string | null {
+  for (const riga of testo.split('\n')) {
+    if (!rigaDiAccordi(riga)) continue;
+    for (const parola of senzaSegniGrassetto(segnoRiga(riga).riga).trim().split(/\s+/)) {
+      const pulita = parola.replace(/^[(\[|]+|[)\]|,.:]+$/g, '');
+      if (NOTA_INIZIO.test(pulita)) return pulita;
+    }
+  }
+  return null;
+}
+
+/** Il canto ha almeno una riga di accordi (se no i comandi della tonalità non servono). */
+export function haAccordi(testo: string): boolean {
+  return primoAccordo(testo) !== null;
+}
+
+/**
+ * Diesis o bemolle per la tonalità di arrivo: "auto" guarda il primo accordo (in FA si scrive
+ * SIb, non LA#; una tonalità minore si scrive come la sua relativa maggiore).
+ */
+function usaBemolle(testo: string, passo: number, alterazioni: Alterazioni): boolean {
+  if (alterazioni === 'diesis') return false;
+  if (alterazioni === 'bemolle') return true;
+  const primo = primoAccordo(testo);
+  if (!primo) return false;
+  const dopoNota = primo.slice(primo.match(NOTA_INIZIO)![0].length);
+  const minore = /^(m(?!a)|-)/.test(dopoNota);
+  return TONALITA_BEMOLLE.has(giro(semitonoDi(primo) + passo + (minore ? 3 : 0)));
+}
+
+/**
+ * Una riga di accordi spostata di `passo` semitoni. Ogni accordo resta nella sua colonna
+ * (sopra la stessa sillaba); se uno diventa più lungo, sposta solo quello che viene dopo.
+ */
+function trasponiRiga(riga: string, passo: number, bemolle: boolean): string {
+  const { forzata, riga: senzaSegno } = segnoRiga(riga);
+  const segno = forzata === 'testo' ? SEGNO_TESTO : forzata === 'accordi' ? SEGNO_ACCORDI : '';
+  let fuori = '';
+  const parole = /\S+/g;
+  let pezzo: RegExpExecArray | null;
+  while ((pezzo = parole.exec(senzaSegno))) {
+    // Asterischi del grassetto, parentesi e punteggiatura restano attaccati com'erano.
+    const [, prima, cuore, dopo] = pezzo[0].match(/^([*(\[|]*)(.*?)([*)\]|,.:]*)$/)!;
+    const spostato = cuore && (ACCORDO.test(cuore) || ACCORDI_UNITI.test(cuore))
+      ? spostaAccordo(cuore, passo, bemolle) : null;
+    const nuovo = prima + (spostato ?? cuore) + dopo;
+    const colonna = fuori ? Math.max(pezzo.index, fuori.length + 1) : pezzo.index;
+    fuori = fuori.padEnd(colonna, ' ') + nuovo;
+  }
+  return segno + fuori;
+}
+
+/** Il testo del canto con gli accordi spostati (le righe di parole restano uguali). */
+export function trasponiTesto(testo: string, passo: number, alterazioni: Alterazioni = 'auto'): string {
+  const spostamento = giro(passo);
+  if (!spostamento && alterazioni === 'auto') return testo;
+  const bemolle = usaBemolle(testo, passo, alterazioni);
+  return testo.split('\n').map(r => rigaDiAccordi(r) ? trasponiRiga(r, spostamento, bemolle) : r).join('\n');
+}
+
+/** "MI", "SI minore"…: la tonalità di arrivo, detta come la si dice. */
+export function nomeTonalita(testo: string, passo: number, alterazioni: Alterazioni = 'auto'): string | null {
+  const primo = primoAccordo(testo);
+  if (!primo) return null;
+  const nota = primo.match(NOTA_INIZIO)![0];
+  const minore = /^(m(?!a)|-)/.test(primo.slice(nota.length));
+  return nomeNota(semitonoDi(nota) + passo, usaBemolle(testo, passo, alterazioni), 'X') + (minore ? ' minore' : '');
+}
+
 /**
  * Il canto riga per riga, come sul foglio: spazi e a capo restano, e si sa quali righe
  * sono accordi (le uniche mostrate in modo diverso). Con `conAccordi` a false si tolgono.
+ * Con `passo` gli accordi si spostano di quei semitoni (il testo salvato non cambia).
  */
-export function righeCanto(testo: string, conAccordi = true): RigaCanto[] {
+export function righeCanto(testo: string, conAccordi = true, passo = 0, alterazioni: Alterazioni = 'auto'): RigaCanto[] {
   const righe = conAccordi
-    ? testo.split('\n')
+    ? trasponiTesto(testo, passo, alterazioni).split('\n')
     : testo.split('\n').filter(r => !rigaDiAccordi(r));
   return righe.map(r => {
     const senzaSegno = segnoRiga(r).riga;
@@ -154,7 +290,20 @@ export class CantiService {
   }
 
   /** Indirizzo del PDF con i canti scelti (il file lo prepara il server). */
-  urlPdf(ids: number[], conAccordi: boolean): string {
-    return `${apiUrl()}/canti/pdf/scarica?ids=${ids.join(',')}&accordi=${conAccordi ? 1 : 0}`;
+  /** La tonalità del gruppo: i semitoni rispetto agli accordi scritti (lo scelgono i capi). */
+  salvaTonalita(id: number, trasposizione: number) {
+    return this.http.put<{ canto: Canto }>(`${apiUrl()}/canti/${id}/tonalita`, { trasposizione }).pipe(map(r => r.canto));
+  }
+
+  /**
+   * Il PDF dei canti scelti, ognuno nella tonalità del gruppo. Per un canto solo si può
+   * passare la tonalità di chi scarica (passo, capotasto e alterazioni).
+   */
+  urlPdf(ids: number[], conAccordi: boolean,
+         tonalita?: { passo: number; capotasto: number; alterazioni: Alterazioni }): string {
+    let url = `${apiUrl()}/canti/pdf/scarica?ids=${ids.join(',')}&accordi=${conAccordi ? 1 : 0}`;
+    if (tonalita && ids.length === 1)
+      url += `&passo=${tonalita.passo}&capotasto=${tonalita.capotasto}&alterazioni=${tonalita.alterazioni}`;
+    return url;
   }
 }

@@ -29,6 +29,10 @@
                     [attr.aria-pressed]="!accordiVisibili">
               {{ accordiVisibili ? 'Nascondi accordi' : 'Mostra accordi' }}
             </button>
+            <button type="button" class="pulsante pulsante--vetro" (click)="scaricaPdf()">
+              <ion-icon [icon]="icone.pdf" aria-hidden="true"></ion-icon>
+              PDF
+            </button>
             @if (puoModificare) {
               <button type="button" class="pulsante pulsante--vetro" (click)="modifica()" [disabled]="eliminando">
                 <ion-icon [icon]="icone.modifica" aria-hidden="true"></ion-icon>
@@ -45,6 +49,64 @@
 
       <!-- Il testo com'è sul foglio: solo le righe degli accordi si distinguono. -->
       <div class="foglio">
+        @if (conAccordi && accordiVisibili) {
+          <!-- Tonalità: per chi legge; i capi la possono salvare come quella del gruppo. -->
+          <section class="tonalita" aria-label="Tonalità degli accordi">
+            <div class="tonalita__riga">
+              <button type="button" class="tondo" (click)="sposta(-1)" aria-label="Abbassa di mezzo tono">
+                <ion-icon [icon]="icone.giu"></ion-icon>
+              </button>
+              <div class="tonalita__nome" aria-live="polite">
+                <strong>{{ tonalita }}</strong>
+                <small>
+                  {{ distanza }}
+                  @if (passo === passoGruppo && passoGruppo !== 0) { · tonalità del gruppo }
+                </small>
+              </div>
+              <button type="button" class="tondo" (click)="sposta(1)" aria-label="Alza di mezzo tono">
+                <ion-icon [icon]="icone.su"></ion-icon>
+              </button>
+            </div>
+
+            <div class="tonalita__riga tonalita__riga--opzioni">
+              @if (passo !== 0 || capotasto !== 0) {
+                <button type="button" class="chip" (click)="tornaAllOriginale()">
+                  <ion-icon [icon]="icone.originale" aria-hidden="true"></ion-icon> Originale ({{ tonalitaScritta }})
+                </button>
+              }
+              @if (passoGruppo !== 0 && passo !== passoGruppo) {
+                <button type="button" class="chip" (click)="tornaAlGruppo()">Tonalità del gruppo</button>
+              }
+              <label class="capotasto">
+                <span>Capotasto</span>
+                <select name="capotasto" [(ngModel)]="capotasto">
+                  @for (t of tastiCapotasto; track t) {
+                    <option [ngValue]="t">{{ t ? t + '° tasto' : 'nessuno' }}</option>
+                  }
+                </select>
+              </label>
+              <div class="alterazioni" role="group" aria-label="Come scrivere le note alterate">
+                @for (a of sceltaAlterazioni; track a.valore) {
+                  <button type="button" class="chip" [class.chip--scelto]="alterazioni === a.valore"
+                          [attr.aria-pressed]="alterazioni === a.valore" (click)="alterazioni = a.valore">
+                    {{ a.nome }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            @if (capotasto) {
+              <p class="tonalita__nota">
+                Con il capotasto al {{ capotasto }}° tasto fai le posizioni di {{ tonalitaPosizioni }}: il canto esce in {{ tonalita }}.
+              </p>
+            }
+            @if (puoModificare && passo !== passoGruppo) {
+              <button type="button" class="salva-gruppo" (click)="salvaTonalitaGruppo()" [disabled]="salvandoTonalita">
+                {{ salvandoTonalita ? 'Salvataggio…' : 'Usa ' + tonalita + ' come tonalità del gruppo' }}
+              </button>
+            }
+          </section>
+        }
         <div class="testo">
           @for (r of righe; track $index) {
             <pre class="riga" [class.riga--accordi]="r.accordi">@for (p of r.pezzi; track $index) {<span

@@ -383,6 +383,8 @@ export interface Canto {
   titolo: string;
   sezione: SezioneCanto;
   testo: string;
+  /** Tonalità del gruppo: semitoni rispetto agli accordi scritti (0 = come sono scritti). */
+  trasposizione: number;
   data_creazione: string;
   data_modifica: string;
 }

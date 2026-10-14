@@ -1,31 +1,49 @@
 import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   AlertController, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonRouterLink, IonRouterLinkWithHref,
   IonContent, ModalController, NavController, ToastController
 } from '@ionic/angular/standalone';
-import { arrowBackOutline, musicalNotesOutline, pencilOutline, trashOutline } from 'ionicons/icons';
+import {
+  addOutline, arrowBackOutline, downloadOutline, musicalNotesOutline, pencilOutline, refreshOutline, removeOutline,
+  trashOutline
+} from 'ionicons/icons';
 import { AuthService } from '../services/auth';
-import { CantiService, RigaCanto, coloreSezione, nomeSezione, righeCanto } from '../services/canti';
+import {
+  Alterazioni, CantiService, RigaCanto, coloreSezione, haAccordi, nomeSezione, nomeTonalita, righeCanto
+} from '../services/canti';
 import { CantoEditorComponent } from '../components/canto-editor/canto-editor.component';
 import { Canto } from '../../types/models';
 
-/** Pagina di un canto: testo con gli accordi, che si possono nascondere. */
+/** Fin dove si sposta il capotasto (oltre, le corde sono troppo corte per suonare bene). */
+const MAX_CAPOTASTO = 7;
+
+/**
+ * Pagina di un canto: testo con gli accordi, che si possono nascondere o spostare di tonalità.
+ * Il canto si apre nella tonalità del gruppo (scelta dai capi); chi legge la può cambiare per
+ * sé, mettere il capotasto e scaricare il PDF così com'è. Il testo salvato non cambia mai.
+ */
 @Component({
   selector: 'app-dettaglio-canzoniere',
   templateUrl: './dettaglio-canzoniere.page.html',
   styleUrls: ['./dettaglio-canzoniere.page.scss'],
   standalone: true,
   imports: [
-    RouterLink, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonRouterLink, IonRouterLinkWithHref,
+    FormsModule, RouterLink, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonRouterLink, IonRouterLinkWithHref,
     IonContent,
   ],
 })
 export class DettaglioCanzonierePage {
   readonly icone = {
     indietro: arrowBackOutline, modifica: pencilOutline, elimina: trashOutline, canto: musicalNotesOutline,
+    giu: removeOutline, su: addOutline, originale: refreshOutline, pdf: downloadOutline,
   };
+  readonly tastiCapotasto = Array.from({ length: MAX_CAPOTASTO + 1 }, (_, i) => i);
+  readonly sceltaAlterazioni: { valore: Alterazioni; nome: string }[] = [
+    { valore: 'auto', nome: 'Automatiche' }, { valore: 'diesis', nome: 'Diesis #' }, { valore: 'bemolle', nome: 'Bemolle b' },
+  ];
   readonly nomeSezione = nomeSezione;
   readonly coloreSezione = coloreSezione;
 
@@ -35,6 +53,12 @@ export class DettaglioCanzonierePage {
   eliminando = false;
   /** Gli accordi si possono nascondere per leggere solo le parole. */
   accordiVisibili = true;
+  /** Semitoni rispetto agli accordi scritti: parte dalla tonalità del gruppo. */
+  passo = 0;
+  /** Tasto del capotasto (0 = senza): si mostrano le posizioni, la tonalità che si sente resta. */
+  capotasto = 0;
+  alterazioni: Alterazioni = 'auto';
+  salvandoTonalita = false;
 
   private id: number;
 
@@ -59,9 +83,90 @@ export class DettaglioCanzonierePage {
     return ruolo === 'capo' || ruolo === 'admin';
   }
 
-  /** Il canto riga per riga, con o senza le righe degli accordi. */
+  /** Il canto riga per riga, con o senza le righe degli accordi, nella tonalità scelta. */
   get righe(): RigaCanto[] {
-    return this.canto ? righeCanto(this.canto.testo, this.accordiVisibili) : [];
+    return this.canto
+      ? righeCanto(this.canto.testo, this.accordiVisibili, this.passo - this.capotasto, this.alterazioni)
+      : [];
+  }
+
+  // ---------- Tonalità ----------
+
+  get conAccordi(): boolean {
+    return !!this.canto && haAccordi(this.canto.testo);
+  }
+
+  /** La tonalità del gruppo, salvata dai capi (0 = come sono scritti gli accordi). */
+  get passoGruppo(): number {
+    return this.canto?.trasposizione ?? 0;
+  }
+
+  /** "MI", "SI minore": come suona adesso. */
+  get tonalita(): string {
+    return this.canto ? nomeTonalita(this.canto.testo, this.passo, this.alterazioni) ?? '' : '';
+  }
+
+  get tonalitaScritta(): string {
+    return this.canto ? nomeTonalita(this.canto.testo, 0, this.alterazioni) ?? '' : '';
+  }
+
+  /** Le posizioni che si fanno col capotasto: la tonalità "per le dita". */
+  get tonalitaPosizioni(): string {
+    return this.canto ? nomeTonalita(this.canto.testo, this.passo - this.capotasto, this.alterazioni) ?? '' : '';
+  }
+
+  /** "+2 dall'originale", "come è scritto". */
+  get distanza(): string {
+    if (!this.passo) return 'come è scritto';
+    const semitoni = Math.abs(this.passo) === 1 ? 'semitono' : 'semitoni';
+    return `${this.passo > 0 ? '+' : '−'}${Math.abs(this.passo)} ${semitoni}`;
+  }
+
+  /** Mezzo tono più su o più giù: dopo 11 semitoni si torna alla stessa nota. */
+  sposta(verso: 1 | -1) {
+    const nuovo = this.passo + verso;
+    this.passo = nuovo > 11 ? nuovo - 12 : nuovo < -11 ? nuovo + 12 : nuovo;
+  }
+
+  tornaAllOriginale() {
+    this.passo = 0;
+    this.capotasto = 0;
+  }
+
+  tornaAlGruppo() {
+    this.passo = this.passoGruppo;
+  }
+
+  /** I capi salvano la tonalità di adesso come quella del gruppo (il testo non cambia). */
+  salvaTonalitaGruppo() {
+    if (!this.canto) return;
+    this.salvandoTonalita = true;
+    this.canti.salvaTonalita(this.canto.id, this.passo).subscribe({
+      next: canto => {
+        this.salvandoTonalita = false;
+        this.canto = canto;
+        this.avvisa(this.passo ? `Tonalità del gruppo: ${this.tonalita}.` : 'Il gruppo lo canta come è scritto.');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.salvandoTonalita = false;
+        this.avvisa(err.error?.error ?? 'Non sono riuscito a salvare la tonalità.');
+      },
+    });
+  }
+
+  /** Il PDF di questo canto, così come si vede adesso (tonalità, capotasto, con o senza accordi). */
+  scaricaPdf() {
+    if (!this.canto) return;
+    const indirizzo = this.canti.urlPdf([this.canto.id], this.accordiVisibili,
+      { passo: this.passo, capotasto: this.capotasto, alterazioni: this.alterazioni });
+    const collegamento = document.createElement('a');
+    collegamento.href = indirizzo;
+    collegamento.rel = 'noopener';
+    collegamento.target = '_blank';
+    document.body.appendChild(collegamento);
+    collegamento.click();
+    collegamento.remove();
+    this.avvisa('PDF in preparazione…');
   }
 
   carica() {
@@ -73,6 +178,9 @@ export class DettaglioCanzonierePage {
     this.canti.dettaglio(this.id).subscribe({
       next: canto => {
         this.canto = canto;
+        // Si parte sempre dalla tonalità del gruppo.
+        this.passo = canto.trasposizione ?? 0;
+        this.capotasto = 0;
         this.caricamento = false;
         this.errore = '';
       },

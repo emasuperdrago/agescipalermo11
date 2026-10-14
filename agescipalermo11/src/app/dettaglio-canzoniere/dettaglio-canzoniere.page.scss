@@ -112,6 +112,142 @@
   }
 }
 
+// ---------- Tonalità ----------
+
+.tonalita {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 14px;
+  border-radius: 20px;
+  background: $white;
+  box-shadow: 0 10px 28px rgba($dark, .08);
+
+  &__riga {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+
+    &--opzioni {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  }
+
+  &__nome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 150px;
+    text-align: center;
+
+    strong {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--colore-sezione);
+    }
+
+    small {
+      font-size: .76rem;
+      font-weight: 600;
+      color: $slate;
+    }
+  }
+
+  &__nota {
+    margin: 0;
+    font-size: .8rem;
+    color: $slate-600;
+    text-align: center;
+  }
+}
+
+// Mezzo tono su / giù.
+.tondo {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1.5px solid $slate-200;
+  border-radius: 50%;
+  background: $white;
+  font-size: 1.3rem;
+  color: var(--colore-sezione);
+  cursor: pointer;
+
+  &:hover { border-color: var(--colore-sezione); }
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1.5px solid $slate-200;
+  border-radius: 999px;
+  background: $white;
+  font-family: inherit;
+  font-size: .78rem;
+  font-weight: 700;
+  color: $slate-600;
+  cursor: pointer;
+
+  &:hover { border-color: var(--colore-sezione); }
+
+  &--scelto {
+    border-color: var(--colore-sezione);
+    background: var(--colore-sezione);
+    color: $white;
+  }
+}
+
+.alterazioni {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.capotasto {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .78rem;
+  font-weight: 700;
+  color: $slate-600;
+
+  select {
+    min-height: 34px;
+    padding: 0 10px;
+    border: 1.5px solid $slate-200;
+    border-radius: 999px;
+    background: $white;
+    font-family: inherit;
+    font-size: .78rem;
+    font-weight: 700;
+    color: $dark;
+  }
+}
+
+// Solo per i capi: la tonalità di adesso diventa quella con cui si apre il canto per tutti.
+.salva-gruppo {
+  align-self: center;
+  min-height: 40px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 999px;
+  background: var(--colore-sezione);
+  font-family: inherit;
+  font-size: .85rem;
+  font-weight: 700;
+  color: $white;
+  cursor: pointer;
+
+  &:disabled { opacity: .7; cursor: default; }
+}
+
 // Gli accordi stanno sopra le parole: servono spazi e a capo così come sono,
 // e un carattere a larghezza fissa perché le colonne restino allineate.
 .testo {
