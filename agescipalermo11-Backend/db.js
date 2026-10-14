@@ -14,7 +14,7 @@ const path = require('path');
 const fs = require('fs');
 require('./configurazione');
 const { creaSchema } = require('./schema');
-const { decriptaRiga, sigilloChiave, emailDaSalvare, codiceDaSalvare, improntaCodice } = require('./cifratura');
+const { decriptaRiga, sigilloChiave, emailDaSalvare, codiceDaSalvare, improntaCodice, decriptaFile } = require('./cifratura');
 
 // Numeri grandi (COUNT, SUM, BIGINT) e decimali: come numeri JavaScript, non come testo.
 types.setTypeParser(20, (v) => v === null ? null : Number(v));
@@ -248,13 +248,18 @@ async function popolaSfondi() {
   let file;
   try {
     fs.mkdirSync(destinazione, { recursive: true });
-    file = fs.readdirSync(origine).filter(f => /\.(jpe?g|png|webp)$/i.test(f)).sort();
+    // Le foto possono esserci in chiaro (sul computer) o solo cifrate ("foto.jpg.cif", come
+    // arrivano dal repository): si prende ogni foto una volta sola.
+    const nomi = fs.readdirSync(origine).map(f => f.replace(/\.cif$/, ''));
+    file = [...new Set(nomi)].filter(f => /\.(jpe?g|png|webp)$/i.test(f)).sort();
   } catch (err) {
     return console.error('Sfondi di partenza non leggibili:', err.message);
   }
   for (const [i, nome] of file.entries()) {
     try {
-      fs.copyFileSync(path.join(origine, nome), path.join(destinazione, nome));
+      const inChiaro = path.join(origine, nome);
+      if (fs.existsSync(inChiaro)) fs.copyFileSync(inChiaro, path.join(destinazione, nome));
+      else fs.writeFileSync(path.join(destinazione, nome), decriptaFile(fs.readFileSync(inChiaro + '.cif')));
       await interroga('INSERT INTO sfondo_home (percorso, ordine) VALUES (?, ?)', [`/uploads/sfondi/${nome}`, i]);
     } catch (err) {
       console.error(`Sfondo ${nome} non copiato:`, err.message);

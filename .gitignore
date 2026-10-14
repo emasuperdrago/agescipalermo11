@@ -20,3 +20,11 @@ agescipalermo11-Backend/archivio-sqlite/
 
 # Pagine di prova per l'hosting: solo sul Mac.
 hosting/
+
+# Foto in cui si vedono i ragazzi: nel repository c'è solo la copia cifrata (.cif), vedi
+# agescipalermo11-Backend/foto-cifrate.js. Gli originali restano sul computer.
+agescipalermo11-Backend/dati/sfondi-iniziali/*.jpg
+agescipalermo11-Backend/dati/sfondi-iniziali/*.jpeg
+agescipalermo11-Backend/dati/sfondi-iniziali/*.png
+agescipalermo11-Backend/dati/sfondi-iniziali/*.webp
+agescipalermo11/src/assets/sfondo/campo-di-gruppo*.jpg

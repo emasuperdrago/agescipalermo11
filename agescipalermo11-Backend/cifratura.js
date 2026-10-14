@@ -17,6 +17,7 @@ const ricava = (scopo) => Buffer.from(crypto.hkdfSync('sha256', chiaveMadre, Buf
 const CHIAVE_CIFRA = ricava('cifra-campi');
 const CHIAVE_IMPRONTE = ricava('impronte-email');
 const CHIAVE_CODICI = ricava('impronte-codici');
+const CHIAVE_FILE = ricava('file-cifrati');
 
 /** Cifra un testo; null e stringhe vuote restano come sono (non c'è niente da proteggere). */
 function cripta(valore) {
@@ -76,6 +77,26 @@ function decriptaRiga(riga) {
 }
 
 /**
+ * File interi cifrati (es. le foto con i ragazzi che stanno nel repository pubblico):
+ * "P11F1" + vettore casuale + sigillo + dati. Senza la DB_KEY sono byte illeggibili.
+ */
+const INTESTAZIONE_FILE = Buffer.from('P11F1');
+function criptaFile(dati) {
+    const iv = crypto.randomBytes(12);
+    const cifrario = crypto.createCipheriv('aes-256-gcm', CHIAVE_FILE, iv);
+    const cifrati = Buffer.concat([cifrario.update(dati), cifrario.final()]);
+    return Buffer.concat([INTESTAZIONE_FILE, iv, cifrario.getAuthTag(), cifrati]);
+}
+function decriptaFile(contenuto) {
+    if (!contenuto.subarray(0, INTESTAZIONE_FILE.length).equals(INTESTAZIONE_FILE))
+        throw new Error('non è un file cifrato del sito');
+    const inizio = INTESTAZIONE_FILE.length;
+    const decifrario = crypto.createDecipheriv('aes-256-gcm', CHIAVE_FILE, contenuto.subarray(inizio, inizio + 12));
+    decifrario.setAuthTag(contenuto.subarray(inizio + 12, inizio + 28));
+    return Buffer.concat([decifrario.update(contenuto.subarray(inizio + 28)), decifrario.final()]);
+}
+
+/**
  * Un testo noto cifrato con la chiave: si salva la prima volta e si ricontrolla a ogni avvio.
  * Se la DB_KEY del .env non è quella giusta, il server si ferma invece di scrivere dati che
  * poi nessuno potrebbe più leggere.
@@ -86,4 +107,4 @@ function sigilloChiave() {
 }
 
 module.exports = { cripta, decripta, improntaEmail, emailDaSalvare, improntaCodice, codiceDaSalvare,
-                   decriptaRiga, sigilloChiave, PREFISSO };
+                   decriptaRiga, sigilloChiave, criptaFile, decriptaFile, PREFISSO };
