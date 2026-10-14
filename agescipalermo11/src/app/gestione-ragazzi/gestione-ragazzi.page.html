@@ -152,6 +152,14 @@
                       {{ euro(totaleVersato(r)) }}<small>su {{ euro(totaleDovuto(r)) }}</small>
                     </td>
                     <td class="azioni">
+                      <button type="button" class="icona icona--scheda" (click)="apriScheda(r)"
+                              [attr.aria-label]="'Scheda personale di ' + r.nome + (r.allegati_scheda ? ', con ' + r.allegati_scheda + ' PDF' : '')"
+                              title="Scheda personale">
+                        <ion-icon [icon]="icone.scheda"></ion-icon>
+                        @if (r.allegati_scheda) {
+                          <span class="icona__numero" aria-hidden="true">{{ r.allegati_scheda }}</span>
+                        }
+                      </button>
                       <button type="button" class="icona" (click)="modifica(r)" aria-label="Modifica" title="Modifica">
                         <ion-icon [icon]="icone.modifica"></ion-icon>
                       </button>

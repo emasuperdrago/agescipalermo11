@@ -1,0 +1,165 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Scheda di {{ titolo }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="chiudi()" aria-label="Chiudi" [disabled]="salvando">
+        <ion-icon slot="icon-only" [icon]="icone.chiudi"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="scheda-ragazzo">
+  <div class="modulo">
+
+    <p class="riservato">
+      <ion-icon [icon]="icone.riservato" aria-hidden="true"></ion-icon>
+      Dati riservati: li vedono solo i capi della sua branca e i capigruppo, e restano cifrati.
+    </p>
+
+    @if (caricamento) {
+      <div class="attesa" aria-label="Caricamento della scheda">
+        <span></span><span></span><span></span>
+      </div>
+    } @else if (scheda) {
+
+      <!-- Quello che c'è già nella tabella: si cambia da "Modifica". -->
+      <section class="riquadro">
+        <h2>Dati del ragazzo</h2>
+        <dl class="dati">
+          <div><dt>Codice censimento</dt><dd>{{ scheda.ragazzo.codice_censimento ?? 'non ancora' }}</dd></div>
+          <div><dt>Nato il</dt><dd>{{ nascita }}</dd></div>
+          <div><dt>Percorso</dt><dd>{{ scheda.ragazzo.tappa || '—' }}</dd></div>
+          <div><dt>Telefono</dt><dd>{{ scheda.ragazzo.telefono || '—' }}</dd></div>
+          <div><dt>Email</dt><dd>{{ scheda.ragazzo.email || '—' }}</dd></div>
+        </dl>
+        <p class="aiuto">Questi si cambiano dalla matita ✏️ nella tabella dei ragazzi.</p>
+      </section>
+
+      <form class="riquadro" (ngSubmit)="salva()" (input)="errore = ''">
+        <h2>Casa e famiglia</h2>
+        @if (scheda.scheda.da_richiesta) {
+          <p class="aiuto">I primi dati sono arrivati dalla sua richiesta di iscrizione: correggili pure.</p>
+        }
+
+        <label class="campo">
+          <span class="etichetta">Indirizzo di casa</span>
+          <input name="indirizzo" [(ngModel)]="campi.indirizzo" maxlength="200" autocomplete="off"
+                 placeholder="Es. Via Libertà 12, 90143 Palermo" />
+        </label>
+
+        <fieldset class="campo">
+          <legend class="etichetta">Un genitore</legend>
+          <div class="coppia">
+            <label class="campo">
+              <span class="sottoetichetta">Nome</span>
+              <input name="g1Nome" [(ngModel)]="campi.genitore1_nome" maxlength="60" autocomplete="off" />
+            </label>
+            <label class="campo">
+              <span class="sottoetichetta">Cognome</span>
+              <input name="g1Cognome" [(ngModel)]="campi.genitore1_cognome" maxlength="60" autocomplete="off" />
+            </label>
+          </div>
+          <div class="coppia">
+            <label class="campo">
+              <span class="sottoetichetta">Telefono</span>
+              <input type="tel" name="g1Telefono" [(ngModel)]="campi.genitore1_telefono" maxlength="20"
+                     autocomplete="off" placeholder="Es. 333 1234567" />
+            </label>
+            <label class="campo">
+              <span class="sottoetichetta">Email</span>
+              <input type="email" name="g1Email" [(ngModel)]="campi.genitore1_email" maxlength="120"
+                     autocomplete="off" placeholder="Es. nome@email.it" />
+            </label>
+          </div>
+        </fieldset>
+
+        @if (secondoGenitore) {
+          <fieldset class="campo">
+            <legend class="etichetta">L'altro genitore</legend>
+            <div class="coppia">
+              <label class="campo">
+                <span class="sottoetichetta">Nome</span>
+                <input name="g2Nome" [(ngModel)]="campi.genitore2_nome" maxlength="60" autocomplete="off" />
+              </label>
+              <label class="campo">
+                <span class="sottoetichetta">Cognome</span>
+                <input name="g2Cognome" [(ngModel)]="campi.genitore2_cognome" maxlength="60" autocomplete="off" />
+              </label>
+            </div>
+            <div class="coppia">
+              <label class="campo">
+                <span class="sottoetichetta">Telefono</span>
+                <input type="tel" name="g2Telefono" [(ngModel)]="campi.genitore2_telefono" maxlength="20"
+                       autocomplete="off" placeholder="Es. 333 1234567" />
+              </label>
+              <label class="campo">
+                <span class="sottoetichetta">Email</span>
+                <input type="email" name="g2Email" [(ngModel)]="campi.genitore2_email" maxlength="120"
+                       autocomplete="off" placeholder="Es. nome@email.it" />
+              </label>
+            </div>
+            <button type="button" class="link-piccolo" (click)="togliSecondoGenitore()">Togli l'altro genitore</button>
+          </fieldset>
+        } @else {
+          <button type="button" class="link-piccolo" (click)="secondoGenitore = true">+ Aggiungi l'altro genitore</button>
+        }
+
+        <label class="campo">
+          <span class="etichetta">Note sanitarie</span>
+          <textarea name="note" [(ngModel)]="campi.note_sanitarie" rows="3" maxlength="1000"
+                    placeholder="Allergie, intolleranze, farmaci da prendere…"></textarea>
+          <span class="aiuto">Le cose da sapere subito. La scheda medica completa allegala qui sotto in PDF.</span>
+        </label>
+
+        @if (errore) {
+          <p class="errore" role="alert">{{ errore }}</p>
+        }
+
+        <button type="submit" class="salva" [disabled]="salvando">
+          {{ salvando ? 'Salvataggio in corso…' : 'Salva la scheda' }}
+        </button>
+        @if (ultimaModifica) {
+          <p class="aiuto aiuto--centro">{{ ultimaModifica }}</p>
+        }
+      </form>
+
+      <section class="riquadro">
+        <h2>Documenti</h2>
+        <p class="aiuto">Solo PDF, fino a 15 MB l'uno: scheda medica, autorizzazioni, certificati…</p>
+
+        @if (scheda.allegati.length) {
+          <ul class="allegati">
+            @for (a of scheda.allegati; track a.id) {
+              <li class="allegato">
+                <ion-icon class="allegato__icona" [icon]="icone.pdf" aria-hidden="true"></ion-icon>
+                <span class="allegato__nome">
+                  <strong>{{ a.nome }}</strong>
+                  <small>{{ dimensioneLeggibile(a.dimensione) }} · {{ dataAllegato(a) }}</small>
+                </span>
+                <button type="button" class="icona" (click)="apri(a)" [attr.aria-label]="'Apri ' + a.nome" title="Apri">
+                  <ion-icon [icon]="icone.scarica"></ion-icon>
+                </button>
+                <button type="button" class="icona icona--elimina" (click)="elimina(a)"
+                        [attr.aria-label]="'Elimina ' + a.nome" title="Elimina">
+                  <ion-icon [icon]="icone.elimina"></ion-icon>
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="vuoto">Ancora nessun documento.</p>
+        }
+
+        <input #scegliPdf type="file" accept="application/pdf,.pdf" hidden (change)="allega($event)" />
+        <button type="button" class="allega" (click)="scegliFile()" [disabled]="caricandoPdf">
+          <ion-icon [icon]="icone.allega" aria-hidden="true"></ion-icon>
+          {{ caricandoPdf ? 'Caricamento…' : 'Allega un PDF' }}
+        </button>
+      </section>
+
+    } @else if (errore) {
+      <p class="errore" role="alert">{{ errore }}</p>
+    }
+  </div>
+</ion-content>

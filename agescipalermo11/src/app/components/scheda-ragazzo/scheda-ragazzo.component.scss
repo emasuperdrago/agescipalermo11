@@ -1,0 +1,294 @@
+@use '../../../theme/variables' as *;
+
+// Stessa impostazione degli altri pop-up (ragazzi, eventi, posti, canti).
+
+.scheda-ragazzo {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+.modulo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 20px 16px calc(28px + env(safe-area-inset-bottom));
+}
+
+.riservato {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba($viola-l, .14);
+  font-size: .8rem;
+  font-weight: 600;
+  color: $viola;
+
+  ion-icon { flex: none; font-size: 1.1rem; }
+}
+
+.riquadro {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 16px;
+  border-radius: 18px;
+  background: $white;
+  box-shadow: 0 6px 20px rgba($dark, .06);
+
+  h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 800;
+    color: $dark;
+  }
+}
+
+// I dati già presenti nella tabella, da leggere.
+.dati {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+
+  dt {
+    font-size: .72rem;
+    font-weight: 700;
+    color: $slate;
+  }
+
+  dd {
+    margin: 2px 0 0;
+    font-size: .9rem;
+    font-weight: 600;
+    color: $dark;
+    overflow-wrap: anywhere;
+  }
+}
+
+.coppia {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  @media (min-width: 600px) {
+    flex-direction: row;
+
+    > .campo { flex: 1; }
+  }
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+
+  input,
+  textarea {
+    width: 100%;
+    min-height: 48px;
+    padding: 11px 14px;
+    border: 1.5px solid $slate-200;
+    border-radius: 12px;
+    background: $white;
+    font-family: inherit;
+    font-size: .95rem;
+    color: $dark;
+    outline: none;
+
+    &:focus {
+      border-color: $viola-m;
+      box-shadow: 0 0 0 4px rgba($viola-l, .2);
+    }
+  }
+
+  textarea { resize: vertical; }
+}
+
+.etichetta {
+  padding: 0;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $slate-600;
+}
+
+.sottoetichetta {
+  font-size: .76rem;
+  font-weight: 600;
+  color: $slate;
+}
+
+.aiuto {
+  margin: 0;
+  font-size: .76rem;
+  color: $slate;
+
+  &--centro { text-align: center; }
+}
+
+.link-piccolo {
+  align-self: flex-start;
+  margin-top: -6px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $viola-m;
+  cursor: pointer;
+
+  &:hover { text-decoration: underline; }
+}
+
+.errore {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba($red, .1);
+  font-size: .85rem;
+  font-weight: 600;
+  color: $red;
+}
+
+.salva {
+  min-height: 52px;
+  border: none;
+  border-radius: 16px;
+  background: $sfumatura-viola;
+  box-shadow: 0 10px 24px rgba($viola, .3);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  color: $white;
+  cursor: pointer;
+
+  &:disabled { opacity: .7; cursor: default; }
+}
+
+// ---------- Documenti ----------
+
+.allegati {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.allegato {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1.5px solid $slate-200;
+  border-radius: 14px;
+
+  &__icona {
+    flex: none;
+    font-size: 1.4rem;
+    color: $red;
+  }
+
+  &__nome {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+
+    strong {
+      overflow: hidden;
+      font-size: .88rem;
+      font-weight: 700;
+      color: $dark;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    small {
+      font-size: .74rem;
+      color: $slate;
+    }
+  }
+}
+
+.icona {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 12px;
+  background: $slate-100;
+  font-size: 1.1rem;
+  color: $slate-600;
+  cursor: pointer;
+
+  &:hover { background: rgba($viola-l, .18); color: $viola; }
+
+  &--elimina:hover { background: rgba($red, .12); color: $red; }
+}
+
+.vuoto {
+  margin: 0;
+  font-size: .85rem;
+  color: $slate;
+}
+
+.allega {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  border: 1.5px dashed $viola-m;
+  border-radius: 14px;
+  background: rgba($viola-l, .08);
+  font-family: inherit;
+  font-size: .9rem;
+  font-weight: 700;
+  color: $viola;
+  cursor: pointer;
+
+  ion-icon { font-size: 1.15rem; }
+
+  &:disabled { opacity: .7; cursor: default; }
+}
+
+// Tre puntini mentre arriva la scheda.
+.attesa {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 0;
+
+  span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: $viola-m;
+    animation: pulsa 1s infinite ease-in-out;
+
+    &:nth-child(2) { animation-delay: .15s; }
+    &:nth-child(3) { animation-delay: .3s; }
+  }
+}
+
+@keyframes pulsa {
+  0%, 100% { opacity: .3; transform: scale(.8); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .attesa span { animation: none; opacity: .7; }
+}

@@ -14,3 +14,5 @@ archivio-sqlite/
 per-il-server/
 dati-palermo11.json.cif
 dati-palermo11.json.cif.importato
+# PDF delle schede dei ragazzi (cifrati): sul server si copiano a mano, mai su GitHub.
+documenti-riservati/

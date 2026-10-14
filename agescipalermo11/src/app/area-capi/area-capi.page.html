@@ -294,6 +294,13 @@
                 </p>
               }
 
+              @if (r.indirizzo) {
+                <p class="richiesta__indirizzo">
+                  <ion-icon [icon]="icone.casa" aria-hidden="true"></ion-icon>
+                  {{ r.indirizzo }}
+                </p>
+              }
+
               @if (r.catechismo) {
                 <p class="richiesta__catechismo">
                   <ion-icon [icon]="icone.catechismo" aria-hidden="true"></ion-icon>

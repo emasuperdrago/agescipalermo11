@@ -168,6 +168,12 @@
           <button type="button" class="link-piccolo" (click)="secondoGenitore = true">+ Aggiungi anche l'altro genitore</button>
         }
 
+        <label class="campo">
+          <span class="etichetta">Indirizzo di casa *</span>
+          <input name="indirizzo" [(ngModel)]="dati.indirizzo" maxlength="200" autocomplete="street-address"
+                 placeholder="Es. Via Libertà 12, 90143 Palermo" />
+        </label>
+
         <div class="coppia">
           <label class="campo">
             <span class="etichetta">Telefono</span>

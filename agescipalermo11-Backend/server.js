@@ -16,7 +16,9 @@ const path = require('path');
 const crypto = require('crypto');
 const db = require('./db');
 // Dati personali cifrati nel database: vedi cifratura.js.
-const { cripta, improntaEmail, emailDaSalvare, improntaCodice, codiceDaSalvare } = require('./cifratura');
+const {
+    cripta, improntaEmail, emailDaSalvare, improntaCodice, codiceDaSalvare, criptaFile, decriptaFile,
+} = require('./cifratura');
 const { creaXlsx } = require('./excel');
 const {
     postaPronta, controllaPosta, inviaEmail, descriviErrore, ATTESE_SOTTOFONDO, emailDiConferma, emailRecuperoPassword, emailNuovaRichiesta,
@@ -1260,6 +1262,9 @@ app.post('/api/utenti/importa', verificaRuolo('capo', 'admin'), async (req, res)
         }
         await dbRun('COMMIT');
         const aggiornati = valide.filter(v => v.gia).length + giaAggiornati;
+        // Chi arriva dal censimento e aveva fatto la richiesta: la scheda prende i suoi dati.
+        if (ruolo === 'ragazzo') await riempiSchedeDaRichieste(miaBranca).catch(err =>
+            console.error('❌ Schede dalle richieste:', err.message));
         // `abbinati`: chi era stato aggiunto a mano e ora ha ricevuto il suo codice.
         res.json({
             inseriti: valide.length - aggiornati - abbinati,
@@ -2573,6 +2578,7 @@ const ANNI_PER_VALORE = new Map(ANNI_SCOLASTICI.map(a => [a.valore, a]));
 const STATI_RICHIESTA = ['nuova', 'letta', 'archiviata'];
 const MAX_NOTE_RICHIESTA = 1000;
 const MAX_NOME_RICHIESTA = 60;
+const MAX_INDIRIZZO = 200;
 
 // Il modulo è aperto a tutti: si accettano al massimo 5 richieste all'ora dallo stesso indirizzo,
 // così una pagina pubblica non può riempire il database.
@@ -2618,6 +2624,9 @@ function validaRichiestaIscrizione(body) {
         return { errore: "L'indirizzo email non sembra giusto." };
     if (!telefono && !email) return { errore: "Lascia almeno un contatto: telefono o email." };
 
+    const indirizzo = testo(body.indirizzo, MAX_INDIRIZZO);
+    if (!indirizzo) return { errore: "Scrivi l'indirizzo di casa." };
+
     // Almeno un genitore, con nome e cognome; l'altro è facoltativo, ma se c'è va scritto per intero.
     const genitore1Nome = testo(body.genitore1_nome, MAX_NOME_RICHIESTA);
     const genitore1Cognome = testo(body.genitore1_cognome, MAX_NOME_RICHIESTA);
@@ -2640,7 +2649,7 @@ function validaRichiestaIscrizione(body) {
             genitore2_nome: genitore2Nome || null, genitore2_cognome: genitore2Cognome || null,
             nome, cognome, data_nascita: dataNascita, anno_scolastico: anno.valore, branca: anno.branca,
             telefono: telefono || null, email: email || null, note: testo(body.note, MAX_NOTE_RICHIESTA) || null,
-            catechismo,
+            catechismo, indirizzo,
         }
     };
 }
@@ -2662,6 +2671,8 @@ function richiestaPubblica(r) {
         ].filter(([n, c]) => n && c).map(([n, c]) => `${n} ${c}`),
         // Anno di catechismo (1-5); null se non lo frequenta o se la richiesta è di prima.
         catechismo: r.catechismo ? Number(r.catechismo) : null,
+        // Indirizzo di casa; null per le richieste arrivate prima che il modulo lo chiedesse.
+        indirizzo: r.indirizzo || null,
         note: r.note,
         stato: r.stato,
         // Accettata o rifiutata dai capi; vuoto se non hanno ancora deciso.
@@ -2717,13 +2728,13 @@ app.post('/api/richieste-iscrizione', async (req, res) => {
     try {
         await dbRun(`INSERT INTO richiesta_iscrizione (nome, cognome, data_nascita, anno_scolastico, branca,
                      telefono, email, note, genitore1_nome, genitore1_cognome, genitore2_nome, genitore2_cognome,
-                     catechismo)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            // Data di nascita, contatti, note, genitori e catechismo si salvano cifrati.
+                     catechismo, indirizzo)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            // Data di nascita, contatti, note, genitori, catechismo e indirizzo si salvano cifrati.
             [dati.nome, dati.cognome, cripta(dati.data_nascita), dati.anno_scolastico, dati.branca,
              cripta(dati.telefono), cripta(dati.email), cripta(dati.note), cripta(dati.genitore1_nome),
              cripta(dati.genitore1_cognome), cripta(dati.genitore2_nome), cripta(dati.genitore2_cognome),
-             cripta(dati.catechismo === null ? null : String(dati.catechismo))]);
+             cripta(dati.catechismo === null ? null : String(dati.catechismo)), cripta(dati.indirizzo)]);
         res.status(201).json({ message: "Richiesta inviata! I capi ti ricontattano presto.", branca: dati.branca });
         // Le email ai capi partono dopo aver risposto: chi compila il modulo non aspetta Gmail.
         avvisaCapiNuovaRichiesta(dati.branca).catch(err => console.error('❌ Avviso ai capi:', err.message));
@@ -2860,7 +2871,7 @@ app.get('/api/richieste-iscrizione/excel', verificaRuolo('capo', 'admin'), async
 
         // "Genitori" in fondo: caricando il file nei codici censimento quella colonna non si legge.
         const intestazioni = ['Codice censimento', 'Cognome', 'Nome', 'Data di nascita', 'Anno', 'Branca', 'Contatti', 'Genitori',
-                              'Catechismo'];
+                              'Catechismo', 'Indirizzo'];
         const contenuto = righe.map(r => {
             const scolastico = ANNI_SCOLASTICI.find(a => a.valore === r.anno_scolastico);
             let tappa = scolastico ? { branca: scolastico.branca, anno: scolastico.anno } : null;
@@ -2877,10 +2888,10 @@ app.get('/api/richieste-iscrizione/excel', verificaRuolo('capo', 'admin'), async
             }
 
             const contatti = [r.telefono, r.email].filter(Boolean).join(' · ');
-            const { genitori, catechismo } = richiestaPubblica(r);
+            const { genitori, catechismo, indirizzo } = richiestaPubblica(r);
             return ['', r.cognome, r.nome, italiana(r.data_nascita), tappa ? String(tappa.anno) : '',
                     tappa ? tappa.branca.charAt(0).toUpperCase() + tappa.branca.slice(1) : '', contatti,
-                    genitori.join(' · '), catechismo ? `${catechismo}° anno` : ''];
+                    genitori.join(' · '), catechismo ? `${catechismo}° anno` : '', indirizzo ?? ''];
         });
 
         const file = creaXlsx([intestazioni, ...contenuto], 'Censiti');
@@ -3025,7 +3036,9 @@ async function elencoRagazzi(branca) {
     const anno = await annoCorrente();
     const dove = branca ? 'AND branca = ?' : '';
     const ragazzi = await dbAll(`SELECT id, codice_censimento, nome, cognome, eta, data_nascita, branca, anno_branca,
-                                        telefono, email, tesoriere, (password IS NOT NULL)::int AS attivato
+                                        telefono, email, tesoriere, (password IS NOT NULL)::int AS attivato,
+                                        (SELECT COUNT(*) FROM scheda_allegato a WHERE a.rif_utente = utenti.id)::int
+                                          AS allegati_scheda
                                  FROM utenti WHERE ruolo = 'ragazzo' ${dove}
                                  -- Prima i più grandi (ultimo anno di branca), poi a scendere;
                                  -- chi non ha ancora l'anno segnato va in fondo.
@@ -3056,6 +3069,8 @@ async function elencoRagazzi(branca) {
             attivato: r.attivato === 1,
             // Solo nel clan: chi tiene la cassa insieme ai capi.
             tesoriere: r.tesoriere === 1,
+            // Quanti PDF ha nella scheda personale (es. la scheda medica).
+            allegati_scheda: r.allegati_scheda,
             // Per ogni attività: se partecipa, quanto deve (la sua quota o quella a testa) e quanto ha dato.
             quote: pagamenti.filter(p => p.rif_utente === r.id).map(p => ({
                 attivita: p.rif_attivita,
@@ -3128,6 +3143,7 @@ app.post('/api/ragazzi', verificaRuolo('capo', 'admin'), async (req, res) => {
             [salvato.codice, salvato.impronta, nome, cognome, cripta(dataNascita || null), branca, anno,
              cripta(testo(body.telefono, 20) || null), email.email, email.impronta]);
         const nuovo = await dbGet(`SELECT * FROM utenti WHERE id = ?`, [esito.lastID]);
+        await riempiSchedaDaRichiesta(nuovo).catch(err => console.error('❌ Scheda dalla richiesta:', err.message));
         res.status(201).json({ ragazzo: { ...utentePubblico(nuovo), anno_branca: nuovo.anno_branca,
                                           tappa: tappaDi(nuovo.branca, nuovo.anno_branca), quote: [] } });
     } catch (err) {
@@ -3199,12 +3215,252 @@ app.delete('/api/ragazzi/:id', verificaRuolo('capo', 'admin'), async (req, res) 
     try {
         const ragazzo = await ragazzoGestibile(req, res);
         if (!ragazzo) return;
+        const documenti = await dbAll(`SELECT file FROM scheda_allegato WHERE rif_utente = ?`, [ragazzo.id]);
         await dbRun(`DELETE FROM utenti WHERE id = ?`, [ragazzo.id]);
+        // La scheda se ne va col ragazzo (ON DELETE CASCADE); i PDF si tolgono anche dal disco.
+        for (const d of documenti) eliminaFile(CARTELLA_SCHEDE, d.file);
         res.json({ message: "Ragazzo rimosso dall'elenco." });
     } catch (err) {
         erroreInterno(res, err);
     }
 });
+
+// ---------- Scheda personale dei ragazzi ----------
+// Indirizzo, genitori e note sanitarie, più i PDF allegati (es. la scheda medica). La vedono e
+// la cambiano solo i capi della branca del ragazzo e i capigruppo; il ragazzo no.
+// Tutto è cifrato: i campi nel database, i PDF su disco, fuori dalle cartelle pubbliche.
+
+const CARTELLA_SCHEDE = path.join(__dirname, 'documenti-riservati', 'schede');
+fs.mkdirSync(CARTELLA_SCHEDE, { recursive: true, mode: 0o700 });
+const MAX_ALLEGATI_SCHEDA = 10;
+const CAMPI_SCHEDA = {
+    indirizzo: MAX_INDIRIZZO,
+    genitore1_nome: MAX_NOME, genitore1_cognome: MAX_NOME, genitore1_telefono: 20, genitore1_email: 120,
+    genitore2_nome: MAX_NOME, genitore2_cognome: MAX_NOME, genitore2_telefono: 20, genitore2_email: 120,
+    note_sanitarie: 1000,
+};
+
+/** Il ragazzo della scheda, se chi chiede può vederla: capo della sua branca o capogruppo. */
+async function ragazzoDellaScheda(req, res) {
+    const riga = await dbGet(`SELECT * FROM utenti WHERE id = ? AND ruolo = 'ragazzo'`, [req.params.id]);
+    if (!riga) {
+        res.status(404).json({ error: "Ragazzo non trovato." });
+        return null;
+    }
+    if (req.user.ruolo !== 'admin' && (await brancaDelCapo(req.user.id)) !== riga.branca) {
+        res.status(403).json({ error: "La scheda la vedono solo i capi della sua branca e i capigruppo." });
+        return null;
+    }
+    return riga;
+}
+
+const chiaveNome = (nome, cognome) => `${nome} ${cognome}`.toLowerCase().replace(/\s+/g, ' ').trim();
+
+/**
+ * Se il ragazzo aveva fatto una richiesta di iscrizione poi accettata (stessi nome, cognome e
+ * data di nascita), la sua scheda prende indirizzo, genitori e contatti da lì. Succede una
+ * volta sola e riempie solo i campi vuoti: quello che hanno scritto i capi non si tocca.
+ */
+async function riempiSchedaDaRichiesta(ragazzo, richieste = null) {
+    if (!ragazzo?.data_nascita) return false;
+    const scheda = await dbGet(`SELECT * FROM scheda_ragazzo WHERE rif_utente = ?`, [ragazzo.id]);
+    if (scheda?.rif_richiesta) return false;
+    // Le date di nascita sono cifrate: il confronto si fa qui, già decifrate.
+    const tutte = richieste ?? await dbAll(`SELECT * FROM richiesta_iscrizione WHERE esito = 'accettata'`);
+    const richiesta = tutte.find(r => r.data_nascita === ragazzo.data_nascita
+        && chiaveNome(r.nome, r.cognome) === chiaveNome(ragazzo.nome, ragazzo.cognome));
+    if (!richiesta) return false;
+
+    // Il contatto lasciato nel modulo è quasi sempre quello di un genitore.
+    const daRichiesta = {
+        indirizzo: richiesta.indirizzo, genitore1_nome: richiesta.genitore1_nome,
+        genitore1_cognome: richiesta.genitore1_cognome, genitore1_telefono: richiesta.telefono,
+        genitore1_email: richiesta.email, genitore2_nome: richiesta.genitore2_nome,
+        genitore2_cognome: richiesta.genitore2_cognome,
+    };
+    const valori = {};
+    for (const campo of Object.keys(CAMPI_SCHEDA))
+        valori[campo] = scheda?.[campo] || daRichiesta[campo] || null;
+    await salvaScheda(ragazzo.id, valori, { rifRichiesta: richiesta.id });
+    return true;
+}
+
+/** Per tutti i ragazzi di una branca (dopo il file del censimento). */
+async function riempiSchedeDaRichieste(branca) {
+    const richieste = await dbAll(`SELECT * FROM richiesta_iscrizione WHERE esito = 'accettata'`);
+    if (!richieste.length) return 0;
+    const ragazzi = await dbAll(`SELECT * FROM utenti WHERE ruolo = 'ragazzo' AND branca = ?`, [branca]);
+    let riempite = 0;
+    for (const r of ragazzi) if (await riempiSchedaDaRichiesta(r, richieste)) riempite++;
+    return riempite;
+}
+
+/** Scrive la scheda (cifrata), che ci fosse già o no. */
+async function salvaScheda(idRagazzo, valori, { rifRichiesta = null, autore = null } = {}) {
+    const campi = Object.keys(CAMPI_SCHEDA);
+    await dbRun(`INSERT INTO scheda_ragazzo (rif_utente, ${campi.join(', ')}, rif_richiesta, data_modifica, rif_modificato_da)
+                 VALUES (?, ${campi.map(() => '?').join(', ')}, ?, ?, ?)
+                 ON CONFLICT (rif_utente) DO UPDATE SET
+                   ${campi.map(c => `${c} = EXCLUDED.${c}`).join(', ')},
+                   rif_richiesta = COALESCE(scheda_ragazzo.rif_richiesta, EXCLUDED.rif_richiesta),
+                   data_modifica = EXCLUDED.data_modifica,
+                   rif_modificato_da = COALESCE(EXCLUDED.rif_modificato_da, scheda_ragazzo.rif_modificato_da)`,
+        [idRagazzo, ...campi.map(c => cripta(valori[c] || null)), rifRichiesta,
+         new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'), autore]);
+}
+
+function allegatoSchedaPubblico(a) {
+    return { id: a.id, nome: a.nome_originale, dimensione: a.dimensione, data_caricamento: a.data_caricamento };
+}
+
+app.get('/api/ragazzi/:id/scheda', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        const ragazzo = await ragazzoDellaScheda(req, res);
+        if (!ragazzo) return;
+        await riempiSchedaDaRichiesta(ragazzo).catch(err => console.error('❌ Scheda dalla richiesta:', err.message));
+        const scheda = await dbGet(`SELECT s.*, u.nome AS autore_nome, u.cognome AS autore_cognome
+                                    FROM scheda_ragazzo s LEFT JOIN utenti u ON u.id = s.rif_modificato_da
+                                    WHERE s.rif_utente = ?`, [ragazzo.id]);
+        const allegati = await dbAll(`SELECT * FROM scheda_allegato WHERE rif_utente = ? ORDER BY id`, [ragazzo.id]);
+        const campi = {};
+        for (const campo of Object.keys(CAMPI_SCHEDA)) campi[campo] = scheda?.[campo] ?? '';
+        res.setHeader('Cache-Control', 'no-store');
+        res.json({
+            ragazzo: {
+                id: ragazzo.id, nome: ragazzo.nome, cognome: ragazzo.cognome,
+                codice_censimento: ragazzo.codice_censimento, data_nascita: ragazzo.data_nascita || null,
+                eta: etaDiOggi(ragazzo), branca: ragazzo.branca, tappa: tappaDi(ragazzo.branca, ragazzo.anno_branca),
+                telefono: ragazzo.telefono, email: ragazzo.email,
+            },
+            scheda: {
+                ...campi,
+                // Da una richiesta di iscrizione accettata (una volta sola).
+                da_richiesta: !!scheda?.rif_richiesta,
+                data_modifica: scheda?.data_modifica ?? null,
+                modificata_da: scheda?.autore_nome ? `${scheda.autore_nome} ${scheda.autore_cognome}` : null,
+            },
+            allegati: allegati.map(allegatoSchedaPubblico),
+        });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+app.put('/api/ragazzi/:id/scheda', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        const ragazzo = await ragazzoDellaScheda(req, res);
+        if (!ragazzo) return;
+        const body = req.body || {};
+        const valori = {};
+        for (const [campo, massimo] of Object.entries(CAMPI_SCHEDA))
+            valori[campo] = String(body[campo] ?? '').trim().slice(0, massimo);
+        for (const n of [1, 2]) {
+            const telefono = valori[`genitore${n}_telefono`];
+            const email = valori[`genitore${n}_email`].toLowerCase();
+            valori[`genitore${n}_email`] = email;
+            if (telefono && !/^[0-9+\s().-]{6,20}$/.test(telefono))
+                return res.status(400).json({ error: `Il telefono del genitore ${n} non sembra giusto.` });
+            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email))
+                return res.status(400).json({ error: `L'email del genitore ${n} non sembra giusta.` });
+        }
+        await salvaScheda(ragazzo.id, valori, { autore: req.user.id });
+        res.json({ message: "Scheda salvata." });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+// Un PDF alla volta, inviato così com'è; il nome originale arriva in X-Nome-File.
+app.post('/api/ragazzi/:id/scheda/allegati', verificaRuolo('capo', 'admin'),
+    express.raw({ type: () => true, limit: MAX_BYTE_ALLEGATO }),
+    async (req, res) => {
+        let nome;
+        try { nome = decodeURIComponent(String(req.headers['x-nome-file'] ?? '')); } catch { nome = ''; }
+        nome = path.basename(nome).replace(/[\x00-\x1f\x7f]/g, '').trim().slice(-MAX_NOME_FILE);
+        const dati = Buffer.isBuffer(req.body) ? req.body : null;
+        if (!nome) return res.status(400).json({ error: "Il file non ha un nome valido." });
+        if (path.extname(nome).toLowerCase() !== '.pdf')
+            return res.status(400).json({ error: "Nella scheda si allegano solo file PDF." });
+        if (!dati || !dati.length) return res.status(400).json({ error: `"${nome}" è vuoto.` });
+        // Un PDF vero comincia con "%PDF-": niente altri file travestiti.
+        if (!dati.subarray(0, 5).equals(Buffer.from('%PDF-')))
+            return res.status(400).json({ error: `"${nome}" non è un PDF valido.` });
+        try {
+            const ragazzo = await ragazzoDellaScheda(req, res);
+            if (!ragazzo) return;
+            const { numero } = await dbGet(`SELECT COUNT(*) AS numero FROM scheda_allegato WHERE rif_utente = ?`, [ragazzo.id]);
+            if (numero >= MAX_ALLEGATI_SCHEDA)
+                return res.status(400).json({ error: `Una scheda può avere al massimo ${MAX_ALLEGATI_SCHEDA} PDF.` });
+            const file = `${crypto.randomUUID()}.pdf.cif`;
+            await fs.promises.writeFile(path.join(CARTELLA_SCHEDE, file), criptaFile(dati), { mode: 0o600 });
+            try {
+                const esito = await dbRun(`INSERT INTO scheda_allegato (rif_utente, nome_originale, file, dimensione, rif_autore)
+                                           VALUES (?, ?, ?, ?, ?)`, [ragazzo.id, cripta(nome), file, dati.length, req.user.id]);
+                const allegato = await dbGet(`SELECT * FROM scheda_allegato WHERE id = ?`, [esito.lastID]);
+                res.status(201).json({ allegato: allegatoSchedaPubblico(allegato) });
+            } catch (err) {
+                eliminaFile(CARTELLA_SCHEDE, file);
+                throw err;
+            }
+        } catch (err) {
+            erroreInterno(res, err);
+        }
+    });
+
+// Si scarica solo con l'accesso fatto (niente link da girare): il PDF esce decifrato e il
+// browser non lo tiene in memoria.
+app.get('/api/ragazzi/:id/scheda/allegati/:idAllegato', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        const ragazzo = await ragazzoDellaScheda(req, res);
+        if (!ragazzo) return;
+        const allegato = await dbGet(`SELECT * FROM scheda_allegato WHERE id = ? AND rif_utente = ?`,
+            [req.params.idAllegato, ragazzo.id]);
+        if (!allegato) return res.status(404).json({ error: "Documento non trovato." });
+        let dati;
+        try {
+            dati = decriptaFile(await fs.promises.readFile(path.join(CARTELLA_SCHEDE, path.basename(allegato.file))));
+        } catch {
+            return res.status(404).json({ error: "Il file del documento non c'è più sul server." });
+        }
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(allegato.nome_originale)}`);
+        res.setHeader('Cache-Control', 'no-store');
+        res.send(dati);
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+app.delete('/api/ragazzi/:id/scheda/allegati/:idAllegato', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        const ragazzo = await ragazzoDellaScheda(req, res);
+        if (!ragazzo) return;
+        const allegato = await dbGet(`SELECT * FROM scheda_allegato WHERE id = ? AND rif_utente = ?`,
+            [req.params.idAllegato, ragazzo.id]);
+        if (!allegato) return res.status(404).json({ error: "Documento non trovato." });
+        await dbRun(`DELETE FROM scheda_allegato WHERE id = ?`, [allegato.id]);
+        eliminaFile(CARTELLA_SCHEDE, allegato.file);
+        res.json({ message: "Documento eliminato." });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+/**
+ * I PDF di chi non c'è più (ragazzo tolto in altri modi, es. a fine clan): ogni giorno si
+ * cancellano dal disco i file che nessuna scheda usa.
+ */
+async function pulisciDocumentiOrfani() {
+    try {
+        const usati = new Set((await dbAll(`SELECT file FROM scheda_allegato`)).map(a => a.file));
+        for (const file of await fs.promises.readdir(CARTELLA_SCHEDE))
+            if (file.endsWith('.pdf.cif') && !usati.has(file)) eliminaFile(CARTELLA_SCHEDE, file);
+    } catch (err) {
+        console.error('❌ Pulizia dei documenti delle schede:', err.message);
+    }
+}
+setTimeout(pulisciDocumentiOrfani, 60 * 1000);
+setInterval(pulisciDocumentiOrfani, 24 * 60 * 60 * 1000);
 
 // La tabella in un file da aprire con Excel (punto e virgola, come vuole Excel in italiano).
 app.get('/api/ragazzi/csv', verificaRuolo('capo', 'admin'), async (req, res) => {

@@ -7,10 +7,12 @@ import {
   IonRouterLinkWithHref, IonContent, ModalController, ToastController
 } from '@ionic/angular/standalone';
 import {
-  addOutline, arrowBackOutline, cashOutline, downloadOutline, peopleOutline, pencilOutline, trashOutline
+  addOutline, arrowBackOutline, cashOutline, downloadOutline, idCardOutline, peopleOutline, pencilOutline,
+  trashOutline
 } from 'ionicons/icons';
 import { BarraInferioreComponent } from '../components/barra-inferiore/barra-inferiore.component';
 import { RagazzoEditorComponent } from '../components/ragazzo-editor/ragazzo-editor.component';
+import { SchedaRagazzoComponent } from '../components/scheda-ragazzo/scheda-ragazzo.component';
 import { AuthService } from '../services/auth';
 import { ZonaCapiService, euro } from '../services/zona-capi';
 import { nomeBranca, stiliBranca } from '../services/posti';
@@ -34,7 +36,7 @@ import { AnnoScout, AttivitaQuota, Branca, QuotaRagazzo, RagazzoElenco } from '.
 export class GestioneRagazziPage {
   readonly icone = {
     indietro: arrowBackOutline, aggiungi: addOutline, scarica: downloadOutline, quote: cashOutline,
-    modifica: pencilOutline, elimina: trashOutline, ragazzi: peopleOutline,
+    modifica: pencilOutline, elimina: trashOutline, ragazzi: peopleOutline, scheda: idCardOutline,
   };
   readonly nomeBranca = nomeBranca;
   readonly stiliBranca = stiliBranca;
@@ -241,6 +243,17 @@ export class GestioneRagazziPage {
     });
     await modale.present();
     const { role } = await modale.onDidDismiss<RagazzoElenco>();
+    if (role === 'salvato') this.carica();
+  }
+
+  /** La scheda personale: indirizzo, genitori, note sanitarie e PDF (es. la scheda medica). */
+  async apriScheda(ragazzo: RagazzoElenco) {
+    const modale = await this.modalCtrl.create({
+      component: SchedaRagazzoComponent,
+      componentProps: { ragazzo },
+    });
+    await modale.present();
+    const { role } = await modale.onDidDismiss();
     if (role === 'salvato') this.carica();
   }
 

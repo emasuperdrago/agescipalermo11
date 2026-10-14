@@ -250,11 +250,46 @@ const TABELLE = [
         genitore1_cognome TEXT,
         genitore2_nome TEXT,
         genitore2_cognome TEXT,
-        catechismo TEXT
+        catechismo TEXT,
+        indirizzo TEXT
     )`,
     // Anno di catechismo (1-5) se lo frequenta, cifrato come gli altri dati della richiesta;
     // vuoto se non lo frequenta. Per le tabelle nate prima che ci fosse la domanda:
     `ALTER TABLE richiesta_iscrizione ADD COLUMN IF NOT EXISTS catechismo TEXT`,
+    // L'indirizzo di casa (cifrato), chiesto dal modulo da ottobre 2026.
+    `ALTER TABLE richiesta_iscrizione ADD COLUMN IF NOT EXISTS indirizzo TEXT`,
+
+    // Scheda personale di un ragazzo: la vedono e la cambiano i capi della sua branca e i
+    // capigruppo. Tutti i campi sono cifrati (indirizzo, genitori, note sanitarie).
+    // rif_richiesta: la richiesta di iscrizione da cui sono arrivati i dati, una volta sola.
+    `CREATE TABLE IF NOT EXISTS scheda_ragazzo (
+        rif_utente INTEGER PRIMARY KEY REFERENCES utenti(id) ON DELETE CASCADE,
+        indirizzo TEXT,
+        genitore1_nome TEXT,
+        genitore1_cognome TEXT,
+        genitore1_telefono TEXT,
+        genitore1_email TEXT,
+        genitore2_nome TEXT,
+        genitore2_cognome TEXT,
+        genitore2_telefono TEXT,
+        genitore2_email TEXT,
+        note_sanitarie TEXT,
+        rif_richiesta INTEGER,
+        data_modifica TEXT,
+        rif_modificato_da INTEGER REFERENCES utenti(id) ON DELETE SET NULL
+    )`,
+
+    // PDF allegati alla scheda (es. la scheda medica). Il file sta su disco cifrato, fuori
+    // dalle cartelle pubbliche; anche il nome originale è cifrato.
+    `CREATE TABLE IF NOT EXISTS scheda_allegato (
+        id SERIAL PRIMARY KEY,
+        rif_utente INTEGER NOT NULL REFERENCES utenti(id) ON DELETE CASCADE,
+        nome_originale TEXT NOT NULL,
+        file TEXT NOT NULL UNIQUE,
+        dimensione INTEGER NOT NULL,
+        data_caricamento TEXT NOT NULL DEFAULT ${ADESSO},
+        rif_autore INTEGER REFERENCES utenti(id) ON DELETE SET NULL
+    )`,
 
     `CREATE TABLE IF NOT EXISTS sfondo_home (
         id SERIAL PRIMARY KEY,

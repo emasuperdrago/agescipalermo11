@@ -2,7 +2,8 @@
 // (con Cyberduck) e che non sta nel repository:
 //  - .env                      le chiavi del sito (le stesse di qui) e le impostazioni online;
 //  - dati-palermo11.json.cif   tutti i dati del database, cifrati con la DB_KEY.
-// Le foto caricate (cartella uploads/) si copiano a parte, così come sono.
+// Le foto caricate (cartella uploads/) e i PDF delle schede dei ragazzi (documenti-riservati/,
+// già cifrati) si copiano a parte, così come sono.
 //
 // Uso:  npm run server:prepara        (a backend acceso o spento, non cambia niente qui)
 //

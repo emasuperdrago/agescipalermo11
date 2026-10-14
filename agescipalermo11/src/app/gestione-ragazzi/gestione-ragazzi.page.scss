@@ -396,6 +396,7 @@
 }
 
 .icona {
+  position: relative;
   display: grid;
   place-items: center;
   width: 34px;
@@ -409,6 +410,25 @@
   ion-icon { font-size: 1.05rem; }
 
   &:hover { border-color: $viola-m; color: $viola; }
+
+  // La scheda personale; il numerino dice quanti PDF ci sono (es. la scheda medica).
+  &--scheda { color: $viola-m; }
+
+  &__numero {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: $viola-m;
+    font-size: .64rem;
+    font-weight: 800;
+    line-height: 17px;
+    color: $white;
+    text-align: center;
+  }
 
   &--elimina {
     color: $red;

@@ -41,7 +41,7 @@ export class RichiestaIscrizionePage {
   dati: DatiRichiestaIscrizione = {
     nome: '', cognome: '', data_nascita: '', anno_scolastico: '', telefono: '', email: '', note: '',
     genitore1_nome: '', genitore1_cognome: '', genitore2_nome: '', genitore2_cognome: '',
-    catechismo: null,
+    catechismo: null, indirizzo: '',
   };
 
   /** Spuntato "Frequenta il catechismo?": compare la scelta dell'anno. */
@@ -156,6 +156,10 @@ export class RichiestaIscrizionePage {
       this.errore = "Scegli l'anno di catechismo che frequenta.";
       return;
     }
+    if (!this.dati.indirizzo.trim()) {
+      this.errore = "Scrivi l'indirizzo di casa.";
+      return;
+    }
     if (!this.dati.telefono.trim() && !this.dati.email.trim()) {
       this.errore = 'Lascia almeno un contatto: telefono o email.';
       return;
@@ -182,7 +186,7 @@ export class RichiestaIscrizionePage {
     this.dati = {
       nome: '', cognome: '', data_nascita: '', anno_scolastico: '', telefono: '', email: '', note: '',
       genitore1_nome: '', genitore1_cognome: '', genitore2_nome: '', genitore2_cognome: '',
-      catechismo: null,
+      catechismo: null, indirizzo: '',
     };
     this.frequentaCatechismo = false;
     this.inviata = false;

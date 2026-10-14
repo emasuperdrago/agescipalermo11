@@ -4,8 +4,9 @@ import { map } from 'rxjs';
 import { apiUrl } from './api';
 import { BRANCHE_POSTO } from './posti';
 import {
-  AnnoScout, AttivitaQuota, Branca, CapoElenco, CompleannoOggi, DatiCapo, DatiMovimento, DatiRagazzo, EsitoApertura,
-  Movimento, NomeCassa, NotificaContenuto, QuotaRagazzo, RagazzoElenco, RiepilogoCassa, TabellaRagazzi
+  AllegatoScheda, AnnoScout, AttivitaQuota, Branca, CampiScheda, CapoElenco, CompleannoOggi, DatiCapo, DatiMovimento,
+  DatiRagazzo, EsitoApertura,
+  Movimento, NomeCassa, NotificaContenuto, QuotaRagazzo, RagazzoElenco, RiepilogoCassa, SchedaRagazzo, TabellaRagazzi
 } from '../../types/models';
 
 /** Le tre branche vere, con i loro colori: la stessa lista della mappa, senza "gruppo". */
@@ -60,6 +61,32 @@ export class ZonaCapiService {
 
   eliminaRagazzo(id: number) {
     return this.http.delete<{ message: string }>(`${apiUrl()}/ragazzi/${id}`);
+  }
+
+  // ---------- Scheda personale ----------
+
+  scheda(idRagazzo: number) {
+    return this.http.get<SchedaRagazzo>(`${apiUrl()}/ragazzi/${idRagazzo}/scheda`);
+  }
+
+  salvaScheda(idRagazzo: number, campi: CampiScheda) {
+    return this.http.put<{ message: string }>(`${apiUrl()}/ragazzi/${idRagazzo}/scheda`, campi);
+  }
+
+  /** Il PDF viaggia così com'è; il nome originale va nell'intestazione X-Nome-File. */
+  allegaAllaScheda(idRagazzo: number, file: File) {
+    return this.http.post<{ allegato: AllegatoScheda }>(`${apiUrl()}/ragazzi/${idRagazzo}/scheda/allegati`, file, {
+      headers: { 'Content-Type': 'application/pdf', 'X-Nome-File': encodeURIComponent(file.name) },
+    }).pipe(map(r => r.allegato));
+  }
+
+  /** Il PDF arriva solo con l'accesso fatto: si scarica come file e si apre dal browser. */
+  scaricaAllegatoScheda(idRagazzo: number, idAllegato: number) {
+    return this.http.get(`${apiUrl()}/ragazzi/${idRagazzo}/scheda/allegati/${idAllegato}`, { responseType: 'blob' });
+  }
+
+  eliminaAllegatoScheda(idRagazzo: number, idAllegato: number) {
+    return this.http.delete<{ message: string }>(`${apiUrl()}/ragazzi/${idRagazzo}/scheda/allegati/${idAllegato}`);
   }
 
   /**

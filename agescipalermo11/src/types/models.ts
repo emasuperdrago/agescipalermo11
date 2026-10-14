@@ -424,6 +424,8 @@ export interface RichiestaIscrizione {
   genitori: string[];
   /** Anno di catechismo che frequenta (1-5); null se non lo frequenta o se la richiesta è di prima. */
   catechismo: number | null;
+  /** Indirizzo di casa; null per le richieste arrivate prima che il modulo lo chiedesse. */
+  indirizzo: string | null;
   note: string | null;
   stato: StatoRichiesta;
   /** La decisione dei capi; null se non hanno ancora deciso. */
@@ -450,6 +452,8 @@ export interface DatiRichiestaIscrizione {
   note: string;
   /** Anno di catechismo (1-5) se lo frequenta, altrimenti null. */
   catechismo: number | null;
+  /** Via, numero civico, CAP e città. */
+  indirizzo: string;
 }
 
 // ---------- Zona capi: anno scout, ragazzi, quote, casse ----------
@@ -511,7 +515,56 @@ export interface RagazzoElenco {
   attivato: boolean;
   /** Solo nel clan: tiene la cassa insieme ai capi clan. */
   tesoriere: boolean;
+  /** Quanti PDF ci sono nella sua scheda personale (es. la scheda medica). */
+  allegati_scheda: number;
   quote: QuotaRagazzo[];
+}
+
+/** I campi della scheda personale che i capi possono scrivere. */
+export interface CampiScheda {
+  /** Via, numero civico, CAP e città. */
+  indirizzo: string;
+  genitore1_nome: string;
+  genitore1_cognome: string;
+  genitore1_telefono: string;
+  genitore1_email: string;
+  genitore2_nome: string;
+  genitore2_cognome: string;
+  genitore2_telefono: string;
+  genitore2_email: string;
+  /** Allergie, intolleranze, farmaci: la scheda medica completa va allegata in PDF. */
+  note_sanitarie: string;
+}
+
+/** PDF allegato alla scheda (si scarica solo con l'accesso fatto). */
+export interface AllegatoScheda {
+  id: number;
+  nome: string;
+  dimensione: number;
+  data_caricamento: string;
+}
+
+/** La scheda personale di un ragazzo: la vedono solo i capi della sua branca e i capigruppo. */
+export interface SchedaRagazzo {
+  ragazzo: {
+    id: number;
+    nome: string;
+    cognome: string;
+    codice_censimento: number | null;
+    data_nascita: string | null;
+    eta: number | null;
+    branca: Branca | null;
+    tappa: string | null;
+    telefono: string | null;
+    email: string | null;
+  };
+  scheda: CampiScheda & {
+    /** I dati sono arrivati da una richiesta di iscrizione accettata. */
+    da_richiesta: boolean;
+    data_modifica: string | null;
+    modificata_da: string | null;
+  };
+  allegati: AllegatoScheda[];
 }
 
 export interface TabellaRagazzi {

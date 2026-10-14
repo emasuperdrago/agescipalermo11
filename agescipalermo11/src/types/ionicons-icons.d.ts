@@ -10,6 +10,7 @@ declare module 'ionicons/icons' {
   export const arrowForwardOutline: string;
   export const arrowUndoOutline: string;
   export const arrowUpCircleOutline: string;
+  export const attachOutline: string;
   export const bagAddOutline: string;
   export const banOutline: string;
   export const barChartOutline: string;
@@ -67,6 +68,7 @@ declare module 'ionicons/icons' {
   export const listOutline: string;
   export const locateOutline: string;
   export const locationOutline: string;
+  export const lockClosedOutline: string;
   export const logOutOutline: string;
   export const mailOpenOutline: string;
   export const mailOutline: string;
