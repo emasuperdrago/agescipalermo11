@@ -99,6 +99,19 @@ const TABELLE = [
     `ALTER TABLE canto ADD COLUMN IF NOT EXISTS trasposizione SMALLINT NOT NULL DEFAULT 0
         CHECK (trasposizione BETWEEN -11 AND 11)`,
 
+    // "Link utili" (in Chi siamo): titolo e indirizzo, in quattro sezioni. Li vedono tutti,
+    // li aggiungono, cambiano, spostano e tolgono i capi e i capigruppo.
+    `CREATE TABLE IF NOT EXISTS link_utile (
+        id SERIAL PRIMARY KEY,
+        sezione TEXT NOT NULL CHECK (sezione IN ('branco', 'reparto', 'clan', 'capi')),
+        titolo TEXT NOT NULL,
+        url TEXT NOT NULL,
+        ordine INTEGER NOT NULL DEFAULT 0,
+        rif_autore INTEGER REFERENCES utenti(id) ON DELETE SET NULL,
+        data_creazione TEXT NOT NULL DEFAULT ${ADESSO},
+        data_modifica TEXT NOT NULL DEFAULT ${ADESSO}
+    )`,
+
     `CREATE TABLE IF NOT EXISTS carta_clan (
         id SERIAL PRIMARY KEY,
         titolo TEXT NOT NULL,

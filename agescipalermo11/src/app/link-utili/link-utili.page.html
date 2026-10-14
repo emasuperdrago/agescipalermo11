@@ -1,0 +1,142 @@
+<ion-header class="testata-pagina">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/home" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Home
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="link-utili">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      <h1>Link utili</h1>
+      <p>
+        <ion-icon [icon]="icone.link" aria-hidden="true"></ion-icon>
+        Siti, documenti e pagine da tenere a portata di mano
+      </p>
+    </div>
+  </header>
+
+  <div class="corpo">
+
+    @if (puoGestire) {
+      <button type="button" class="modifica-pagina" [class.modifica-pagina--accesa]="inModifica"
+              (click)="alternaModifica()">
+        <ion-icon [icon]="inModifica ? icone.fatto : icone.modifica" aria-hidden="true"></ion-icon>
+        {{ inModifica ? 'Fatto, esci dalla modifica' : 'Modifica la pagina' }}
+      </button>
+    }
+
+    @if (errore) {
+      <p class="avviso-errore">{{ errore }}</p>
+    } @else if (caricamento) {
+      <div class="scheletro" aria-busy="true"><div></div></div>
+    } @else {
+      @for (s of sezioni; track s.valore) {
+        <section class="sezione" [style]="s.stile" [attr.aria-labelledby]="'titolo-' + s.valore">
+          <h2 class="sezione__titolo" [id]="'titolo-' + s.valore">
+            <span class="sezione__icona" aria-hidden="true"><ion-icon [icon]="s.icona"></ion-icon></span>
+            {{ s.nome }}
+          </h2>
+
+          @if (link[s.valore].length) {
+            <ul class="elenco">
+              @for (l of link[s.valore]; track l.id; let primo = $first; let ultimo = $last) {
+                @if (modulo && modulo.id === l.id) {
+                  <ng-container *ngTemplateOutlet="moduloLink" />
+                } @else {
+                  <li class="voce">
+                    <a class="voce__link" [href]="l.url" target="_blank" rel="noopener noreferrer"
+                       [attr.aria-label]="l.titolo + ' (si apre in una nuova scheda)'">
+                      <ion-icon [icon]="icone.link" aria-hidden="true"></ion-icon>
+                      <span>
+                        <strong>{{ l.titolo }}</strong>
+                        <small>{{ dominio(l.url) }}</small>
+                      </span>
+                    </a>
+                    @if (inModifica) {
+                      <span class="voce__azioni">
+                        <button type="button" class="icona" (click)="sposta(l, 'su')" [disabled]="primo || occupato"
+                                aria-label="Sposta in su" title="Sposta in su">
+                          <ion-icon [icon]="icone.su"></ion-icon>
+                        </button>
+                        <button type="button" class="icona" (click)="sposta(l, 'giu')" [disabled]="ultimo || occupato"
+                                aria-label="Sposta in giù" title="Sposta in giù">
+                          <ion-icon [icon]="icone.giu"></ion-icon>
+                        </button>
+                        <button type="button" class="icona" (click)="cambia(l)" [disabled]="occupato"
+                                aria-label="Modifica" title="Modifica">
+                          <ion-icon [icon]="icone.modifica"></ion-icon>
+                        </button>
+                        <button type="button" class="icona icona--togli" (click)="togli(l)" [disabled]="occupato"
+                                aria-label="Togli" title="Togli">
+                          <ion-icon [icon]="icone.togli"></ion-icon>
+                        </button>
+                      </span>
+                    }
+                  </li>
+                }
+              }
+            </ul>
+          } @else if (!inModifica) {
+            <p class="vuota">Ancora nessun link.</p>
+          }
+
+          @if (inModifica) {
+            @if (modulo && modulo.id === null && modulo.sezione === s.valore) {
+              <ul class="elenco"><ng-container *ngTemplateOutlet="moduloLink" /></ul>
+            } @else {
+              <button type="button" class="aggiungi" (click)="nuovo(s.valore)" [disabled]="occupato">
+                <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+                Aggiungi un link
+              </button>
+            }
+          }
+        </section>
+      }
+    }
+
+  </div>
+
+</ion-content>
+
+<!-- Il modulo per scrivere un link: titolo e indirizzo. -->
+<ng-template #moduloLink>
+  @if (modulo) {
+    <li class="modulo">
+      <form (ngSubmit)="salva()" (input)="modulo.errore = ''">
+        <label class="campo">
+          <span>Titolo</span>
+          <input name="titolo" [(ngModel)]="modulo.titolo" maxlength="120" placeholder="Es. Sito dell'AGESCI" />
+        </label>
+        <label class="campo">
+          <span>Indirizzo</span>
+          <input name="url" [(ngModel)]="modulo.url" maxlength="500" inputmode="url" autocomplete="off"
+                 autocapitalize="off" spellcheck="false" placeholder="Es. https://www.agesci.it" />
+        </label>
+        @if (modulo.errore) {
+          <p class="modulo__errore" role="alert">{{ modulo.errore }}</p>
+        }
+        <div class="modulo__azioni">
+          <button type="button" class="secondario" (click)="annulla()">Annulla</button>
+          <button type="submit" class="principale" [disabled]="occupato">
+            {{ occupato ? 'Salvataggio…' : (modulo.id === null ? 'Aggiungi' : 'Salva') }}
+          </button>
+        </div>
+      </form>
+    </li>
+  }
+</ng-template>
+
+<app-barra-inferiore />

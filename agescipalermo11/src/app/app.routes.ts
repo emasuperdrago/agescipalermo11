@@ -55,6 +55,10 @@ export const routes: Routes = [
     loadComponent: () => import('./marco/marco.page').then(m => m.MarcoPage)
   },
   {
+    path: 'link-utili',
+    loadComponent: () => import('./link-utili/link-utili.page').then(m => m.LinkUtiliPage)
+  },
+  {
     path: 'canzoniere',
     loadComponent: () => import('./canzoniere/canzoniere.page').then(m => m.CanzonierePage)
   },

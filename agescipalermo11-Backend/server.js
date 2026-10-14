@@ -4858,6 +4858,122 @@ app.put('/api/notifiche-contenuti/:id/letta', verificaRuolo('capo', 'admin'), as
     }
 });
 
+// ---------- Link utili (in "Chi siamo") ----------
+// Quattro sezioni con titolo e indirizzo: le vedono tutti, le modificano capi e capigruppo.
+
+const SEZIONI_LINK = ['branco', 'reparto', 'clan', 'capi'];
+const MAX_LINK_PER_SEZIONE = 50;
+const MAX_TITOLO_LINK = 120;
+const MAX_URL_LINK = 500;
+
+/**
+ * L'indirizzo del link, pulito: solo pagine web (http o https). Chi lo scrive senza
+ * "https://" (es. "agesci.it") lo trova aggiunto; tutto il resto (javascript:, file:…) no.
+ */
+function leggiUrlLink(valore) {
+    let scritto = String(valore ?? '').trim();
+    if (!scritto || scritto.length > MAX_URL_LINK) return null;
+    if (!/^[a-z][a-z0-9+.-]*:/i.test(scritto)) scritto = `https://${scritto}`;
+    try {
+        const url = new URL(scritto);
+        if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+        if (!url.hostname.includes('.') || url.username || url.password) return null;
+        return url.href;
+    } catch {
+        return null;
+    }
+}
+
+function datiLink(body) {
+    const titolo = testo(body?.titolo, MAX_TITOLO_LINK);
+    if (!titolo) return { errore: "Scrivi il titolo del link." };
+    const url = leggiUrlLink(body?.url);
+    if (!url) return { errore: "L'indirizzo non sembra giusto: scrivilo come https://www.esempio.it" };
+    return { dati: { titolo, url } };
+}
+
+const linkPubblico = (l) => ({ id: l.id, sezione: l.sezione, titolo: l.titolo, url: l.url });
+
+app.get('/api/link-utili', async (req, res) => {
+    try {
+        const righe = await dbAll(`SELECT * FROM link_utile ORDER BY ordine, id`);
+        const sezioni = Object.fromEntries(SEZIONI_LINK.map(s => [s, []]));
+        for (const r of righe) sezioni[r.sezione]?.push(linkPubblico(r));
+        res.json({ sezioni, puoGestire: puoGestireStoria(req) });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+app.post('/api/link-utili', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        const sezione = String(req.body?.sezione ?? '');
+        if (!SEZIONI_LINK.includes(sezione)) return res.status(400).json({ error: "Sezione non valida." });
+        const { dati, errore } = datiLink(req.body);
+        if (errore) return res.status(400).json({ error: errore });
+        const { quanti, ultimo } = await dbGet(
+            `SELECT COUNT(*) AS quanti, MAX(ordine) AS ultimo FROM link_utile WHERE sezione = ?`, [sezione]);
+        if (quanti >= MAX_LINK_PER_SEZIONE)
+            return res.status(400).json({ error: `Una sezione può avere al massimo ${MAX_LINK_PER_SEZIONE} link.` });
+        const esito = await dbRun(`INSERT INTO link_utile (sezione, titolo, url, ordine, rif_autore) VALUES (?, ?, ?, ?, ?)`,
+            [sezione, dati.titolo, dati.url, (ultimo ?? 0) + 1, req.user.id]);
+        res.status(201).json({ link: linkPubblico(await dbGet(`SELECT * FROM link_utile WHERE id = ?`, [esito.lastID])) });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+app.put('/api/link-utili/:id', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        const { dati, errore } = datiLink(req.body);
+        if (errore) return res.status(400).json({ error: errore });
+        const esito = await dbRun(`UPDATE link_utile SET titolo = ?, url = ?, rif_autore = ?,
+                                   data_modifica = to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+                                   WHERE id = ?`, [dati.titolo, dati.url, req.user.id, req.params.id]);
+        if (esito.changes === 0) return res.status(404).json({ error: "Questo link non c'è più." });
+        res.json({ link: linkPubblico(await dbGet(`SELECT * FROM link_utile WHERE id = ?`, [req.params.id])) });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+// Un posto più su o più giù nella sua sezione, scambiandolo con quello accanto.
+app.post('/api/link-utili/:id/sposta', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        const verso = req.body?.verso;
+        if (verso !== 'su' && verso !== 'giu') return res.status(400).json({ error: 'Richiesta non valida.' });
+        const link = await dbGet(`SELECT * FROM link_utile WHERE id = ?`, [req.params.id]);
+        if (!link) return res.status(404).json({ error: "Questo link non c'è più." });
+        const righe = await dbAll(`SELECT id FROM link_utile WHERE sezione = ? ORDER BY ordine, id`, [link.sezione]);
+        const qui = righe.findIndex(r => r.id === link.id);
+        const la = verso === 'su' ? qui - 1 : qui + 1;
+        if (la < 0 || la >= righe.length) return res.json({ message: 'Già in fondo.' });
+        [righe[qui], righe[la]] = [righe[la], righe[qui]];
+        // Si riscrive l'ordine di tutta la sezione: così non restano due link con lo stesso numero.
+        await dbRun('BEGIN');
+        try {
+            for (const [i, r] of righe.entries()) await dbRun(`UPDATE link_utile SET ordine = ? WHERE id = ?`, [i + 1, r.id]);
+            await dbRun('COMMIT');
+        } catch (err) {
+            await dbRun('ROLLBACK').catch(() => {});
+            throw err;
+        }
+        res.json({ message: 'Spostato.' });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+app.delete('/api/link-utili/:id', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        const esito = await dbRun(`DELETE FROM link_utile WHERE id = ?`, [req.params.id]);
+        if (esito.changes === 0) return res.status(404).json({ error: "Questo link non c'è più." });
+        res.json({ message: 'Link tolto.' });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
 app.use((err, req, res, next) => {
     if (err.type === 'entity.too.large') {
         const conFoto = ROTTE_CON_FOTO.some(r => req.path.startsWith(r));

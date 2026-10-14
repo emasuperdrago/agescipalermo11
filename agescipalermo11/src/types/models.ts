@@ -816,3 +816,21 @@ export interface CompleannoOggi {
   /** Gli anni che compie oggi. */
   anni: number;
 }
+
+// ---------- Link utili (in Chi siamo) ----------
+
+export type SezioneLink = 'branco' | 'reparto' | 'clan' | 'capi';
+
+export interface LinkUtile {
+  id: number;
+  sezione: SezioneLink;
+  titolo: string;
+  /** Sempre un indirizzo web completo (https://…), pulito dal server. */
+  url: string;
+}
+
+export interface PaginaLinkUtili {
+  sezioni: Record<SezioneLink, LinkUtile[]>;
+  /** Capi e capigruppo: aggiungono, cambiano, spostano e tolgono i link. */
+  puoGestire: boolean;
+}
