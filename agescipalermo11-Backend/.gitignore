@@ -9,3 +9,8 @@ uploads/
 # Copie del database e archivio del vecchio SQLite: dati personali, mai su GitHub.
 copia-database.sql
 archivio-sqlite/
+
+# Il pacchetto per il server (chiavi e dati): si carica a mano con Cyberduck, mai su GitHub.
+per-il-server/
+dati-palermo11.json.cif
+dati-palermo11.json.cif.importato

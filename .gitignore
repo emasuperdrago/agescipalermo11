@@ -28,3 +28,7 @@ agescipalermo11-Backend/dati/sfondi-iniziali/*.jpeg
 agescipalermo11-Backend/dati/sfondi-iniziali/*.png
 agescipalermo11-Backend/dati/sfondi-iniziali/*.webp
 agescipalermo11/src/assets/sfondo/campo-di-gruppo*.jpg
+
+# Il pacchetto per il server (chiavi e dati): si carica a mano con Cyberduck, mai su GitHub.
+agescipalermo11-Backend/per-il-server/
+agescipalermo11-Backend/dati-palermo11.json.cif*

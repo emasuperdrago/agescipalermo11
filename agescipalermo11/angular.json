@@ -35,9 +35,15 @@
                 "output": "/"
               },
               {
+                "glob": ".htaccess",
+                "input": "src",
+                "output": "/"
+              },
+              {
                 "glob": "**/*",
                 "input": "src/assets",
-                "output": "assets"
+                "output": "assets",
+                "ignore": ["**/*.cif"]
               },
               {
                 "glob": "sql-wasm.wasm",
@@ -135,7 +141,8 @@
               {
                 "glob": "**/*",
                 "input": "src/assets",
-                "output": "assets"
+                "output": "assets",
+                "ignore": ["**/*.cif"]
               },
               {
                 "glob": "sql-wasm.wasm",
