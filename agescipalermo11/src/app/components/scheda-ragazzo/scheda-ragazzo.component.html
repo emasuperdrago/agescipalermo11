@@ -112,6 +112,13 @@
           <span class="aiuto">Le cose da sapere subito. La scheda medica completa allegala qui sotto in PDF.</span>
         </label>
 
+        <label class="campo">
+          <span class="etichetta">Note</span>
+          <textarea name="noteGenerali" [(ngModel)]="campi.note" rows="3" maxlength="1000"
+                    placeholder="Fratelli nel gruppo, orari, cose da ricordare…"></textarea>
+          <span class="aiuto">Qui arrivano anche le note scritte nella richiesta di iscrizione.</span>
+        </label>
+
         @if (errore) {
           <p class="errore" role="alert">{{ errore }}</p>
         }

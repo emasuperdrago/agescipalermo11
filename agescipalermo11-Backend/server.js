@@ -3238,6 +3238,7 @@ const CAMPI_SCHEDA = {
     genitore1_nome: MAX_NOME, genitore1_cognome: MAX_NOME, genitore1_telefono: 20, genitore1_email: 120,
     genitore2_nome: MAX_NOME, genitore2_cognome: MAX_NOME, genitore2_telefono: 20, genitore2_email: 120,
     note_sanitarie: 1000,
+    note: MAX_NOTE_RICHIESTA,
 };
 
 /** Il ragazzo della scheda, se chi chiede può vederla: capo della sua branca o capogruppo. */
@@ -3276,7 +3277,7 @@ async function riempiSchedaDaRichiesta(ragazzo, richieste = null) {
         indirizzo: richiesta.indirizzo, genitore1_nome: richiesta.genitore1_nome,
         genitore1_cognome: richiesta.genitore1_cognome, genitore1_telefono: richiesta.telefono,
         genitore1_email: richiesta.email, genitore2_nome: richiesta.genitore2_nome,
-        genitore2_cognome: richiesta.genitore2_cognome,
+        genitore2_cognome: richiesta.genitore2_cognome, note: richiesta.note,
     };
     const valori = {};
     for (const campo of Object.keys(CAMPI_SCHEDA))
@@ -3284,6 +3285,24 @@ async function riempiSchedaDaRichiesta(ragazzo, richieste = null) {
     await salvaScheda(ragazzo.id, valori, { rifRichiesta: richiesta.id });
     return true;
 }
+
+/**
+ * Una volta sola: le schede riempite da una richiesta prima che esistesse il campo "Note"
+ * prendono anche le note di quella richiesta (se c'è ancora e se la nota è vuota).
+ */
+async function completaNoteDalleRichieste() {
+    const fatto = await dbGet(`SELECT valore FROM impostazioni WHERE chiave = 'note_schede_copiate'`);
+    if (fatto) return;
+    const schede = await dbAll(`SELECT s.rif_utente, r.note FROM scheda_ragazzo s
+                                JOIN richiesta_iscrizione r ON r.id = s.rif_richiesta
+                                WHERE s.note IS NULL AND r.note IS NOT NULL`);
+    for (const s of schede)
+        await dbRun(`UPDATE scheda_ragazzo SET note = ? WHERE rif_utente = ? AND note IS NULL`, [cripta(s.note), s.rif_utente]);
+    await dbRun(`INSERT INTO impostazioni (chiave, valore) VALUES ('note_schede_copiate', ?)
+                 ON CONFLICT (chiave) DO NOTHING`, [new Date().toISOString()]);
+    if (schede.length) console.log(`📝 Note delle richieste copiate in ${schede.length} schede`);
+}
+completaNoteDalleRichieste().catch(err => console.error('❌ Note delle schede:', err.message));
 
 /** Per tutti i ragazzi di una branca (dopo il file del censimento). */
 async function riempiSchedeDaRichieste(branca) {

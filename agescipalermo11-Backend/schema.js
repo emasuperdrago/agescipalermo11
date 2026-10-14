@@ -274,10 +274,14 @@ const TABELLE = [
         genitore2_telefono TEXT,
         genitore2_email TEXT,
         note_sanitarie TEXT,
+        note TEXT,
         rif_richiesta INTEGER,
         data_modifica TEXT,
         rif_modificato_da INTEGER REFERENCES utenti(id) ON DELETE SET NULL
     )`,
+
+    // Note generali (cifrate): ci arrivano anche quelle scritte nella richiesta di iscrizione.
+    `ALTER TABLE scheda_ragazzo ADD COLUMN IF NOT EXISTS note TEXT`,
 
     // PDF allegati alla scheda (es. la scheda medica). Il file sta su disco cifrato, fuori
     // dalle cartelle pubbliche; anche il nome originale è cifrato.

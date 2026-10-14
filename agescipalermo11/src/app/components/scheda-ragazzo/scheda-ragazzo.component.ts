@@ -46,6 +46,7 @@ export class SchedaRagazzoComponent implements OnInit {
   campi: CampiScheda = {
     indirizzo: '', genitore1_nome: '', genitore1_cognome: '', genitore1_telefono: '', genitore1_email: '',
     genitore2_nome: '', genitore2_cognome: '', genitore2_telefono: '', genitore2_email: '', note_sanitarie: '',
+    note: '',
   };
   /** Il secondo genitore si mostra se c'è già o se lo si aggiunge. */
   secondoGenitore = false;

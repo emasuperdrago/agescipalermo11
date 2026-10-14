@@ -534,6 +534,8 @@ export interface CampiScheda {
   genitore2_email: string;
   /** Allergie, intolleranze, farmaci: la scheda medica completa va allegata in PDF. */
   note_sanitarie: string;
+  /** Tutto il resto; ci arrivano anche le note scritte nella richiesta di iscrizione. */
+  note: string;
 }
 
 /** PDF allegato alla scheda (si scarica solo con l'accesso fatto). */
