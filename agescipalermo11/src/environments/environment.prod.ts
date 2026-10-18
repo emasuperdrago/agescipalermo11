@@ -2,8 +2,8 @@ export const environment = {
   production: true,
   backendPort: null,
   /**
-   * Online il backend ha un indirizzo suo (la app Node del cPanel). Se cambia il dominio,
-   * o se il backend va sotto un altro nome, si cambia solo qui e si ricompila il sito.
+   * Vuoto: online sito e backend sono la stessa app, sullo stesso indirizzo (newsite.palermo11.it).
+   * Se un giorno il backend andasse su un indirizzo suo, si scrive qui (es. 'https://api.…').
    */
-  backendOrigin: 'https://api.newsite.palermo11.it',
+  backendOrigin: '',
 };

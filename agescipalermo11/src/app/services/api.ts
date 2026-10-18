@@ -6,6 +6,8 @@ import { environment } from '../../environments/environment';
  */
 export function backendUrl(): string {
   if (environment.backendOrigin) return environment.backendOrigin;
+  // Senza porta del backend: stessa app del sito, stesso indirizzo (porta compresa).
+  if (!environment.backendPort) return window.location.origin;
   const port = environment.backendPort ? `:${environment.backendPort}` : '';
   return `${window.location.protocol}//${window.location.hostname}${port}`;
 }

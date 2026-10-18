@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
@@ -28,7 +28,7 @@ import { BozzaLibretto, Canto, CantoElenco, SezioneCanto } from '../../types/mod
     IonRouterLinkWithHref, IonContent, BarraInferioreComponent,
   ],
 })
-export class CanzonierePage {
+export class CanzonierePage implements OnInit {
   readonly sezioni = SEZIONI_CANTO;
   readonly nomeSezione = nomeSezione;
   readonly coloreSezione = coloreSezione;
@@ -79,6 +79,13 @@ export class CanzonierePage {
           : 'Impossibile caricare i canti. Riprova tra poco.';
       },
     });
+  }
+
+  // Ionic a volte crea la pagina due volte: si carica sia alla creazione sia a ogni ingresso,
+  // così la pagina che si vede ha sempre i canti (le richieste doppie le ferma il debounce).
+  ngOnInit() {
+    this.cerca();
+    this.caricaBozze();
   }
 
   ionViewWillEnter() {

@@ -17,8 +17,8 @@ const { ORDINE_TABELLE } = require('./schema');
 
 const CARTELLA = path.join(__dirname, 'per-il-server');
 // Dove sarà il sito online (i link nelle email) e chi può parlare col backend.
-const SITO_ONLINE = 'https://www.newsite.palermo11.it';
-const ORIGINI_ONLINE = ['https://www.newsite.palermo11.it', 'https://newsite.palermo11.it'];
+const SITO_ONLINE = 'https://newsite.palermo11.it';
+const ORIGINI_ONLINE = ['https://newsite.palermo11.it', 'https://www.newsite.palermo11.it'];
 // Link per email già scaduti o da usare una volta sola: online non servono.
 const TABELLE_SALTATE = new Set(['link_email']);
 // L'admin di prova (codice 1111111) ha ancora la password di prova, che sta scritta nel codice
@@ -80,9 +80,8 @@ function envDelServer(gia = {}) {
         '',
         '# Online: niente admin di prova, solo gli indirizzi qui sotto, HTTPS obbligatorio.',
         riga('NODE_ENV', 'production'),
-        '# L\'HTTPS lo fa l\'hosting (Apache/Passenger) davanti al backend.',
+        '# L\'HTTPS lo fa l\'hosting davanti al backend (il certificato è nel pannello).',
         riga('DIETRO_PROXY', '1'),
-        riga('FORZA_HTTPS', '1'),
         riga('ALLOWED_ORIGINS', ORIGINI_ONLINE.join(',')),
         riga('SITO_URL', SITO_ONLINE),
         '',

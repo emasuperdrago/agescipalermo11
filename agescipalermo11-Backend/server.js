@@ -5482,6 +5482,30 @@ app.delete('/api/link-utili/:id', verificaRuolo('capo', 'admin'), async (req, re
     }
 });
 
+// ---------- Il sito (le pagine di Angular, già compilate) ----------
+// Online la stessa app fa da sito e da backend, sullo stesso indirizzo: le pagine stanno in
+// ../agescipalermo11/www (le crea "npm run build:sito" al deploy). Gli indirizzi del sito
+// (es. /canzoniere/806) non sono file veri: li apre l'app, che parte da index.html.
+const CARTELLA_SITO = process.env.CARTELLA_SITO || path.join(__dirname, '..', 'agescipalermo11', 'www');
+const INDICE_SITO = path.join(CARTELLA_SITO, 'index.html');
+if (fs.existsSync(INDICE_SITO)) {
+    app.use(express.static(CARTELLA_SITO, {
+        index: false,
+        setHeaders: (res, file) => {
+            // Script e stili hanno il nome che cambia a ogni versione: si tengono a lungo.
+            // Il resto (immagini, icone) per un giorno.
+            res.setHeader('Cache-Control', /-[0-9A-Z]{8}\.(js|css)$/.test(file)
+                ? 'public, max-age=31536000, immutable' : 'public, max-age=86400');
+        },
+    }));
+    app.get(/^\/(?!api\/|uploads\/).*/, (req, res) => {
+        // index.html si ricontrolla sempre: dopo un aggiornamento si vede subito il sito nuovo.
+        res.setHeader('Cache-Control', 'no-cache');
+        res.sendFile(INDICE_SITO);
+    });
+    console.log(`🌐 Il sito si apre da qui (${path.relative(__dirname, CARTELLA_SITO) || '.'})`);
+}
+
 app.use((err, req, res, next) => {
     if (err.type === 'entity.too.large') {
         const conFoto = ROTTE_CON_FOTO.some(r => req.path.startsWith(r));

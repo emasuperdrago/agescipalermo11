@@ -12,7 +12,8 @@
     "server:prepara": "node prepara-server.js",
     "dati:importa": "node importa-dati.js",
     "foto:cifra": "node foto-cifrate.js cifra",
-    "foto:decifra": "node foto-cifrate.js decifra"
+    "foto:decifra": "node foto-cifrate.js decifra",
+    "build:sito": "cd ../agescipalermo11 && npm ci --include=dev && npx ng build --configuration production"
   },
   "keywords": [],
   "author": "",
