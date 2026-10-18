@@ -85,6 +85,7 @@ let pronto;
 
 async function prepara() {
   await creaSchema(sql => interroga(sql));
+  await importaSeCiSonoDati();
   await controllaChiave();
   await cifraCodiciCensimento();
   await assicuraAnnoScout();
@@ -108,6 +109,18 @@ pronto = prepara()
 /** Le righe di una query (per i dati di partenza qui sotto). */
 async function righe(sql, parametri) {
   return (await interroga(sql, parametri)).rows;
+}
+
+/**
+ * Sul server, al primo avvio: se nella cartella c'è il file dei dati preparato sul Mac
+ * ("npm run server:prepara"), si caricano nel database prima di tutto il resto.
+ * Se il file c'è ma non si può usare (chiave sbagliata…) ci si ferma: meglio che partire vuoti.
+ */
+async function importaSeCiSonoDati() {
+  const { importaDati } = require('./importa-dati');
+  const esito = await importaDati();
+  if (esito.importato) console.log(`📦 Dati del Mac importati: ${esito.righe} righe (preparati il ${esito.creato}).`);
+  else if (esito.motivo !== 'nessun file da importare') console.warn(`📦 Dati non importati: ${esito.motivo}.`);
 }
 
 /**
