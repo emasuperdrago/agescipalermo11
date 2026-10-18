@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 const { Client } = require('pg');
-require('./configurazione');
+const { datiDatabase } = require('./configurazione');
 const { decriptaFile, sigilloChiave } = require('./cifratura');
 const { creaSchema, ORDINE_TABELLE } = require('./schema');
 
@@ -31,11 +31,7 @@ async function importaDati() {
     if (pacchetto.sigillo !== sigilloChiave())
         throw new Error('la DB_KEY nel .env non è quella del Mac: i dati cifrati non si leggerebbero');
 
-    const client = new Client({
-        host: process.env.DB_HOST, port: Number(process.env.DB_PORT) || 5432,
-        user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME,
-        ...(process.env.DB_SSL === '1' ? { ssl: { rejectUnauthorized: true } } : {}),
-    });
+    const client = new Client(datiDatabase());
     await client.connect();
     try {
         // Le tabelle ci sono già se il backend è partito almeno una volta; se no si creano.

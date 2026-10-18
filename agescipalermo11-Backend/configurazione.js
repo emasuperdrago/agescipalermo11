@@ -102,8 +102,29 @@ function chiaveDelDatabase() {
     return nuova;
 }
 
+/**
+ * Il collegamento al database PostgreSQL. Si leggono prima PG_HOST, PG_PORT, PG_NAME, PG_USER,
+ * PG_PASSWORD (PG_SSL): il pannello dell'hosting mette nella app le sue variabili DB_* per un
+ * database MySQL, che il backend non usa e che altrimenti prenderebbero il posto delle nostre.
+ * Se le PG_* mancano valgono le DB_* (come sul Mac).
+ */
+function datiDatabase() {
+    const e = process.env;
+    const usaPg = !!(e.PG_HOST || e.PG_NAME || e.PG_USER);
+    const v = (nome) => usaPg ? e[`PG_${nome}`] : e[`DB_${nome}`];
+    return {
+        host: v('HOST'),
+        port: Number(v('PORT')) || 5432,
+        user: v('USER'),
+        password: v('PASSWORD'),
+        database: v('NAME'),
+        ...(v('SSL') === '1' ? { ssl: { rejectUnauthorized: true } } : {}),
+    };
+}
+
 module.exports = {
     JWT_SECRET: chiaveDeiToken(),
     DB_KEY: chiaveDelDatabase(),
     percorsoEnv,
+    datiDatabase,
 };

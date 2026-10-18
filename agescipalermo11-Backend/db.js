@@ -12,7 +12,7 @@ const { Pool, types } = require('pg');
 const bcrypt = require('bcrypt');
 const path = require('path');
 const fs = require('fs');
-require('./configurazione');
+const { datiDatabase } = require('./configurazione');
 const { creaSchema } = require('./schema');
 const { decriptaRiga, sigilloChiave, emailDaSalvare, codiceDaSalvare, improntaCodice, decriptaFile } = require('./cifratura');
 
@@ -20,22 +20,20 @@ const { decriptaRiga, sigilloChiave, emailDaSalvare, codiceDaSalvare, improntaCo
 types.setTypeParser(20, (v) => v === null ? null : Number(v));
 types.setTypeParser(1700, (v) => v === null ? null : Number(v));
 
-const mancanti = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'].filter(n => !process.env[n]);
+const DATABASE = datiDatabase();
+const mancanti = [['host', 'HOST'], ['database', 'NAME'], ['user', 'USER'], ['password', 'PASSWORD']]
+  .filter(([campo]) => !DATABASE[campo]).map(([, nome]) => nome);
 if (mancanti.length) {
-  console.error(`❌ Mancano nel file .env i dati del database: ${mancanti.join(', ')}.`);
+  console.error(`❌ Mancano nel file .env i dati del database PostgreSQL: ${mancanti.join(', ')}`
+    + ' (PG_HOST, PG_NAME… sul server; DB_HOST, DB_NAME… sul Mac).');
   process.exit(1);
 }
 
 const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT) || 5432,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  ...DATABASE,
   // Un collegamento solo: le query aspettano in fila, come con SQLite.
+  // (Se il database sta su un altro server, il collegamento va cifrato: PG_SSL=1 / DB_SSL=1.)
   max: 1,
-  // Se il database sta su un altro server, il collegamento va cifrato (DB_SSL=1 nel .env).
-  ...(process.env.DB_SSL === '1' ? { ssl: { rejectUnauthorized: true } } : {}),
 });
 pool.on('error', (err) => console.error('Database: collegamento interrotto, si riprova alla prossima query:', err.code || err.message));
 
@@ -99,7 +97,7 @@ async function prepara() {
 }
 
 pronto = prepara()
-  .then(() => console.log(`✅ Database pronto (PostgreSQL, ${process.env.DB_NAME})`))
+  .then(() => console.log(`✅ Database pronto (PostgreSQL, ${DATABASE.database})`))
   .catch((err) => {
     console.error('❌ Database non disponibile:', err.code || '', err.message);
     console.error('   Controlla che PostgreSQL sia acceso e i dati DB_* nel file .env.');

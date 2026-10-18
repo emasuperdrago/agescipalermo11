@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const { Client } = require('pg');
-require('./configurazione');
+const { datiDatabase } = require('./configurazione');
 const { criptaFile, improntaCodice, sigilloChiave } = require('./cifratura');
 const { ORDINE_TABELLE } = require('./schema');
 
@@ -26,10 +26,7 @@ const TABELLE_SALTATE = new Set(['link_email']);
 const CODICE_DI_PROVA = 1111111;
 
 async function esportaDati() {
-    const client = new Client({
-        host: process.env.DB_HOST, port: Number(process.env.DB_PORT) || 5432,
-        user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME,
-    });
+    const client = new Client(datiDatabase());
     await client.connect();
     const tabelle = {};
     let righe = 0;
@@ -83,12 +80,13 @@ function envDelServer() {
         '',
         '# Database PostgreSQL dell\'hosting: nome, utente e password li scrivi tu (dal pannello',
         '# del tuo amico; la password è quella NUOVA, non quella vecchia finita in una chat).',
-        '# Non stanno nel codice perché il repository è pubblico.',
-        riga('DB_HOST', 'localhost'),
-        riga('DB_PORT', '5432'),
-        riga('DB_NAME', 'SCRIVI_QUI_IL_NOME_DEL_DATABASE'),
-        riga('DB_USER', 'SCRIVI_QUI_L_UTENTE_DEL_DATABASE'),
-        riga('DB_PASSWORD', 'SCRIVI_QUI_LA_PASSWORD_DEL_DATABASE'),
+        '# Non stanno nel codice perché il repository è pubblico. Si chiamano PG_* e non DB_*:',
+        '# le DB_* il pannello le usa per un database MySQL che al backend non serve.',
+        riga('PG_HOST', 'localhost'),
+        riga('PG_PORT', '5432'),
+        riga('PG_NAME', 'SCRIVI_QUI_IL_NOME_DEL_DATABASE'),
+        riga('PG_USER', 'SCRIVI_QUI_L_UTENTE_DEL_DATABASE'),
+        riga('PG_PASSWORD', 'SCRIVI_QUI_LA_PASSWORD_DEL_DATABASE'),
         '',
         '# Email: per ora lo stesso Gmail del Mac; più avanti la casella del dominio.',
         riga('SMTP_HOST', e.SMTP_HOST),
