@@ -2497,8 +2497,8 @@ const INTERLINEA = DIMENSIONE_TESTO * 1.32;
 const LARGHEZZA_LETTERA = DIMENSIONE_TESTO * 0.602;
 const ALTEZZA_TESTATA = 54;
 
-/** Barra viola in cima a ogni pagina, come quella del sito. */
-function testata(doc, sottotitolo) {
+/** Barra viola in cima a ogni pagina, come quella del sito. A destra l'evento e, sotto, la data. */
+function testata(doc, sottotitolo, data = '') {
     const larghezza = doc.page.width - MARGINE * 2;
     doc.save();
     doc.roundedRect(MARGINE, MARGINE - 14, larghezza, ALTEZZA_TESTATA - 12, 14).fill(VIOLA);
@@ -2510,7 +2510,10 @@ function testata(doc, sottotitolo) {
     doc.font('Helvetica').fontSize(8).fillColor('#E3C0FF')
         .text('GRUPPO SCOUT AGESCI', MARGINE + 50, MARGINE + 12);
     doc.font('Helvetica-Bold').fontSize(11).fillColor('#FFFFFF')
-        .text(sottotitolo, MARGINE, MARGINE + 2, { width: larghezza - 14, align: 'right' });
+        .text(sottotitolo, MARGINE, data ? MARGINE - 4 : MARGINE + 2,
+            { width: larghezza - 14, align: 'right', lineBreak: false, ellipsis: true });
+    if (data) doc.font('Helvetica').fontSize(8).fillColor('#E3C0FF')
+        .text(data, MARGINE, MARGINE + 12, { width: larghezza - 14, align: 'right', lineBreak: false });
     doc.restore();
 }
 
@@ -2556,7 +2559,7 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, copertina 
     doc.on('pageAdded', () => {
         pagina += 1;
         if (inCopertina) return;
-        testata(doc, sottotitolo);
+        testata(doc, sottotitolo, dataLunga(copertina?.data));
         piePagina(doc, pagina, copertina?.evento);
         doc.y = MARGINE + ALTEZZA_TESTATA;
     });
