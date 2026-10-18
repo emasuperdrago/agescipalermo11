@@ -834,3 +834,35 @@ export interface PaginaLinkUtili {
   /** Capi e capigruppo: aggiungono, cambiano, spostano e tolgono i link. */
   puoGestire: boolean;
 }
+
+// ---------- Libretti dei canti (anche per la messa) ----------
+
+export type ParteMessa =
+  | 'ingresso' | 'gloria' | 'alleluia' | 'offertorio' | 'santo' | 'pace' | 'agnello' | 'comunione' | 'conclusione';
+
+/** Le scelte di un libretto: canti, copertina, opzioni e (per la messa) i canti di ogni parte. */
+export interface DatiLibretto {
+  ids: number[];
+  evento: string;
+  /** "AAAA-MM-GG" o vuota. */
+  data: string;
+  luogo: string;
+  messa: boolean;
+  parti: Partial<Record<ParteMessa, number[]>>;
+  accordi: boolean;
+  grande: boolean;
+}
+
+/** Una bozza salvata: la vedono e la cambiano i capi. */
+export interface BozzaLibretto {
+  id: number;
+  evento: string;
+  data: string;
+  messa: boolean;
+  /** Quanti canti ci sono. */
+  canti: number;
+  autore: string | null;
+  data_modifica: string;
+  /** Solo quando si apre la bozza. */
+  libretto?: DatiLibretto;
+}

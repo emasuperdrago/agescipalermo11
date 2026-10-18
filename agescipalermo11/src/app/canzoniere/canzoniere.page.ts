@@ -9,13 +9,14 @@ import {
 } from '@ionic/angular/standalone';
 import {
   addOutline, arrowBackOutline, checkmarkOutline, chevronForwardOutline, closeOutline, documentTextOutline,
-  downloadOutline, musicalNotesOutline, searchOutline
+  downloadOutline, musicalNotesOutline, searchOutline, trashOutline
 } from 'ionicons/icons';
 import { AuthService } from '../services/auth';
 import { CantiService, SEZIONI_CANTO, coloreSezione, nomeSezione } from '../services/canti';
 import { CantoEditorComponent } from '../components/canto-editor/canto-editor.component';
+import { AnteprimaLibrettoComponent } from '../components/anteprima-libretto/anteprima-libretto.component';
 import { BarraInferioreComponent } from '../components/barra-inferiore/barra-inferiore.component';
-import { Canto, CantoElenco, SezioneCanto } from '../../types/models';
+import { BozzaLibretto, Canto, CantoElenco, SezioneCanto } from '../../types/models';
 
 @Component({
   selector: 'app-canzoniere',
@@ -34,8 +35,11 @@ export class CanzonierePage {
   readonly icone = {
     indietro: arrowBackOutline, cerca: searchOutline, cancella: closeOutline, aggiungi: addOutline,
     canto: musicalNotesOutline, apri: chevronForwardOutline, scarica: downloadOutline,
-    scelta: checkmarkOutline, libretto: documentTextOutline,
+    scelta: checkmarkOutline, libretto: documentTextOutline, elimina: trashOutline,
   };
+
+  /** Le bozze dei libretti salvate dai capi. */
+  bozze: BozzaLibretto[] = [];
 
   /** Selezione dei canti da mettere insieme in un PDF. */
   modalitaSelezione = false;
@@ -79,6 +83,7 @@ export class CanzonierePage {
   ionViewWillEnter() {
     // Al ritorno dal dettaglio un canto può essere cambiato o sparito.
     this.cerca();
+    this.caricaBozze();
   }
 
   /** Capi e admin aggiungono, modificano ed eliminano i canti; gli altri li leggono. */
@@ -123,34 +128,67 @@ export class CanzonierePage {
     else this.canti.forEach(c => this.scelti.add(c.id));
   }
 
+  /** I canti scelti vanno nell'anteprima: copertina, messa, opzioni, e da lì si scarica. */
   async scaricaPdf() {
     if (!this.scelti.size) return;
+    await this.apriAnteprima({ ids: [...this.scelti] });
+  }
+
+  private async apriAnteprima(props: { ids?: number[]; bozza?: BozzaLibretto }) {
+    const modale = await this.modalCtrl.create({
+      component: AnteprimaLibrettoComponent, componentProps: props, cssClass: 'modale-grande',
+    });
+    await modale.present();
+    const { role } = await modale.onDidDismiss();
+    if (role === 'salvato') this.caricaBozze();
+  }
+
+  // ---------- Bozze dei libretti ----------
+
+  caricaBozze() {
+    if (!this.puoModificare) return;
+    this.canti$.bozze().subscribe({
+      next: bozze => this.bozze = bozze,
+      error: () => this.bozze = [],
+    });
+  }
+
+  /** "25 ottobre 2026" (la data dell'evento) o quando è stata salvata. */
+  dataBozza(b: BozzaLibretto): string {
+    const opzioni: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+    if (b.data) {
+      const [a, m, g] = b.data.split('-').map(Number);
+      return new Date(a, m - 1, g).toLocaleDateString('it-IT', opzioni);
+    }
+    return `salvata il ${new Date(b.data_modifica).toLocaleDateString('it-IT', opzioni)}`;
+  }
+
+  apriBozza(b: BozzaLibretto) {
+    this.canti$.bozza(b.id).subscribe({
+      next: bozza => this.apriAnteprima({ bozza }),
+      error: (err: HttpErrorResponse) => this.avvisa(err.error?.error ?? 'Non riesco ad aprire la bozza.'),
+    });
+  }
+
+  async eliminaBozza(b: BozzaLibretto) {
     const alert = await this.alertCtrl.create({
-      header: 'Scarica i canti',
-      message: `${this.scelti.size} ${this.scelti.size === 1 ? 'canto' : 'canti'} in un unico PDF.`,
-      inputs: [
-        { type: 'radio', label: 'Con gli accordi', value: 'accordi', checked: true },
-        { type: 'radio', label: 'Solo le parole', value: 'parole' },
-      ],
+      header: 'Eliminare la bozza?',
+      message: `"${b.evento || 'Senza titolo'}" sparisce dalle bozze per tutti i capi.`,
       buttons: [
         { text: 'Annulla', role: 'cancel' },
-        { text: 'Scarica', handler: (scelta: string) => this.apriPdf(scelta !== 'parole') },
+        { text: 'Elimina', role: 'destructive' },
       ],
     });
     await alert.present();
-  }
-
-  private apriPdf(conAccordi: boolean) {
-    const indirizzo = this.canti$.urlPdf([...this.scelti], conAccordi);
-    // Il PDF arriva dal server come file da scaricare.
-    const collegamento = document.createElement('a');
-    collegamento.href = indirizzo;
-    collegamento.rel = 'noopener';
-    collegamento.target = '_blank';
-    document.body.appendChild(collegamento);
-    collegamento.click();
-    collegamento.remove();
-    this.avvisa('PDF in preparazione…');
+    const { role } = await alert.onDidDismiss();
+    if (role !== 'destructive') return;
+    this.canti$.eliminaBozza(b.id).subscribe({
+      next: () => {
+        this.bozze = this.bozze.filter(x => x.id !== b.id);
+        this.avvisa('Bozza eliminata.');
+      },
+      error: (err: HttpErrorResponse) => this.avvisa(err.error?.error ?? 'Non sono riuscito a eliminarla.'),
+    });
   }
 
   pulisciRicerca() {

@@ -112,6 +112,15 @@ const TABELLE = [
         data_modifica TEXT NOT NULL DEFAULT ${ADESSO}
     )`,
 
+    // Bozze dei libretti dei canti (anche per la messa): le scelte in JSON, da riaprire.
+    `CREATE TABLE IF NOT EXISTS libretto_bozza (
+        id SERIAL PRIMARY KEY,
+        dati TEXT NOT NULL,
+        rif_autore INTEGER REFERENCES utenti(id) ON DELETE SET NULL,
+        data_creazione TEXT NOT NULL DEFAULT ${ADESSO},
+        data_modifica TEXT NOT NULL DEFAULT ${ADESSO}
+    )`,
+
     `CREATE TABLE IF NOT EXISTS carta_clan (
         id SERIAL PRIMARY KEY,
         titolo TEXT NOT NULL,

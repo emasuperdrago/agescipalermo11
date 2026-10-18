@@ -1,0 +1,264 @@
+@use '../../../theme/variables' as *;
+
+// Stessa impostazione degli altri pop-up; su schermi larghi le scelte stanno accanto all'anteprima.
+
+.anteprima-libretto {
+  --background: #{$page};
+  font-family: 'Poppins', sans-serif;
+}
+
+.pagina {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 16px 12px calc(28px + env(safe-area-inset-bottom));
+
+  @media (min-width: 900px) {
+    grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.scelte {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.riquadro {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  background: $white;
+  box-shadow: 0 6px 20px rgba($dark, .06);
+
+  h2 {
+    margin: 0;
+    font-size: .98rem;
+    font-weight: 800;
+    color: $dark;
+  }
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+
+  input {
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 12px;
+    border: 1.5px solid $slate-200;
+    border-radius: 12px;
+    background: $white;
+    font-family: inherit;
+    font-size: .92rem;
+    color: $dark;
+    outline: none;
+
+    &:focus {
+      border-color: $viola-m;
+      box-shadow: 0 0 0 4px rgba($viola-l, .2);
+    }
+  }
+}
+
+.etichetta {
+  padding: 0;
+  font-size: .8rem;
+  font-weight: 700;
+  color: $slate-600;
+}
+
+.spunta {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+
+  input {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    accent-color: $viola-m;
+  }
+
+  strong {
+    display: block;
+    font-size: .9rem;
+    font-weight: 700;
+    color: $dark;
+  }
+
+  small {
+    font-size: .76rem;
+    color: $slate;
+  }
+}
+
+// Una riga per parte della messa: nome a sinistra, tendine a destra.
+.parte {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+
+  &__nome {
+    padding-top: 10px;
+    font-size: .82rem;
+    font-weight: 700;
+    color: $viola;
+  }
+
+  &__tendine {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+}
+
+.tendina {
+  display: flex;
+  gap: 6px;
+
+  select {
+    flex: 1;
+    min-width: 0;
+    min-height: 40px;
+    padding: 0 10px;
+    border: 1.5px solid $slate-200;
+    border-radius: 10px;
+    background: $white;
+    font-family: inherit;
+    font-size: .85rem;
+    color: $dark;
+  }
+}
+
+.icona {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border: 1.5px solid $slate-200;
+  border-radius: 10px;
+  background: $white;
+  color: $red;
+  cursor: pointer;
+}
+
+.link-piccolo {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: .8rem;
+  font-weight: 700;
+  color: $viola-m;
+  cursor: pointer;
+
+  &:hover { text-decoration: underline; }
+}
+
+.aiuto {
+  margin: 0;
+  font-size: .78rem;
+  color: $slate;
+}
+
+.azioni {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.principale,
+.secondario {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 50px;
+  padding: 0 18px;
+  border-radius: 16px;
+  font-family: inherit;
+  font-size: .95rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:disabled { opacity: .6; cursor: default; }
+}
+
+.principale {
+  border: none;
+  background: $sfumatura-viola;
+  box-shadow: 0 10px 24px rgba($viola, .3);
+  color: $white;
+}
+
+.secondario {
+  border: 1.5px solid rgba($viola-m, .4);
+  background: $white;
+  color: $viola;
+}
+
+// ---------- L'anteprima ----------
+
+.anteprima {
+  position: relative;
+  min-height: 420px;
+  padding: 12px;
+  border-radius: 18px;
+  background: $white;
+  box-shadow: 0 6px 20px rgba($dark, .06);
+
+  @media (min-width: 900px) {
+    position: sticky;
+    top: 12px;
+  }
+}
+
+.attesa {
+  display: grid;
+  place-items: center;
+  min-height: 400px;
+  font-size: .9rem;
+  color: $slate;
+}
+
+.aggiorno {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  margin: 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba($dark, .7);
+  font-size: .75rem;
+  font-weight: 600;
+  color: $white;
+}
+
+.errore {
+  margin: 0 0 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba($red, .1);
+  font-size: .85rem;
+  font-weight: 600;
+  color: $red;
+}

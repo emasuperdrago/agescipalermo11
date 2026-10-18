@@ -69,6 +69,33 @@
       }
     </div>
 
+    <!-- Bozze dei libretti: solo per i capi, da riaprire e scaricare quando servono. -->
+    @if (puoModificare && bozze.length && !modalitaSelezione) {
+      <section class="bozze" aria-labelledby="titolo-bozze">
+        <h2 id="titolo-bozze">Bozze dei libretti</h2>
+        <ul>
+          @for (b of bozze; track b.id) {
+            <li class="bozza">
+              <button type="button" class="bozza__apri" (click)="apriBozza(b)">
+                <ion-icon [icon]="icone.libretto" aria-hidden="true"></ion-icon>
+                <span>
+                  <strong>{{ b.evento || 'Senza titolo' }}</strong>
+                  <small>
+                    {{ dataBozza(b) }} · {{ b.canti }} {{ b.canti === 1 ? 'canto' : 'canti' }}
+                    @if (b.messa) { · messa }
+                  </small>
+                </span>
+              </button>
+              <button type="button" class="bozza__elimina" (click)="eliminaBozza(b)"
+                      [attr.aria-label]="'Elimina la bozza ' + (b.evento || 'senza titolo')" title="Elimina">
+                <ion-icon [icon]="icone.elimina"></ion-icon>
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
     @if (errore) {
       <p class="vuoto vuoto--errore">{{ errore }}</p>
     } @else if (caricamento) {
@@ -134,7 +161,7 @@
       <button type="button" class="barra-selezione__annulla" (click)="annullaSelezione()">Annulla</button>
       <button type="button" class="barra-selezione__scarica" (click)="scaricaPdf()" [disabled]="!numeroScelti">
         <ion-icon [icon]="icone.scarica" aria-hidden="true"></ion-icon>
-        Scarica PDF
+        Anteprima PDF
       </button>
     </div>
   </div>

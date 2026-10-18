@@ -2270,8 +2270,9 @@ function rigaDiAccordi(riga) {
     const { forzata, riga: senzaSegno } = segnoRiga(riga);
     if (forzata) return forzata === 'accordi';
     // Si tolgono i segni del grassetto, le parentesi e la punteggiatura.
+    // Le barre staccate ("LA4 / la") non sono parole: si saltano.
     const parole = senzaSegniGrassetto(senzaSegno).trim().split(/\s+/)
-        .map(p => p.replace(/[()[\]|,.:]/g, '')).filter(Boolean);
+        .map(p => p.replace(/[()[\]|,.:]/g, '')).filter(p => p && !/^[/\\]+$/.test(p));
     if (!parole.length) return false;
     const accordo = (p) => ACCORDO.test(p) || ACCORDI_UNITI.test(p);
     return parole.some(accordo) && parole.every(p => accordo(p) || CODA.test(p));
@@ -2513,13 +2514,13 @@ function testata(doc, sottotitolo) {
     doc.restore();
 }
 
-function piePagina(doc, numero) {
+function piePagina(doc, numero, evento = null) {
     const y = doc.page.height - MARGINE + 6;
     // Il piè di pagina sta sotto il margine: senza questo pdfkit aggiungerebbe una pagina.
     const margineSotto = doc.page.margins.bottom;
     doc.page.margins.bottom = 0;
     doc.save().font('Helvetica').fontSize(8).fillColor(GRIGIO)
-        .text(`Canzoniere Palermo 11 · pagina ${numero}`, MARGINE, y,
+        .text(`${evento || 'Canzoniere Palermo 11'} · pagina ${numero}`, MARGINE, y,
             { width: doc.page.width - MARGINE * 2, align: 'center', lineBreak: false });
     doc.restore();
     doc.page.margins.bottom = margineSotto;
@@ -2531,104 +2532,218 @@ function soloParole(testo) {
 }
 
 /**
- * `tonalita`: per un canto solo, quella scelta da chi scarica ({ passo, capotasto, alterazioni });
- * altrimenti ogni canto esce nella tonalità del gruppo.
+ * Il PDF di uno o più canti, già in ordine. Ogni voce di `voci` è { canto, titoletto }:
+ * il titoletto (es. "Comunione" nel libretto della messa) va sopra il titolo del canto.
+ * Opzioni:
+ *  - conAccordi: con le righe degli accordi (carattere a larghezza fissa) o solo parole;
+ *  - grande: carattere più grande, da leggere in assemblea;
+ *  - copertina: { evento, data, luogo } per la prima pagina (null = niente copertina);
+ *  - tonalita: per un canto solo, quella scelta da chi scarica ({ passo, capotasto, alterazioni });
+ *    altrimenti ogni canto esce nella tonalità del gruppo.
+ * Un canto non si spezza mai fra due pagine, se entra in una pagina sola.
  */
-function creaPdfCanzoniere(canti, conAccordi, res, tonalita = null) {
-    const doc = new PDFDocument({ size: 'A4', margins: { top: MARGINE + ALTEZZA_TESTATA, bottom: MARGINE + 14, left: MARGINE, right: MARGINE } });
+function creaPdfCanti(voci, res, { conAccordi = true, grande = false, copertina = null, tonalita = null } = {}) {
+    const doc = new PDFDocument({
+        size: 'A4', autoFirstPage: false,
+        margins: { top: MARGINE + ALTEZZA_TESTATA, bottom: MARGINE + 14, left: MARGINE, right: MARGINE },
+        info: { Title: copertina?.evento || 'Canzoniere Palermo 11', Author: 'Gruppo Scout AGESCI Palermo 11' },
+    });
+    const titoloFile = copertina?.evento || (voci.length === 1 ? voci[0].canto.titolo : 'Canzoniere');
+    const sottotitolo = copertina?.evento ? copertina.evento
+        : voci.length === 1 ? 'Canzoniere' : `Canzoniere · ${voci.length} canti`;
     let pagina = 0;
-    const nuovaPagina = () => {
+    let inCopertina = false;
+    doc.on('pageAdded', () => {
         pagina += 1;
-        testata(doc, canti.length === 1 ? 'Canzoniere' : `Canzoniere · ${canti.length} canti`);
-        piePagina(doc, pagina);
+        if (inCopertina) return;
+        testata(doc, sottotitolo);
+        piePagina(doc, pagina, copertina?.evento);
         doc.y = MARGINE + ALTEZZA_TESTATA;
-    };
-    doc.on('pageAdded', nuovaPagina);
+    });
 
     res.setHeader('Content-Type', 'application/pdf');
-    const nomeFile = canti.length === 1
-        ? `${canti[0].titolo.replace(/[^\p{L}\p{N} _-]/gu, '').trim() || 'canto'}.pdf`
-        : 'canzoniere-palermo11.pdf';
+    const nomeFile = `${titoloFile.replace(/[^\p{L}\p{N} _-]/gu, '').trim() || 'canzoniere'}.pdf`;
     res.setHeader('Content-Disposition', `attachment; filename="${nomeFile}"; filename*=UTF-8''${encodeURIComponent(nomeFile)}`);
     doc.pipe(res);
 
-    nuovaPagina();
-    const larghezza = doc.page.width - MARGINE * 2;
+    const larghezza = doc.page ? doc.page.width - MARGINE * 2 : 595.28 - MARGINE * 2;
+    if (copertina) {
+        inCopertina = true;
+        doc.addPage({ margins: { top: MARGINE, bottom: MARGINE, left: MARGINE, right: MARGINE } });
+        disegnaCopertina(doc, copertina);
+        inCopertina = false;
+    }
+    doc.addPage();
+    const fondo = () => doc.page.height - MARGINE - 14;
+    const cima = MARGINE + ALTEZZA_TESTATA;
 
-    // Indice, quando i canti sono parecchi: titolo a sinistra, sezione a destra.
-    if (canti.length >= 4) {
+    // Indice, quando i canti sono parecchi: titolo (e la parte della messa) a sinistra, sezione a destra.
+    if (voci.length >= 4) {
         doc.font('Helvetica-Bold').fontSize(16).fillColor(VIOLA).text('Indice', MARGINE, doc.y + 6, { lineBreak: false });
         let y = doc.y + 24;
-        for (const c of canti) {
-            if (y > doc.page.height - MARGINE - 30) {
+        for (const { canto: c, titoletto } of voci) {
+            if (y > fondo() - 16) {
                 doc.addPage();
                 y = doc.y;
             }
             const colore = COLORI_SEZIONE[c.sezione] ?? VIOLA;
             doc.circle(MARGINE + 3, y + 5, 3).fill(colore);
-            doc.font('Helvetica').fontSize(10).fillColor('#0F172A')
-                .text(c.titolo, MARGINE + 14, y, { width: larghezza - 100, lineBreak: false, ellipsis: true });
+            const nome = titoletto ? `${titoletto} · ${c.titolo}` : c.titolo;
+            doc.font(titoletto ? 'Helvetica-Bold' : 'Helvetica').fontSize(10).fillColor('#0F172A')
+                .text(nome, MARGINE + 14, y, { width: larghezza - 110, lineBreak: false, ellipsis: true });
             doc.font('Helvetica').fontSize(9).fillColor(GRIGIO)
                 .text(NOMI_SEZIONE[c.sezione] ?? '', MARGINE, y + 1, { width: larghezza, align: 'right', lineBreak: false });
             y += 17;
         }
-        doc.y = y;
         doc.addPage();
     }
 
-    for (const [i, c] of canti.entries()) {
+    // Il carattere: a larghezza fissa con gli accordi (le colonne devono restare allineate),
+    // normale per le sole parole, che si leggono meglio.
+    const dimensioneBase = grande ? DIMENSIONE_TESTO + 3 : DIMENSIONE_TESTO;
+    const interlineaDi = (dimensione) => dimensione * (conAccordi ? 1.32 : 1.4);
+    const carattere = (grassetto) => conAccordi
+        ? (grassetto ? 'Courier-Bold' : 'Courier')
+        : (grassetto ? 'Helvetica-Bold' : 'Helvetica');
+
+    /** Le righe del canto pronte da scrivere (con questa dimensione del carattere), con l'altezza di ognuna. */
+    const righeDi = (c, dimensione) => {
+        const interlinea = interlineaDi(dimensione);
         const passo = tonalita ? tonalita.passo : (c.trasposizione ?? 0);
         const capotasto = tonalita?.capotasto ?? 0;
         const alterazioni = tonalita?.alterazioni ?? 'auto';
         // Con il capotasto si scrivono le posizioni da fare: la tonalità che si sente resta `passo`.
         const testo = conAccordi ? trasponiTesto(c.testo, passo - capotasto, alterazioni) : soloParole(c.testo);
-        const righe = testo.split('\n');
-        const colore = COLORI_SEZIONE[c.sezione] ?? VIOLA;
-
-        const altezzaCanto = 34 + righe.length * INTERLINEA;
-        const spazioRimasto = doc.page.height - MARGINE - 14 - doc.y;
-        // Si va a pagina nuova se il canto non ci sta e ne resta poco, oppure se in fondo
-        // alla pagina entrerebbero solo il titolo e due righe.
-        // Pagina nuova solo se in fondo resterebbe spazio per poco più del titolo.
-        if (i > 0 && spazioRimasto < 150) doc.addPage();
-        else if (i > 0) doc.y += 18;
-
-        doc.font('Helvetica-Bold').fontSize(8).fillColor(colore)
-            .text((NOMI_SEZIONE[c.sezione] ?? '').toUpperCase(), MARGINE, doc.y, { characterSpacing: 0.8 });
-        doc.font('Helvetica-Bold').fontSize(14).fillColor('#0F172A').text(c.titolo, MARGINE, doc.y + 1);
-        // Se gli accordi non sono quelli scritti, si dice in che tonalità sono.
-        if (conAccordi && (giro(passo) || capotasto)) {
-            const tono = nomeTonalita(c.testo, passo, alterazioni);
-            const parti = [tono ? `Tonalità: ${tono}` : 'Tonalità cambiata',
-                capotasto ? `capotasto al ${capotasto}° tasto` : null].filter(Boolean);
-            doc.font('Helvetica').fontSize(8.5).fillColor(GRIGIO).text(parti.join(' · '), MARGINE, doc.y + 1);
-        }
-        doc.moveDown(0.4);
-
-        for (const riga of righe) {
-            if (doc.y > doc.page.height - MARGINE - 24) doc.addPage();
-            const accordi = rigaDiAccordi(riga);
+        doc.fontSize(dimensione);
+        return testo.replace(/\n+$/, '').split('\n').map(riga => {
+            const accordi = conAccordi && rigaDiAccordi(riga);
             const senzaSegno = segnoRiga(riga).riga;
             const pulita = senzaSegniGrassetto(senzaSegno);
+            doc.font(carattere(accordi));
             // Le pochissime righe più larghe della pagina vanno a capo, invece di sforare.
-            const troppoLunga = pulita.length * LARGHEZZA_LETTERA > larghezza;
-            const opzioni = troppoLunga ? { width: larghezza } : { lineBreak: false, width: larghezza * 2 };
+            const troppoLunga = doc.widthOfString(pulita) > larghezza;
+            const altezza = troppoLunga
+                ? Math.max(interlinea, doc.heightOfString(pulita, { width: larghezza, lineGap: interlinea - dimensione }))
+                : interlinea;
+            return { accordi, senzaSegno, pulita, troppoLunga, altezza, dimensione, interlinea };
+        });
+    };
+    const tonoDi = (c) => {
+        const passo = tonalita ? tonalita.passo : (c.trasposizione ?? 0);
+        const capotasto = tonalita?.capotasto ?? 0;
+        if (!conAccordi || (!giro(passo) && !capotasto)) return null;
+        const tono = nomeTonalita(c.testo, passo, tonalita?.alterazioni ?? 'auto');
+        return [tono ? `Tonalità: ${tono}` : 'Tonalità cambiata', capotasto ? `capotasto al ${capotasto}° tasto` : null]
+            .filter(Boolean).join(' · ');
+    };
+
+    /** Quanto spazio prende la testa del canto (titoletto, sezione, titolo, tonalità), misurata davvero. */
+    const altezzaIntestazione = (c, titoletto, tono) => {
+        let altezza = 0;
+        if (titoletto) {
+            doc.font('Helvetica-Bold').fontSize(11);
+            altezza += doc.heightOfString(titoletto.toUpperCase(), { width: larghezza, characterSpacing: 1.2 });
+            altezza += doc.currentLineHeight(true) * 0.25;
+        }
+        doc.font('Helvetica-Bold').fontSize(8);
+        altezza += doc.heightOfString((NOMI_SEZIONE[c.sezione] ?? '').toUpperCase() || ' ', { width: larghezza, characterSpacing: 0.8 });
+        doc.font('Helvetica-Bold').fontSize(grande ? 16 : 14);
+        altezza += 1 + doc.heightOfString(c.titolo, { width: larghezza });
+        if (tono) {
+            doc.font('Helvetica').fontSize(8.5);
+            altezza += 1 + doc.heightOfString(tono, { width: larghezza });
+        }
+        return altezza + doc.currentLineHeight(true) * 0.4;
+    };
+
+    const altezzaPagina = fondo() - cima;
+    for (const [i, { canto: c, titoletto }] of voci.entries()) {
+        const tono = tonoDi(c);
+        const intestazione = altezzaIntestazione(c, titoletto, tono);
+        const misura = (righe) => intestazione + righe.reduce((somma, r) => somma + r.altezza, 0) + 2;
+        let righe = righeDi(c, dimensioneBase);
+        // Un canto che supera la pagina di poco si stringe un po' (fino a un quarto più piccolo),
+        // così non resta un "Rit." da solo sulla pagina dopo. Quelli lunghi davvero vanno a capo pagina.
+        for (let d = dimensioneBase - 0.5; misura(righe) > altezzaPagina && d >= dimensioneBase * 0.75; d -= 0.5)
+            righe = righeDi(c, d);
+        if (misura(righe) > altezzaPagina) righe = righeDi(c, dimensioneBase);
+        const altezzaCanto = misura(righe);
+        const spazio = i > 0 ? 22 : 0;
+        const inCima = doc.y <= cima + 1;
+        // Non sta nello spazio che resta: pagina nuova. Un canto più lungo di una pagina intera
+        // comincia comunque su una pagina nuova, e lì va avanti dove serve.
+        if (!inCima && doc.y + spazio + altezzaCanto > fondo()) doc.addPage();
+        else if (i > 0) doc.y += spazio;
+
+        const colore = COLORI_SEZIONE[c.sezione] ?? VIOLA;
+        if (titoletto) {
+            doc.font('Helvetica-Bold').fontSize(11).fillColor(VIOLA_CHIARO)
+                .text(titoletto.toUpperCase(), MARGINE, doc.y, { characterSpacing: 1.2 });
+            doc.moveDown(0.25);
+        }
+        doc.font('Helvetica-Bold').fontSize(8).fillColor(colore)
+            .text((NOMI_SEZIONE[c.sezione] ?? '').toUpperCase(), MARGINE, doc.y, { characterSpacing: 0.8 });
+        doc.font('Helvetica-Bold').fontSize(grande ? 16 : 14).fillColor('#0F172A').text(c.titolo, MARGINE, doc.y + 1);
+        if (tono) doc.font('Helvetica').fontSize(8.5).fillColor(GRIGIO).text(tono, MARGINE, doc.y + 1);
+        doc.moveDown(0.4);
+
+        for (const r of righe) {
+            if (doc.y + r.altezza > fondo()) doc.addPage();
+            const opzioni = r.troppoLunga
+                ? { width: larghezza, lineGap: r.interlinea - r.dimensione }
+                : { lineBreak: false, width: larghezza * 2 };
             // Gli accordi sono già tutti in neretto; i versi seguono gli **asterischi**.
-            // Courier normale e grassetto sono larghi uguali, quindi l'allineamento non cambia.
-            const pezzi = accordi ? [{ grassetto: true, testo: pulita || ' ' }] : pezziRiga(senzaSegno || ' ');
+            const pezzi = r.accordi ? [{ grassetto: true, testo: r.pulita || ' ' }] : pezziRiga(r.senzaSegno || ' ');
             const partenza = doc.y;
-            doc.fontSize(DIMENSIONE_TESTO).fillColor(accordi ? colore : '#0F172A');
+            doc.fontSize(r.dimensione).fillColor(r.accordi ? colore : '#0F172A');
             pezzi.forEach((pezzo, indice) => {
-                doc.font(pezzo.grassetto ? 'Courier-Bold' : 'Courier');
+                doc.font(carattere(pezzo.grassetto));
                 const continua = indice < pezzi.length - 1;
                 if (indice === 0) doc.text(pezzo.testo, MARGINE, partenza, { ...opzioni, continued: continua });
                 else doc.text(pezzo.testo, { ...opzioni, continued: continua });
             });
-            doc.y += INTERLINEA - DIMENSIONE_TESTO;
+            doc.y = partenza + r.altezza;
         }
     }
 
     doc.end();
+}
+
+/** La prima pagina del libretto: logo, gruppo, evento, data e luogo. */
+function disegnaCopertina(doc, { evento, data, luogo }) {
+    const larghezza = doc.page.width - MARGINE * 2;
+    const centro = doc.page.width / 2;
+    doc.save();
+    doc.roundedRect(MARGINE, MARGINE, larghezza, doc.page.height - MARGINE * 2, 22).lineWidth(1.2).stroke('#E3C0FF');
+    try {
+        doc.image(path.join(__dirname, 'dati', 'logo.png'), centro - 55, 190, { width: 110 });
+    } catch { /* senza logo la copertina resta comunque */ }
+    doc.font('Helvetica-Bold').fontSize(11).fillColor(VIOLA_CHIARO)
+        .text('GRUPPO SCOUT AGESCI PALERMO 11', MARGINE, 330, { width: larghezza, align: 'center', characterSpacing: 1.5 });
+    doc.font('Helvetica-Bold').fontSize(28).fillColor(VIOLA)
+        .text(evento || 'Canzoniere', MARGINE + 30, 370, { width: larghezza - 60, align: 'center' });
+    let y = doc.y + 18;
+    const quando = dataLunga(data);
+    if (quando) {
+        doc.font('Helvetica').fontSize(14).fillColor('#0F172A').text(quando, MARGINE, y, { width: larghezza, align: 'center' });
+        y = doc.y + 6;
+    }
+    if (luogo) doc.font('Helvetica').fontSize(13).fillColor(GRIGIO).text(luogo, MARGINE, y, { width: larghezza, align: 'center' });
+    doc.restore();
+}
+
+/** "Domenica 25 ottobre 2026" da "2026-10-25"; vuoto se la data non c'è. */
+function dataLunga(data) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(data ?? ''))) return '';
+    const [a, m, g] = data.split('-').map(Number);
+    const testo = new Date(Date.UTC(a, m - 1, g, 12)).toLocaleDateString('it-IT',
+        { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+    return testo.charAt(0).toUpperCase() + testo.slice(1);
+}
+
+/** Come prima: i canti scelti, in ordine alfabetico, senza copertina. */
+function creaPdfCanzoniere(canti, conAccordi, res, tonalita = null) {
+    creaPdfCanti(canti.map(canto => ({ canto, titoletto: null })), res, { conAccordi, tonalita });
 }
 
 // ?ids=1,2,3 &accordi=0|1 — i canti li può scaricare chiunque, come il canzoniere del sito.
@@ -2658,6 +2773,163 @@ app.get('/api/canti/pdf/scarica', async (req, res) => {
     }
 });
 
+
+// ---------- Libretti: PDF con copertina, anche per la messa, e bozze ----------
+
+// Le parti della messa, in ordine. Comunione e conclusione possono avere più canti.
+const PARTI_MESSA = [
+    { valore: 'ingresso', nome: 'Ingresso' }, { valore: 'gloria', nome: 'Gloria' },
+    { valore: 'alleluia', nome: 'Alleluia' }, { valore: 'offertorio', nome: 'Offertorio' },
+    { valore: 'santo', nome: 'Santo' }, { valore: 'pace', nome: 'Pace' },
+    { valore: 'agnello', nome: 'Agnello di Dio' }, { valore: 'comunione', nome: 'Comunione', piu: true },
+    { valore: 'conclusione', nome: 'Conclusione', piu: true },
+];
+const MAX_BOZZE = 100;
+
+/**
+ * Le scelte del libretto, pulite: canti scelti, copertina (evento, data, luogo), opzioni e,
+ * per la messa, quale canto va in ogni parte (solo fra quelli scelti).
+ */
+function leggiLibretto(body) {
+    const ids = [...new Set((Array.isArray(body?.ids) ? body.ids : []).map(Number)
+        .filter(n => Number.isInteger(n) && n > 0))].slice(0, MAX_CANTI_PDF);
+    if (!ids.length) return { errore: "Scegli almeno un canto." };
+    const data = String(body?.data ?? '').trim();
+    if (data && !/^\d{4}-\d{2}-\d{2}$/.test(data)) return { errore: "La data va scritta come AAAA-MM-GG." };
+    const messa = body?.messa === true;
+    const parti = {};
+    if (messa) {
+        for (const p of PARTI_MESSA) {
+            const scelti = (Array.isArray(body?.parti?.[p.valore]) ? body.parti[p.valore] : [])
+                .map(Number).filter(n => ids.includes(n));
+            parti[p.valore] = p.piu ? [...new Set(scelti)].slice(0, 10) : scelti.slice(0, 1);
+        }
+    }
+    return {
+        libretto: {
+            ids, messa, parti, data,
+            evento: testo(body?.evento, 120), luogo: testo(body?.luogo, 120),
+            accordi: body?.accordi !== false, grande: body?.grande === true,
+        },
+    };
+}
+
+/** Le voci del PDF nell'ordine giusto: le parti della messa, poi "Altri canti"; se no alfabetico. */
+async function vociDelLibretto(libretto) {
+    const righe = await dbAll(`SELECT * FROM canto WHERE id IN (${libretto.ids.map(() => '?').join(',')})
+                               ORDER BY lower(titolo)`, libretto.ids);
+    const perId = new Map(righe.map(c => [c.id, c]));
+    if (!libretto.messa) return righe.map(canto => ({ canto, titoletto: null }));
+    const voci = [];
+    const usati = new Set();
+    for (const p of PARTI_MESSA) {
+        for (const id of libretto.parti[p.valore] ?? []) {
+            const canto = perId.get(id);
+            if (!canto) continue;
+            voci.push({ canto, titoletto: p.nome });
+            usati.add(id);
+        }
+    }
+    // I canti scelti ma non messi in nessuna parte: in fondo, in ordine alfabetico.
+    const altri = righe.filter(c => !usati.has(c.id));
+    altri.forEach((canto, i) => voci.push({ canto, titoletto: i === 0 ? 'Altri canti' : null }));
+    return voci;
+}
+
+// Il PDF del libretto, come si vede nell'anteprima: lo può fare chiunque, come il canzoniere.
+app.post('/api/canti/pdf', async (req, res) => {
+    const { libretto, errore } = leggiLibretto(req.body);
+    if (errore) return res.status(400).json({ error: errore });
+    try {
+        const voci = await vociDelLibretto(libretto);
+        if (!voci.length) return res.status(404).json({ error: "Nessuno dei canti scelti esiste più." });
+        creaPdfCanti(voci, res, {
+            conAccordi: libretto.accordi, grande: libretto.grande,
+            copertina: { evento: libretto.evento, data: libretto.data, luogo: libretto.luogo },
+        });
+    } catch (err) {
+        if (!res.headersSent) erroreInterno(res, err);
+    }
+});
+
+// Le bozze dei libretti: le vedono e le cambiano i capi e i capigruppo.
+function bozzaPubblica(b, conDati = false) {
+    let dati = {};
+    try { dati = JSON.parse(b.dati); } catch { dati = {}; }
+    return {
+        id: b.id,
+        evento: dati.evento || '',
+        data: dati.data || '',
+        messa: !!dati.messa,
+        canti: (dati.ids ?? []).length,
+        autore: b.autore_nome ? `${b.autore_nome} ${b.autore_cognome}` : null,
+        data_modifica: b.data_modifica,
+        ...(conDati ? { libretto: dati } : {}),
+    };
+}
+
+app.get('/api/canti/bozze', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        const righe = await dbAll(`SELECT b.*, u.nome AS autore_nome, u.cognome AS autore_cognome
+                                   FROM libretto_bozza b LEFT JOIN utenti u ON u.id = b.rif_autore
+                                   ORDER BY b.data_modifica DESC, b.id DESC`);
+        res.json({ bozze: righe.map(b => bozzaPubblica(b)) });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+app.get('/api/canti/bozze/:id', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        const b = await dbGet(`SELECT b.*, u.nome AS autore_nome, u.cognome AS autore_cognome
+                               FROM libretto_bozza b LEFT JOIN utenti u ON u.id = b.rif_autore WHERE b.id = ?`, [req.params.id]);
+        if (!b) return res.status(404).json({ error: "Questa bozza non c'è più." });
+        res.json({ bozza: bozzaPubblica(b, true) });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+app.post('/api/canti/bozze', verificaRuolo('capo', 'admin'), async (req, res) => {
+    const { libretto, errore } = leggiLibretto(req.body);
+    if (errore) return res.status(400).json({ error: errore });
+    try {
+        const { quante } = await dbGet(`SELECT COUNT(*) AS quante FROM libretto_bozza`);
+        if (quante >= MAX_BOZZE)
+            return res.status(400).json({ error: `Ci sono già ${MAX_BOZZE} bozze: eliminane qualcuna vecchia.` });
+        const esito = await dbRun(`INSERT INTO libretto_bozza (dati, rif_autore) VALUES (?, ?)`,
+            [JSON.stringify(libretto), req.user.id]);
+        const b = await dbGet(`SELECT * FROM libretto_bozza WHERE id = ?`, [esito.lastID]);
+        res.status(201).json({ bozza: bozzaPubblica(b) });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+app.put('/api/canti/bozze/:id', verificaRuolo('capo', 'admin'), async (req, res) => {
+    const { libretto, errore } = leggiLibretto(req.body);
+    if (errore) return res.status(400).json({ error: errore });
+    try {
+        const esito = await dbRun(`UPDATE libretto_bozza SET dati = ?, rif_autore = ?,
+                                   data_modifica = to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+                                   WHERE id = ?`, [JSON.stringify(libretto), req.user.id, req.params.id]);
+        if (esito.changes === 0) return res.status(404).json({ error: "Questa bozza non c'è più." });
+        const b = await dbGet(`SELECT * FROM libretto_bozza WHERE id = ?`, [req.params.id]);
+        res.json({ bozza: bozzaPubblica(b) });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+app.delete('/api/canti/bozze/:id', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        const esito = await dbRun(`DELETE FROM libretto_bozza WHERE id = ?`, [req.params.id]);
+        if (esito.changes === 0) return res.status(404).json({ error: "Questa bozza non c'è più." });
+        res.json({ message: 'Bozza eliminata.' });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
 
 app.get('/api/canti/:id', (req, res) => inviaCanto(res, req.params.id));
 

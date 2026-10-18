@@ -713,3 +713,12 @@ ion-tab-button ion-label {
 ion-alert .alert-message {
   white-space: pre-line;
 }
+
+// Pop-up larghi (l'anteprima del libretto: modulo e PDF uno accanto all'altro).
+@media (min-width: 768px) {
+  ion-modal.modale-grande {
+    --width: 94vw;
+    --max-width: 1240px;
+    --height: 90vh;
+  }
+}

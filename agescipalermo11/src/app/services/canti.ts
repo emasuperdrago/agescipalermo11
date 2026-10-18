@@ -2,7 +2,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map } from 'rxjs';
 import { apiUrl } from './api';
-import { Canto, CantoElenco, DatiCanto, SezioneCanto } from '../../types/models';
+import {
+  BozzaLibretto, Canto, CantoElenco, DatiCanto, DatiLibretto, ParteMessa, SezioneCanto
+} from '../../types/models';
 
 /** Sezioni del canzoniere, nell'ordine del canzoniere di carta. */
 export const SEZIONI_CANTO: { valore: SezioneCanto; nome: string; colore: string }[] = [
@@ -56,8 +58,9 @@ export function rigaDiAccordi(riga: string): boolean {
   const { forzata, riga: senzaSegno } = segnoRiga(riga);
   if (forzata) return forzata === 'accordi';
   // Si tolgono i segni del grassetto, le parentesi e la punteggiatura: "(Sol)" o "RE-|" restano accordi.
+  // Le barre staccate ("LA4 / la") non sono parole: si saltano.
   const parole = senzaSegniGrassetto(senzaSegno).trim().split(/\s+/)
-    .map(p => p.replace(/[()[\]|,.:]/g, '')).filter(Boolean);
+    .map(p => p.replace(/[()[\]|,.:]/g, '')).filter(p => p && !/^[/\\]+$/.test(p));
   if (!parole.length) return false;
   const accordo = (p: string) => ACCORDO.test(p) || ACCORDI_UNITI.test(p);
   return parole.some(accordo) && parole.every(p => accordo(p) || CODA.test(p));
@@ -258,6 +261,19 @@ export function righeCanto(testo: string, conAccordi = true, passo = 0, alterazi
   });
 }
 
+/** Le parti della messa, in ordine (stesse del backend). Comunione e conclusione: anche più canti. */
+export const PARTI_MESSA: { valore: ParteMessa; nome: string; piu: boolean }[] = [
+  { valore: 'ingresso', nome: 'Ingresso', piu: false },
+  { valore: 'gloria', nome: 'Gloria', piu: false },
+  { valore: 'alleluia', nome: 'Alleluia', piu: false },
+  { valore: 'offertorio', nome: 'Offertorio', piu: false },
+  { valore: 'santo', nome: 'Santo', piu: false },
+  { valore: 'pace', nome: 'Pace', piu: false },
+  { valore: 'agnello', nome: 'Agnello di Dio', piu: false },
+  { valore: 'comunione', nome: 'Comunione', piu: true },
+  { valore: 'conclusione', nome: 'Conclusione', piu: true },
+];
+
 @Injectable({
   providedIn: 'root'
 })
@@ -290,6 +306,33 @@ export class CantiService {
   }
 
   /** Indirizzo del PDF con i canti scelti (il file lo prepara il server). */
+  /** Il PDF del libretto, esattamente quello dell'anteprima (copertina, messa, opzioni). */
+  pdfLibretto(dati: DatiLibretto) {
+    return this.http.post(`${apiUrl()}/canti/pdf`, dati, { responseType: 'blob' });
+  }
+
+  // ---------- Bozze dei libretti (solo capi) ----------
+
+  bozze() {
+    return this.http.get<{ bozze: BozzaLibretto[] }>(`${apiUrl()}/canti/bozze`).pipe(map(r => r.bozze));
+  }
+
+  bozza(id: number) {
+    return this.http.get<{ bozza: BozzaLibretto }>(`${apiUrl()}/canti/bozze/${id}`).pipe(map(r => r.bozza));
+  }
+
+  /** Una bozza nuova, o quella con `id` aggiornata. */
+  salvaBozza(dati: DatiLibretto, id: number | null = null) {
+    const richiesta = id === null
+      ? this.http.post<{ bozza: BozzaLibretto }>(`${apiUrl()}/canti/bozze`, dati)
+      : this.http.put<{ bozza: BozzaLibretto }>(`${apiUrl()}/canti/bozze/${id}`, dati);
+    return richiesta.pipe(map(r => r.bozza));
+  }
+
+  eliminaBozza(id: number) {
+    return this.http.delete<{ message: string }>(`${apiUrl()}/canti/bozze/${id}`);
+  }
+
   /** La tonalità del gruppo: i semitoni rispetto agli accordi scritti (lo scelgono i capi). */
   salvaTonalita(id: number, trasposizione: number) {
     return this.http.put<{ canto: Canto }>(`${apiUrl()}/canti/${id}/tonalita`, { trasposizione }).pipe(map(r => r.canto));

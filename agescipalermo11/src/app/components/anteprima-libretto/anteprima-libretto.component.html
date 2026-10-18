@@ -1,0 +1,119 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Anteprima del libretto</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="chiudi()" aria-label="Chiudi">
+        <ion-icon slot="icon-only" [icon]="icone.chiudi"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="anteprima-libretto">
+  <div class="pagina">
+
+    <!-- Le scelte: ogni modifica rifà l'anteprima qui accanto. -->
+    <form class="scelte" (ngSubmit)="scarica()">
+      <section class="riquadro">
+        <h2>Copertina</h2>
+        <label class="campo">
+          <span class="etichetta">Evento</span>
+          <input name="evento" [(ngModel)]="evento" (ngModelChange)="cambiato()" maxlength="120"
+                 placeholder="Es. Messa di apertura dell'anno" />
+        </label>
+        <fieldset class="campo">
+          <legend class="etichetta">Data</legend>
+          <app-selettore-data [valore]="data" [anniIndietro]="1" [anniAvanti]="2"
+                              (valoreChange)="data = $event; cambiato()" />
+        </fieldset>
+        <label class="campo">
+          <span class="etichetta">Luogo</span>
+          <input name="luogo" [(ngModel)]="luogo" (ngModelChange)="cambiato()" maxlength="120"
+                 placeholder="Es. Parrocchia San Michele, Palermo" />
+        </label>
+      </section>
+
+      <section class="riquadro">
+        <h2>Opzioni</h2>
+        <label class="spunta">
+          <input type="checkbox" name="messa" [(ngModel)]="messa" (ngModelChange)="alternaMessa()" />
+          <span><strong>Libretto per la messa</strong><small>I canti vanno nell'ordine della messa, ognuno col suo titoletto.</small></span>
+        </label>
+        <label class="spunta">
+          <input type="checkbox" name="accordi" [(ngModel)]="accordi" (ngModelChange)="toccaOpzione()" />
+          <span><strong>Con gli accordi</strong><small>Senza, solo le parole: più comodo per chi canta.</small></span>
+        </label>
+        <label class="spunta">
+          <input type="checkbox" name="grande" [(ngModel)]="grande" (ngModelChange)="toccaOpzione()" />
+          <span><strong>Carattere grande</strong><small>Si legge meglio da lontano o con poca luce.</small></span>
+        </label>
+      </section>
+
+      @if (messa) {
+        <section class="riquadro">
+          <h2>Canti della messa</h2>
+          @for (p of partiMessa; track p.valore) {
+            <div class="parte">
+              <span class="parte__nome">{{ p.nome }}</span>
+              <div class="parte__tendine">
+                @for (id of tendine(p.valore); track $index; let posto = $index) {
+                  <div class="tendina">
+                    <select [name]="p.valore + posto" [ngModel]="id" (ngModelChange)="scegli(p.valore, posto, $event)"
+                            [attr.aria-label]="'Canto per ' + p.nome">
+                      <option [ngValue]="null">— nessuno —</option>
+                      @for (c of scelti; track c.id) {
+                        <option [ngValue]="c.id">{{ c.titolo }}</option>
+                      }
+                    </select>
+                    @if (p.piu && tendine(p.valore).length > 1) {
+                      <button type="button" class="icona" (click)="togliTendina(p.valore, posto)"
+                              [attr.aria-label]="'Togli questo canto da ' + p.nome">
+                        <ion-icon [icon]="icone.togli"></ion-icon>
+                      </button>
+                    }
+                  </div>
+                }
+                @if (p.piu) {
+                  <button type="button" class="link-piccolo" (click)="aggiungiTendina(p.valore)">
+                    + un altro canto per {{ p.nome.toLowerCase() }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+          @if (altriCanti.length) {
+            <p class="aiuto">In fondo, come "Altri canti": {{ altriCanti.join(', ') }}.</p>
+          }
+        </section>
+      }
+
+      <div class="azioni">
+        <button type="submit" class="principale" [disabled]="!scelti.length">
+          <ion-icon [icon]="icone.scarica" aria-hidden="true"></ion-icon>
+          Scarica il PDF
+        </button>
+        @if (puoSalvare) {
+          <button type="button" class="secondario" (click)="salvaBozza()" [disabled]="salvando || !scelti.length">
+            <ion-icon [icon]="icone.salva" aria-hidden="true"></ion-icon>
+            {{ salvando ? 'Salvataggio…' : 'Salva nelle bozze' }}
+          </button>
+        }
+      </div>
+    </form>
+
+    <!-- Il PDF vero, come verrà scaricato. -->
+    <section class="anteprima" aria-label="Anteprima del PDF" aria-live="polite">
+      @if (errore) {
+        <p class="errore" role="alert">{{ errore }}</p>
+      }
+      @if (urlAnteprima) {
+        <app-sfoglia-pdf [src]="urlAnteprima" modo="riquadro" />
+      } @else if (!errore) {
+        <div class="attesa">Preparo l'anteprima…</div>
+      }
+      @if (aggiornando && urlAnteprima) {
+        <p class="aggiorno">Aggiorno l'anteprima…</p>
+      }
+    </section>
+  </div>
+</ion-content>
