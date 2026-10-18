@@ -3317,6 +3317,25 @@ app.post('/api/ragazzi', verificaRuolo('capo', 'admin'), async (req, res) => {
     }
 });
 
+// Nel clan i tesorieri sono almeno 1 e al massimo 2.
+const MAX_TESORIERI = 2;
+
+/**
+ * Il ragazzo diventa (o smette di essere) tesoriere: si controlla che nel clan ne resti almeno
+ * uno e che non diventino più di due. Torna il messaggio d'errore, o null se va bene.
+ */
+async function controllaTesorieri(ragazzo, saraTesoriere) {
+    const era = ragazzo.tesoriere === 1;
+    if (era === !!saraTesoriere) return null;
+    const { altri } = await dbGet(`SELECT COUNT(*) AS altri FROM utenti WHERE ruolo = 'ragazzo' AND branca = 'clan'
+                                   AND tesoriere = 1 AND id <> ?`, [ragazzo.id]);
+    if (saraTesoriere && altri >= MAX_TESORIERI)
+        return `Nel clan ci possono essere al massimo ${MAX_TESORIERI} tesorieri: prima togli il ruolo a uno dei due.`;
+    if (!saraTesoriere && altri === 0)
+        return `${ragazzo.nome} è l'unico tesoriere del clan: prima nomina chi prende il suo posto.`;
+    return null;
+}
+
 /**
  * Legge il codice censimento scritto a mano: può restare vuoto (arriverà col censimento),
  * ma se c'è dev'essere fatto di sole cifre e non già di qualcun altro.
@@ -3360,6 +3379,8 @@ app.put('/api/ragazzi/:id', verificaRuolo('capo', 'admin'), async (req, res) => 
 
         // Il tesoriere esiste solo nel clan: cambiando branca il ruolo si perde.
         const tesoriere = branca === 'clan' && body.tesoriere === true ? 1 : 0;
+        const erroreTesorieri = await controllaTesorieri(ragazzo, tesoriere);
+        if (erroreTesorieri) return res.status(400).json({ error: erroreTesorieri });
 
         const email = emailDaSalvare(testo(body.email, 120).toLowerCase() || null);
         const salvato = codiceDaSalvare(codice);
@@ -3381,6 +3402,9 @@ app.delete('/api/ragazzi/:id', verificaRuolo('capo', 'admin'), async (req, res) 
     try {
         const ragazzo = await ragazzoGestibile(req, res);
         if (!ragazzo) return;
+        // Il clan non resta senza tesoriere.
+        const erroreTesorieri = await controllaTesorieri(ragazzo, 0);
+        if (erroreTesorieri) return res.status(400).json({ error: erroreTesorieri });
         const documenti = await dbAll(`SELECT file FROM scheda_allegato WHERE rif_utente = ?`, [ragazzo.id]);
         await dbRun(`DELETE FROM utenti WHERE id = ?`, [ragazzo.id]);
         // La scheda se ne va col ragazzo (ON DELETE CASCADE); i PDF si tolgono anche dal disco.

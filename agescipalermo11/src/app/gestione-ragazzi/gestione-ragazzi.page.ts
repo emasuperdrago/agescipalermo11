@@ -236,6 +236,11 @@ export class GestioneRagazziPage {
 
   // ---------- Ragazzi ----------
 
+  /** Quanti tesorieri ha il clan (almeno uno, al massimo due). */
+  get tesorieri(): number {
+    return this.ragazzi.filter(r => r.tesoriere).length;
+  }
+
   async modifica(ragazzo: RagazzoElenco) {
     const modale = await this.modalCtrl.create({
       component: RagazzoEditorComponent,

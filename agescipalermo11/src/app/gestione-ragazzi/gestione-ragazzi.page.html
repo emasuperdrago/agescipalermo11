@@ -106,6 +106,12 @@
             ("Carica i ragazzi") oppure si aggiungono a mano con "Aggiungi".
           </p>
         } @else {
+          @if (branca === 'clan' && !tesorieri) {
+            <p class="avviso-tesoriere" role="status">
+              Il clan non ha ancora un tesoriere: sceglilo con la matita ✏️ accanto a un ragazzo
+              (almeno uno, al massimo due).
+            </p>
+          }
           <div class="tabella">
             <table>
               <thead>

@@ -496,3 +496,14 @@
 @media (prefers-reduced-motion: reduce) {
   .scheletro > div { animation: none; }
 }
+
+// Il clan senza tesoriere: un promemoria sopra la tabella.
+.avviso-tesoriere {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba($red, .08);
+  font-size: .82rem;
+  font-weight: 600;
+  color: $red;
+}
