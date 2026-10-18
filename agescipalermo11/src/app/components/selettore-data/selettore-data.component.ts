@@ -22,7 +22,11 @@ export class SelettoreDataComponent {
   }
   /** Quanti anni indietro arrivare: per i ragazzi bastano 30, per i capi servono di più. */
   @Input() anniIndietro = 30;
-  @Input() anniAvanti = 5;
+  /**
+   * L'anno più recente, rispetto a oggi: +2 per gli eventi (anche i prossimi due anni),
+   * -5 (di base) per le date di nascita, perché chi entra nel gruppo ha almeno 5 anni.
+   */
+  @Input() anniAvanti = -5;
   @Output() valoreChange = new EventEmitter<string | null>();
 
   readonly mesi = [
@@ -37,7 +41,7 @@ export class SelettoreDataComponent {
   get anni(): number[] {
     const adesso = new Date().getFullYear();
     const elenco: number[] = [];
-    for (let a = adesso - this.anniAvanti; a >= adesso - this.anniIndietro; a--) elenco.push(a);
+    for (let a = adesso + this.anniAvanti; a >= adesso - this.anniIndietro; a--) elenco.push(a);
     return elenco;
   }
 

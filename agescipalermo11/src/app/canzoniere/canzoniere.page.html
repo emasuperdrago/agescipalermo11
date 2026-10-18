@@ -27,119 +27,141 @@
 
   <div class="corpo">
 
-    <label class="cerca">
-      <ion-icon [icon]="icone.cerca" aria-hidden="true"></ion-icon>
-      <input type="search" name="ricerca" [(ngModel)]="ricerca" (ngModelChange)="cerca()"
-             placeholder="Cerca un canto o una frase" aria-label="Cerca un canto" autocomplete="off" />
-      @if (ricerca) {
-        <button type="button" class="cerca__cancella" (click)="pulisciRicerca()" aria-label="Cancella la ricerca">
-          <ion-icon [icon]="icone.cancella" aria-hidden="true"></ion-icon>
+    <!-- Per i capi due parti: i canti e le bozze dei libretti salvate. -->
+    @if (puoModificare && !modalitaSelezione) {
+      <div class="viste" role="tablist" aria-label="Parti del canzoniere">
+        <button type="button" role="tab" class="vista" [class.vista--attiva]="vista === 'canti'"
+                [attr.aria-selected]="vista === 'canti'" (click)="vista = 'canti'">
+          <ion-icon [icon]="icone.canto" aria-hidden="true"></ion-icon> Canti
         </button>
-      }
-    </label>
+        <button type="button" role="tab" class="vista" [class.vista--attiva]="vista === 'bozze'"
+                [attr.aria-selected]="vista === 'bozze'" (click)="vista = 'bozze'; caricaBozze()">
+          <ion-icon [icon]="icone.libretto" aria-hidden="true"></ion-icon> Bozze dei libretti
+          @if (bozze.length) { <span class="vista__conta">{{ bozze.length }}</span> }
+        </button>
+      </div>
+    }
 
-    <!-- Sezioni del canzoniere -->
-    <div class="sezioni" role="group" aria-label="Filtra per sezione">
-      <button type="button" class="sezione sezione--tutte" [class.sezione--attiva]="!sezione"
-              [attr.aria-pressed]="!sezione" (click)="scegliSezione(null)">
-        Tutte
-      </button>
-      @for (s of sezioni; track s.valore) {
-        <button type="button" class="sezione" [style.--colore-sezione]="s.colore"
-                [class.sezione--attiva]="sezione === s.valore"
-                [attr.aria-pressed]="sezione === s.valore" (click)="scegliSezione(s.valore)">
-          {{ s.nome }}
-        </button>
-      }
-    </div>
+    @if (vista === 'bozze' && puoModificare && !modalitaSelezione) {
+      <section class="bozze" aria-label="Bozze dei libretti">
+        @if (bozze.length) {
+          <ul>
+            @for (b of bozze; track b.id) {
+              <li class="bozza">
+                <button type="button" class="bozza__apri" (click)="apriBozza(b)">
+                  <ion-icon [icon]="icone.libretto" aria-hidden="true"></ion-icon>
+                  <span>
+                    <strong>{{ b.evento || 'Senza titolo' }}</strong>
+                    <small>
+                      {{ dataBozza(b) }} · {{ b.canti }} {{ b.canti === 1 ? 'canto' : 'canti' }}
+                      @if (b.messa) { · messa }
+                      @if (b.autore) { · {{ b.autore }} }
+                    </small>
+                  </span>
+                </button>
+                <button type="button" class="bozza__elimina" (click)="eliminaBozza(b)"
+                        [attr.aria-label]="'Elimina la bozza ' + (b.evento || 'senza titolo')" title="Elimina">
+                  <ion-icon [icon]="icone.elimina"></ion-icon>
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="bozze__vuota">
+            Ancora nessuna bozza. Dai Canti tocca "Crea un libretto PDF", scegli i canti e, nell'anteprima,
+            "Salva nelle bozze": la ritrovi qui, per tutti i capi.
+          </p>
+        }
+      </section>
+    } @else {
 
-    <div class="azioni">
-      @if (puoModificare) {
-        <button type="button" class="nuovo-canto" (click)="nuovoCanto()">
-          <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
-          Aggiungi un canto
-        </button>
-      }
-      <!-- Più canti insieme in un unico PDF da stampare o portare in uscita. -->
-      @if (!modalitaSelezione) {
-        <button type="button" class="libretto" (click)="avviaSelezione()">
-          <ion-icon [icon]="icone.libretto" aria-hidden="true"></ion-icon>
-          Crea un libretto PDF
-        </button>
-      }
-    </div>
+      <label class="cerca">
+        <ion-icon [icon]="icone.cerca" aria-hidden="true"></ion-icon>
+        <input type="search" name="ricerca" [(ngModel)]="ricerca" (ngModelChange)="cerca()"
+               placeholder="Cerca un canto o una frase" aria-label="Cerca un canto" autocomplete="off" />
+        @if (ricerca) {
+          <button type="button" class="cerca__cancella" (click)="pulisciRicerca()" aria-label="Cancella la ricerca">
+            <ion-icon [icon]="icone.cancella" aria-hidden="true"></ion-icon>
+          </button>
+        }
+      </label>
 
-    <!-- Bozze dei libretti: solo per i capi, da riaprire e scaricare quando servono. -->
-    @if (puoModificare && bozze.length && !modalitaSelezione) {
-      <section class="bozze" aria-labelledby="titolo-bozze">
-        <h2 id="titolo-bozze">Bozze dei libretti</h2>
-        <ul>
-          @for (b of bozze; track b.id) {
-            <li class="bozza">
-              <button type="button" class="bozza__apri" (click)="apriBozza(b)">
-                <ion-icon [icon]="icone.libretto" aria-hidden="true"></ion-icon>
-                <span>
-                  <strong>{{ b.evento || 'Senza titolo' }}</strong>
-                  <small>
-                    {{ dataBozza(b) }} · {{ b.canti }} {{ b.canti === 1 ? 'canto' : 'canti' }}
-                    @if (b.messa) { · messa }
-                  </small>
-                </span>
-              </button>
-              <button type="button" class="bozza__elimina" (click)="eliminaBozza(b)"
-                      [attr.aria-label]="'Elimina la bozza ' + (b.evento || 'senza titolo')" title="Elimina">
-                <ion-icon [icon]="icone.elimina"></ion-icon>
-              </button>
+      <!-- Sezioni del canzoniere -->
+      <div class="sezioni" role="group" aria-label="Filtra per sezione">
+        <button type="button" class="sezione sezione--tutte" [class.sezione--attiva]="!sezione"
+                [attr.aria-pressed]="!sezione" (click)="scegliSezione(null)">
+          Tutte
+        </button>
+        @for (s of sezioni; track s.valore) {
+          <button type="button" class="sezione" [style.--colore-sezione]="s.colore"
+                  [class.sezione--attiva]="sezione === s.valore"
+                  [attr.aria-pressed]="sezione === s.valore" (click)="scegliSezione(s.valore)">
+            {{ s.nome }}
+          </button>
+        }
+      </div>
+
+      <div class="azioni">
+        @if (puoModificare) {
+          <button type="button" class="nuovo-canto" (click)="nuovoCanto()">
+            <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+            Aggiungi un canto
+          </button>
+        }
+        <!-- Più canti insieme in un unico PDF da stampare o portare in uscita. -->
+        @if (!modalitaSelezione) {
+          <button type="button" class="libretto" (click)="avviaSelezione()">
+            <ion-icon [icon]="icone.libretto" aria-hidden="true"></ion-icon>
+            Crea un libretto PDF
+          </button>
+        }
+      </div>
+
+      @if (errore) {
+        <p class="vuoto vuoto--errore">{{ errore }}</p>
+      } @else if (caricamento) {
+        <div class="scheletro" aria-busy="true" aria-label="Caricamento dei canti">
+          <div></div><div></div><div></div><div></div>
+        </div>
+      } @else if (!canti.length) {
+        <div class="vuoto">
+          <p>Nessun canto trovato{{ ricerca ? ' per "' + ricerca + '"' : '' }}.</p>
+          <button type="button" class="vuoto__azione" (click)="mostraTutti()">Mostra tutti</button>
+        </div>
+      } @else {
+        <p class="conteggio" aria-live="polite">
+          {{ canti.length }} {{ canti.length === 1 ? 'canto' : 'canti' }}
+        </p>
+        <ul class="canti">
+          @for (c of canti; track c.id) {
+            <li>
+              @if (modalitaSelezione) {
+                <button type="button" class="canto canto--scegli" [class.canto--scelto]="scelti.has(c.id)"
+                        [style.--colore-sezione]="coloreSezione(c.sezione)"
+                        [attr.aria-pressed]="scelti.has(c.id)" (click)="alternaScelto(c.id)">
+                  <span class="spunta" aria-hidden="true">
+                    @if (scelti.has(c.id)) {
+                      <ion-icon [icon]="icone.scelta"></ion-icon>
+                    }
+                  </span>
+                  <span class="canto__testo">
+                    <strong>{{ c.titolo }}</strong>
+                    <small>{{ nomeSezione(c.sezione) }}@if (c.anteprima) { · {{ c.anteprima }}}</small>
+                  </span>
+                </button>
+              } @else {
+                <a class="canto" [routerLink]="['/canzoniere', c.id]" [style.--colore-sezione]="coloreSezione(c.sezione)">
+                  <span class="canto__testo">
+                    <strong>{{ c.titolo }}</strong>
+                    <small>{{ nomeSezione(c.sezione) }}@if (c.anteprima) { · {{ c.anteprima }}}</small>
+                  </span>
+                  <ion-icon class="canto__freccia" [icon]="icone.apri" aria-hidden="true"></ion-icon>
+                </a>
+              }
             </li>
           }
         </ul>
-      </section>
-    }
-
-    @if (errore) {
-      <p class="vuoto vuoto--errore">{{ errore }}</p>
-    } @else if (caricamento) {
-      <div class="scheletro" aria-busy="true" aria-label="Caricamento dei canti">
-        <div></div><div></div><div></div><div></div>
-      </div>
-    } @else if (!canti.length) {
-      <div class="vuoto">
-        <p>Nessun canto trovato{{ ricerca ? ' per "' + ricerca + '"' : '' }}.</p>
-        <button type="button" class="vuoto__azione" (click)="mostraTutti()">Mostra tutti</button>
-      </div>
-    } @else {
-      <p class="conteggio" aria-live="polite">
-        {{ canti.length }} {{ canti.length === 1 ? 'canto' : 'canti' }}
-      </p>
-      <ul class="canti">
-        @for (c of canti; track c.id) {
-          <li>
-            @if (modalitaSelezione) {
-              <button type="button" class="canto canto--scegli" [class.canto--scelto]="scelti.has(c.id)"
-                      [style.--colore-sezione]="coloreSezione(c.sezione)"
-                      [attr.aria-pressed]="scelti.has(c.id)" (click)="alternaScelto(c.id)">
-                <span class="spunta" aria-hidden="true">
-                  @if (scelti.has(c.id)) {
-                    <ion-icon [icon]="icone.scelta"></ion-icon>
-                  }
-                </span>
-                <span class="canto__testo">
-                  <strong>{{ c.titolo }}</strong>
-                  <small>{{ nomeSezione(c.sezione) }}@if (c.anteprima) { · {{ c.anteprima }}}</small>
-                </span>
-              </button>
-            } @else {
-              <a class="canto" [routerLink]="['/canzoniere', c.id]" [style.--colore-sezione]="coloreSezione(c.sezione)">
-                <span class="canto__testo">
-                  <strong>{{ c.titolo }}</strong>
-                  <small>{{ nomeSezione(c.sezione) }}@if (c.anteprima) { · {{ c.anteprima }}}</small>
-                </span>
-                <ion-icon class="canto__freccia" [icon]="icone.apri" aria-hidden="true"></ion-icon>
-              </a>
-            }
-          </li>
-        }
-      </ul>
+      }
     }
   </div>
 

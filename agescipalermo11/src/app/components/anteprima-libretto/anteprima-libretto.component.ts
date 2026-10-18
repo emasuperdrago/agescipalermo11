@@ -4,12 +4,15 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, IonIcon, ModalController, ToastController
 } from '@ionic/angular/standalone';
-import { addOutline, closeOutline, downloadOutline, saveOutline, trashOutline } from 'ionicons/icons';
+import { addOutline, closeOutline, downloadOutline, saveOutline, searchOutline, trashOutline } from 'ionicons/icons';
 import { SfogliaPdfComponent } from '../sfoglia-pdf/sfoglia-pdf.component';
 import { SelettoreDataComponent } from '../selettore-data/selettore-data.component';
 import { AuthService } from '../../services/auth';
 import { CantiService, PARTI_MESSA } from '../../services/canti';
 import { BozzaLibretto, DatiLibretto, ParteMessa } from '../../../types/models';
+
+/** Per cercare senza badare a maiuscole e accenti ("cantero" trova "Canterò"). */
+const normalizza = (testo: string) => testo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
 /** Dopo quanto dall'ultima modifica si rifà l'anteprima (così non parte a ogni lettera). */
 const ATTESA_ANTEPRIMA = 700;
@@ -36,7 +39,10 @@ export class AnteprimaLibrettoComponent implements OnInit, OnDestroy {
   /** Una bozza da riaprire. */
   @Input() bozza?: BozzaLibretto;
 
-  readonly icone = { chiudi: closeOutline, scarica: downloadOutline, salva: saveOutline, aggiungi: addOutline, togli: trashOutline };
+  readonly icone = {
+    chiudi: closeOutline, scarica: downloadOutline, salva: saveOutline, aggiungi: addOutline, togli: trashOutline,
+    cerca: searchOutline,
+  };
   readonly partiMessa = PARTI_MESSA;
 
   private canti = inject(CantiService);
@@ -46,6 +52,9 @@ export class AnteprimaLibrettoComponent implements OnInit, OnDestroy {
 
   /** I canti scelti, con il titolo, in ordine alfabetico. */
   scelti: { id: number; titolo: string }[] = [];
+  /** Tutto il canzoniere, per aggiungere altri canti con la ricerca. */
+  private tutti: { id: number; titolo: string }[] = [];
+  ricerca = '';
   evento = '';
   data: string | null = null;
   luogo = '';
@@ -91,6 +100,7 @@ export class AnteprimaLibrettoComponent implements OnInit, OnDestroy {
     // I titoli dei canti: dall'elenco completo (i canti eliminati nel frattempo spariscono).
     this.canti.elenco().subscribe({
       next: tutti => {
+        this.tutti = tutti.map(c => ({ id: c.id, titolo: c.titolo }));
         const perId = new Map(tutti.map(c => [c.id, c.titolo]));
         this.scelti = this.ids.filter(id => perId.has(id)).map(id => ({ id, titolo: perId.get(id)! }))
           .sort((a, b) => a.titolo.localeCompare(b.titolo, 'it'));
@@ -111,6 +121,29 @@ export class AnteprimaLibrettoComponent implements OnInit, OnDestroy {
     const vuote = {} as Record<ParteMessa, (number | null)[]>;
     for (const p of PARTI_MESSA) vuote[p.valore] = [];
     return vuote;
+  }
+
+  // ---------- I canti del libretto ----------
+
+  /** I canti del canzoniere che si possono ancora aggiungere, trovati col titolo. */
+  get trovati(): { id: number; titolo: string }[] {
+    const cerca = normalizza(this.ricerca);
+    if (!cerca) return [];
+    const gia = new Set(this.scelti.map(c => c.id));
+    return this.tutti.filter(c => !gia.has(c.id) && normalizza(c.titolo).includes(cerca)).slice(0, 8);
+  }
+
+  aggiungiCanto(canto: { id: number; titolo: string }) {
+    this.scelti = [...this.scelti, canto].sort((a, b) => a.titolo.localeCompare(b.titolo, 'it'));
+    this.ricerca = '';
+    this.cambiato();
+  }
+
+  /** Toglie il canto dal libretto, e quindi anche dalle parti della messa. */
+  togliCanto(id: number) {
+    this.scelti = this.scelti.filter(c => c.id !== id);
+    for (const p of PARTI_MESSA) this.parti[p.valore] = this.parti[p.valore].map(x => x === id ? null : x);
+    this.cambiato();
   }
 
   /** Le tendine di una parte: almeno una, anche vuota. */
@@ -179,7 +212,13 @@ export class AnteprimaLibrettoComponent implements OnInit, OnDestroy {
   private creaAnteprima(): Promise<Blob | null> {
     clearTimeout(this.timer);
     this.inAttesa = false;
-    if (!this.scelti.length) return Promise.resolve(null);
+    if (!this.scelti.length) {
+      // Senza canti non c'è niente da mostrare.
+      if (this.urlAnteprima) URL.revokeObjectURL(this.urlAnteprima);
+      this.urlAnteprima = '';
+      this.filePdf = null;
+      return Promise.resolve(null);
+    }
     const mia = ++this.richiesta;
     this.aggiornando = true;
     this.errore = '';

@@ -216,6 +216,109 @@
   color: $viola;
 }
 
+// ---------- I canti del libretto e la ricerca ----------
+
+.canti {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 220px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 4px 4px 10px;
+    border-radius: 10px;
+    background: $slate-100;
+    font-size: .85rem;
+    font-weight: 600;
+    color: $dark;
+  }
+}
+
+.icona--piccola {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: $slate-600;
+}
+
+.cerca {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  &__campo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    border: 1.5px solid $slate-200;
+    border-radius: 12px;
+    background: $white;
+
+    &:focus-within {
+      border-color: $viola-m;
+      box-shadow: 0 0 0 4px rgba($viola-l, .2);
+    }
+
+    ion-icon { flex: none; color: $slate; }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      min-height: 44px;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: .9rem;
+      color: $dark;
+      outline: none;
+    }
+  }
+
+  &__risultati {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      min-height: 40px;
+      padding: 0 12px;
+      border: 1.5px dashed rgba($viola-m, .45);
+      border-radius: 10px;
+      background: $white;
+      font-family: inherit;
+      font-size: .85rem;
+      font-weight: 600;
+      color: $viola;
+      text-align: left;
+      cursor: pointer;
+
+      &:hover { background: rgba($viola-l, .08); }
+    }
+  }
+
+  &__vuoto {
+    font-size: .8rem;
+    color: $slate;
+  }
+}
+
 // ---------- L'anteprima ----------
 
 .anteprima {

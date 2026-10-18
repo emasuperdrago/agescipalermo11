@@ -49,6 +49,43 @@
         </label>
       </section>
 
+      <section class="riquadro">
+        <h2>Canti del libretto ({{ scelti.length }})</h2>
+        <ul class="canti">
+          @for (c of scelti; track c.id) {
+            <li>
+              <span>{{ c.titolo }}</span>
+              <button type="button" class="icona icona--piccola" (click)="togliCanto(c.id)"
+                      [attr.aria-label]="'Togli ' + c.titolo + ' dal libretto'" title="Togli dal libretto">
+                <ion-icon [icon]="icone.chiudi"></ion-icon>
+              </button>
+            </li>
+          }
+        </ul>
+        <div class="cerca">
+          <label class="cerca__campo">
+            <ion-icon [icon]="icone.cerca" aria-hidden="true"></ion-icon>
+            <input type="search" name="ricerca" [(ngModel)]="ricerca" autocomplete="off"
+                   (keydown.enter)="$event.preventDefault(); trovati.length && aggiungiCanto(trovati[0])"
+                   placeholder="Aggiungi un altro canto: cerca il titolo" aria-label="Cerca un canto da aggiungere" />
+          </label>
+          @if (ricerca.trim()) {
+            <ul class="cerca__risultati">
+              @for (c of trovati; track c.id) {
+                <li>
+                  <button type="button" (click)="aggiungiCanto(c)">
+                    <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+                    {{ c.titolo }}
+                  </button>
+                </li>
+              } @empty {
+                <li class="cerca__vuoto">Nessun altro canto con questo titolo.</li>
+              }
+            </ul>
+          }
+        </div>
+      </section>
+
       @if (messa) {
         <section class="riquadro">
           <h2>Canti della messa</h2>
@@ -108,6 +145,8 @@
       }
       @if (urlAnteprima) {
         <app-sfoglia-pdf [src]="urlAnteprima" modo="riquadro" />
+      } @else if (!scelti.length) {
+        <div class="attesa">Aggiungi almeno un canto per vedere l'anteprima.</div>
       } @else if (!errore) {
         <div class="attesa">Preparo l'anteprima…</div>
       }

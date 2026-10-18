@@ -38,8 +38,9 @@ export class CanzonierePage {
     scelta: checkmarkOutline, libretto: documentTextOutline, elimina: trashOutline,
   };
 
-  /** Le bozze dei libretti salvate dai capi. */
+  /** Le bozze dei libretti salvate dai capi, nella loro parte del canzoniere. */
   bozze: BozzaLibretto[] = [];
+  vista: 'canti' | 'bozze' = 'canti';
 
   /** Selezione dei canti da mettere insieme in un PDF. */
   modalitaSelezione = false;

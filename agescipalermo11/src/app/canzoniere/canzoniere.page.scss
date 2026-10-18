@@ -415,7 +415,55 @@
   .canto { transition: none; }
 }
 
-// ---------- Bozze dei libretti (solo capi) ----------
+// ---------- Canti / Bozze dei libretti (solo capi) ----------
+
+.viste {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 4px;
+  border-radius: 16px;
+  background: $white;
+  box-shadow: 0 6px 20px rgba($dark, .06);
+}
+
+.vista {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  font-family: inherit;
+  font-size: .88rem;
+  font-weight: 700;
+  color: $slate-600;
+  cursor: pointer;
+
+  ion-icon { font-size: 1.1rem; }
+
+  &--attiva {
+    background: $sfumatura-viola;
+    color: $white;
+  }
+
+  &__conta {
+    min-width: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: rgba($white, .25);
+    font-size: .72rem;
+    line-height: 20px;
+  }
+}
+
+.vista:not(.vista--attiva) .vista__conta {
+  background: rgba($viola-m, .14);
+  color: $viola;
+}
 
 .bozze {
   margin: 0 0 16px;
@@ -424,11 +472,11 @@
   background: $white;
   box-shadow: 0 6px 20px rgba($dark, .06);
 
-  h2 {
-    margin: 0 0 10px;
-    font-size: .95rem;
-    font-weight: 800;
-    color: $dark;
+  &__vuota {
+    margin: 0;
+    font-size: .88rem;
+    line-height: 1.5;
+    color: $slate;
   }
 
   ul {
