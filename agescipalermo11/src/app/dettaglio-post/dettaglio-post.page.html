@@ -40,6 +40,15 @@
             }
           </div>
           <h1>{{ post.didascalia }}</h1>
+          <!-- Toccando un hashtag si torna alla home con i post che ce l'hanno. -->
+          @if (post.hashtag.length) {
+            <div class="hashtag">
+              @for (h of post.hashtag; track h) {
+                <a class="hashtag__voce" routerLink="/home" [queryParams]="{ hashtag: h }" routerDirection="back"
+                   [attr.aria-label]="'Tutti i post con #' + h">#{{ h }}</a>
+              }
+            </div>
+          }
         </div>
       </header>
 

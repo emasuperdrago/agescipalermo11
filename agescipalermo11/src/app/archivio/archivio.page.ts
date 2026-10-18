@@ -49,6 +49,9 @@ export class ArchivioPage {
   /** Tutti i post dell'archivio: il filtro per branca lavora su questi, senza richiamare il server. */
   private tutti: Post[] = [];
   etichetta: EtichettaPost | null = null;
+  /** Filtro per hashtag, e gli hashtag dei post dell'archivio dai più usati. */
+  hashtag: string | null = null;
+  hashtagUsati: { hashtag: string; quanti: number }[] = [];
   caricamento = true;
   errore = '';
 
@@ -71,6 +74,7 @@ export class ArchivioPage {
     this.posts.archivio().subscribe({
       next: dati => {
         this.tutti = dati.post;
+        this.contaHashtag();
         this.mostra();
         this.caricamento = false;
         this.errore = '';
@@ -90,9 +94,24 @@ export class ArchivioPage {
     this.mostra();
   }
 
-  /** Rifà i gruppi per anno tenendo conto del filtro. */
+  /** Tocca un hashtag: restano solo i post che ce l'hanno; ritoccarlo toglie il filtro. */
+  filtraHashtag(hashtag: string) {
+    this.hashtag = this.hashtag === hashtag ? null : hashtag;
+    this.mostra();
+  }
+
+  private contaHashtag() {
+    const conti = new Map<string, number>();
+    for (const p of this.tutti) for (const h of p.hashtag ?? []) conti.set(h, (conti.get(h) ?? 0) + 1);
+    this.hashtagUsati = [...conti].map(([hashtag, quanti]) => ({ hashtag, quanti }))
+      .sort((a, b) => b.quanti - a.quanti || a.hashtag.localeCompare(b.hashtag, 'it')).slice(0, 40);
+    if (this.hashtag && !conti.has(this.hashtag)) this.hashtag = null;
+  }
+
+  /** Rifà i gruppi per anno tenendo conto dei filtri. */
   private mostra() {
-    const scelti = this.etichetta ? this.tutti.filter(p => p.etichetta === this.etichetta) : this.tutti;
+    const scelti = this.tutti.filter(p => (!this.etichetta || p.etichetta === this.etichetta)
+      && (!this.hashtag || (p.hashtag ?? []).includes(this.hashtag)));
     this.quanti = scelti.length;
     this.anni = this.dividiPerAnno(scelti);
   }

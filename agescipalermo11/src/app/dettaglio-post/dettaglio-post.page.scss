@@ -483,3 +483,23 @@ $colori-etichetta: (
     border: 0;
   }
 }
+
+// Gli hashtag sotto il titolo: portano alla home filtrata.
+.hashtag {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+
+  &__voce {
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: rgba($white, .2);
+    font-size: .8rem;
+    font-weight: 700;
+    color: $white;
+    text-decoration: none;
+
+    &:hover { background: rgba($white, .32); }
+  }
+}

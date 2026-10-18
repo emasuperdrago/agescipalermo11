@@ -1,7 +1,7 @@
 import { Component, ElementRef, HostListener, NgZone, OnDestroy, ViewChild } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   AlertController, IonContent, IonIcon, ModalController, NavController, ToastController
 } from '@ionic/angular/standalone';
@@ -126,6 +126,9 @@ export class HomePage implements OnDestroy {
   readonly nomeEtichetta = nomeEtichetta;
   filtroEtichetta: EtichettaPost | null = null;
   filtroAperto = false;
+  /** Filtro per hashtag (senza "#"), e gli hashtag più usati da proporre. */
+  filtroHashtag: string | null = null;
+  hashtagPopolari: { hashtag: string; quanti: number }[] = [];
 
   @ViewChild('logo') private logo?: ElementRef<HTMLImageElement>;
   @ViewChild(IonContent) private contenuto?: IonContent;
@@ -197,6 +200,7 @@ export class HomePage implements OnDestroy {
     private modalCtrl: ModalController,
     private alertCtrl: AlertController,
     private sfondiService: SfondiService,
+    private route: ActivatedRoute,
   ) {}
 
   /** Solo capi e admin pubblicano post direttamente; tutti gli altri li leggono. */
@@ -229,7 +233,7 @@ export class HomePage implements OnDestroy {
   caricaPost() {
     this.caricamentoPost = true;
     this.erroreCaricamentoPost = '';
-    this.posts.elenco(0, this.filtroEtichetta).subscribe({
+    this.posts.elenco(0, this.filtroEtichetta, undefined, this.filtroHashtag).subscribe({
       next: pagina => {
         this.post = pagina.post;
         this.altriPost = pagina.altri;
@@ -247,7 +251,7 @@ export class HomePage implements OnDestroy {
   /** Carica i prossimi post (fino a 12) dopo quelli già mostrati. */
   vediAltro() {
     this.caricandoAltri = true;
-    this.posts.elenco(this.post.length, this.filtroEtichetta).subscribe({
+    this.posts.elenco(this.post.length, this.filtroEtichetta, undefined, this.filtroHashtag).subscribe({
       next: pagina => {
         // Un post pubblicato nel frattempo sposta gli altri di una posizione: niente doppioni.
         const giaMostrati = new Set(this.post.map(p => p.id));
@@ -265,6 +269,24 @@ export class HomePage implements OnDestroy {
   alternaFiltro(evento: Event) {
     evento.stopPropagation();
     this.filtroAperto = !this.filtroAperto;
+  }
+
+  /** L'hashtag scelto non è fra i più usati (es. arrivando da un post): si mostra lo stesso. */
+  get hashtagFuoriElenco(): boolean {
+    return !!this.filtroHashtag && !this.hashtagPopolari.some(h => h.hashtag === this.filtroHashtag);
+  }
+
+  /** Tocca un hashtag: si vedono solo i post che ce l'hanno; ritoccarlo toglie il filtro. */
+  scegliHashtag(hashtag: string | null) {
+    this.filtroHashtag = this.filtroHashtag === hashtag ? null : hashtag;
+    this.caricaPost();
+  }
+
+  private caricaHashtag() {
+    this.posts.hashtag().subscribe({
+      next: elenco => this.hashtagPopolari = elenco,
+      error: () => this.hashtagPopolari = [],
+    });
   }
 
   scegliFiltro(etichetta: EtichettaPost | null) {
@@ -327,7 +349,7 @@ export class HomePage implements OnDestroy {
     this.post = this.post.filter(p => p.id !== post.id);
     if (!this.altriPost) return;
 
-    this.posts.elenco(this.post.length, this.filtroEtichetta, 1).subscribe({
+    this.posts.elenco(this.post.length, this.filtroEtichetta, 1, this.filtroHashtag).subscribe({
       next: pagina => {
         const giaMostrati = new Set(this.post.map(p => p.id));
         this.post = [...this.post, ...pagina.post.filter(p => !giaMostrati.has(p.id))];
@@ -350,7 +372,8 @@ export class HomePage implements OnDestroy {
   }
 
   private rispettaFiltro(post: Post): boolean {
-    return !this.filtroEtichetta || post.etichetta === this.filtroEtichetta;
+    return (!this.filtroEtichetta || post.etichetta === this.filtroEtichetta)
+      && (!this.filtroHashtag || (post.hashtag ?? []).includes(this.filtroHashtag));
   }
 
   /** Stesso ordine del server: in evidenza per primi, poi dal più recente. */
@@ -464,6 +487,10 @@ export class HomePage implements OnDestroy {
   }
 
   ionViewWillEnter() {
+    // Arrivando da un hashtag toccato in un post (/home?hashtag=…) si filtra subito per quello.
+    const daLink = this.route.snapshot.queryParamMap.get('hashtag');
+    if (daLink) this.filtroHashtag = daLink;
+    this.caricaHashtag();
     this.caricaPost();
     this.caricaSfondi();
     this.caricaInAttesa();

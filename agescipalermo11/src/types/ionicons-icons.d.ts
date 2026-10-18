@@ -76,6 +76,7 @@ declare module 'ionicons/icons' {
   export const mapOutline: string;
   export const logoFacebook: string;
   export const logoInstagram: string;
+  export const megaphoneOutline: string;
   export const menuOutline: string;
   export const musicalNotesOutline: string;
   export const newspaperOutline: string;

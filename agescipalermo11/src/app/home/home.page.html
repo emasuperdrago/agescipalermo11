@@ -190,6 +190,24 @@
       </div>
     </div>
 
+    <!-- Gli hashtag più usati: toccandone uno si vedono solo i suoi post. -->
+    @if (hashtagPopolari.length || filtroHashtag) {
+      <div class="filtro-hashtag" role="group" aria-label="Filtra per hashtag">
+        @if (hashtagFuoriElenco) {
+          <button type="button" class="tag tag--scelto" (click)="scegliHashtag(filtroHashtag)" aria-pressed="true">
+            #{{ filtroHashtag }} ✕
+          </button>
+        }
+        @for (h of hashtagPopolari; track h.hashtag) {
+          <button type="button" class="tag" [class.tag--scelto]="filtroHashtag === h.hashtag"
+                  [attr.aria-pressed]="filtroHashtag === h.hashtag" (click)="scegliHashtag(h.hashtag)">
+            #{{ h.hashtag }}
+            @if (filtroHashtag === h.hashtag) { ✕ } @else { <small>{{ h.quanti }}</small> }
+          </button>
+        }
+      </div>
+    }
+
     @if (erroreCaricamentoPost) {
       <p class="vuoto vuoto--errore">{{ erroreCaricamentoPost }}</p>
     } @else if (post.length) {
@@ -228,6 +246,16 @@
               </div>
             </a>
 
+            <!-- Gli hashtag: fuori dal link, toccandoli si filtra la home. -->
+            @if (p.hashtag.length) {
+              <div class="storia__hashtag">
+                @for (h of p.hashtag; track h) {
+                  <button type="button" class="tag tag--piccolo" [class.tag--scelto]="filtroHashtag === h"
+                          (click)="scegliHashtag(h)">#{{ h }}</button>
+                }
+              </div>
+            }
+
             <!-- Azioni per capi e admin: fuori dal link, così non aprono il post. -->
             @if (puoPubblicare) {
               <div class="storia__azioni">
@@ -260,7 +288,9 @@
       }
     } @else if (!caricamentoPost) {
       <p class="vuoto">
-        @if (filtroEtichetta) {
+        @if (filtroHashtag) {
+          Nessun post con #{{ filtroHashtag }}.
+        } @else if (filtroEtichetta) {
           Nessun post con l'etichetta {{ nomeEtichetta(filtroEtichetta) }}.
         } @else {
           Ancora nessun post: qui arriveranno le notizie di Branco, Reparto, Clan e Gruppo.

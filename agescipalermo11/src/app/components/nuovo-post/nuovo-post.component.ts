@@ -10,7 +10,7 @@ import {
 } from 'ionicons/icons';
 import {
   COLORI_POST, ESTENSIONI_VIDEO_POST, ETICHETTE_POST, MAX_BYTE_VIDEO_POST, MAX_FOTO_POST, MAX_LINK_VIDEO_POST,
-  MAX_VIDEO_POST, PostService, sembraLinkVideo
+  MAX_VIDEO_POST, PostService, sembraLinkVideo, MAX_HASHTAG_POST, pulisciHashtag
 } from '../../services/post';
 import { EtichettaPost, Post, VideoPost, VoceFotoPost } from '../../../types/models';
 
@@ -50,6 +50,11 @@ export class NuovoPostComponent implements OnInit {
     prima: chevronBackOutline, dopo: chevronForwardOutline, link: linkOutline, video: videocamOutline,
   };
 
+  /** Gli hashtag del post, già puliti (senza "#"). */
+  hashtag: string[] = [];
+  nuovoHashtag = '';
+  readonly maxHashtag = MAX_HASHTAG_POST;
+
   /** I link a YouTube o Instagram. */
   videoLink: string[] = [];
   nuovoLink = '';
@@ -78,6 +83,7 @@ export class NuovoPostComponent implements OnInit {
     const percorsi = this.post.foto_urls?.length ? this.post.foto_urls : [this.post.foto_url];
     this.fotoElenco = percorsi.map(p => ({ tieni: p, anteprima: this.posts.urlDaPercorso(p) }));
     this.videoLink = [...(this.post.video_link ?? [])];
+    this.hashtag = [...(this.post.hashtag ?? [])];
     this.videoEsistenti = [...(this.post.video ?? [])];
     this.didascalia = this.post.didascalia;
     this.colore = this.post.colore;
@@ -131,6 +137,36 @@ export class NuovoPostComponent implements OnInit {
 
   togliFoto(indice: number) {
     this.fotoElenco.splice(indice, 1);
+  }
+
+  // ---------- Hashtag ----------
+
+  /** Aggiunge quello che è scritto: anche più hashtag insieme ("#campo #route"). */
+  aggiungiHashtag() {
+    for (const parola of this.nuovoHashtag.split(/[\s,]+/)) {
+      const pulito = pulisciHashtag(parola);
+      if (!pulito || this.hashtag.includes(pulito)) continue;
+      if (this.hashtag.length >= this.maxHashtag) {
+        this.errore = `Al massimo ${this.maxHashtag} hashtag.`;
+        break;
+      }
+      this.hashtag.push(pulito);
+    }
+    this.nuovoHashtag = '';
+  }
+
+  /** Spazio o virgola chiudono l'hashtag che si sta scrivendo. */
+  tastoHashtag(evento: KeyboardEvent) {
+    if (evento.key === 'Enter' || evento.key === ' ' || evento.key === ',') {
+      evento.preventDefault();
+      this.aggiungiHashtag();
+    } else if (evento.key === 'Backspace' && !this.nuovoHashtag && this.hashtag.length) {
+      this.hashtag.pop();
+    }
+  }
+
+  togliHashtag(indice: number) {
+    this.hashtag.splice(indice, 1);
   }
 
   // ---------- Video ----------
@@ -230,18 +266,20 @@ export class NuovoPostComponent implements OnInit {
       etichetta: this.etichetta,
       testo: this.testo.trim() || null,
     };
-    // Un link scritto ma non ancora aggiunto con "+" si aggiunge da solo.
+    // Un link o un hashtag scritti ma non ancora aggiunti si aggiungono da soli.
     if (this.nuovoLink.trim()) this.aggiungiLink();
+    if (this.nuovoHashtag.trim()) this.aggiungiHashtag();
     if (this.errore) {
       this.pubblicando = false;
       return;
     }
     const foto_elenco: VoceFotoPost[] = this.fotoElenco.map(f => f.tieni ? { tieni: f.tieni } : { nuova: f.nuova! });
     const video_link = [...this.videoLink];
+    const hashtag = [...this.hashtag];
     const eraNuovo = !this.post;
     const richiesta = this.post
-      ? this.posts.aggiorna(this.post.id, { ...dati, foto_elenco, video_link })
-      : this.posts.crea({ ...dati, foto_elenco, video_link });
+      ? this.posts.aggiorna(this.post.id, { ...dati, foto_elenco, video_link, hashtag })
+      : this.posts.crea({ ...dati, foto_elenco, video_link, hashtag });
     richiesta.subscribe({
       next: async post => {
         // Il post è salvato: ora i video, uno alla volta. Se uno non va, gli altri vanno avanti.

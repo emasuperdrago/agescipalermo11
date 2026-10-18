@@ -97,6 +97,8 @@ export interface Post {
   /** I video corti caricati sul sito. */
   video: VideoPost[];
   etichetta: EtichettaPost;
+  /** Gli hashtag, senza "#" e in minuscolo (es. "campoestivo"). */
+  hashtag: string[];
   /** I post in evidenza compaiono sopra tutti gli altri. */
   in_evidenza: boolean;
   /** Messo da parte: non sta più nella home, si trova nell'archivio. */
@@ -124,6 +126,8 @@ export interface DatiPost {
   foto_elenco?: VoceFotoPost[];
   /** I link ai video (YouTube o Instagram): se c'è, sostituisce quelli di prima. */
   video_link?: string[];
+  /** Gli hashtag: se c'è, sostituisce quelli di prima. */
+  hashtag?: string[];
 }
 
 /** Un video corto caricato su un post. */
@@ -726,6 +730,20 @@ export interface Squadriglia {
   attiva: boolean;
   /** Quando è stata chiusa, se lo è. */
   data_chiusura: string | null;
+}
+
+/** Un grido di squadriglia: il nome è facoltativo, il testo va a capo come è scritto. */
+export interface Grido {
+  titolo: string;
+  testo: string;
+}
+
+/** La pagina di una squadriglia: storia, gridi e guidoncini conquistati. */
+export interface PaginaSquadriglia {
+  squadriglia: Squadriglia & { storia: string; gridi: Grido[] };
+  guidoncini: { specialita: string; anno: number }[];
+  /** Capi reparto: scrivono storia e gridi. */
+  puoGestire: boolean;
 }
 
 /** Quello che il server risponde sulle squadriglie. */

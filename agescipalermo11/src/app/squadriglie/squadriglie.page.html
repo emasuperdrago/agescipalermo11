@@ -1,9 +1,131 @@
-<ion-header>
+<ion-header class="testata-pagina">
   <ion-toolbar>
-    <ion-title>Squadriglia</ion-title>
+    <ion-buttons slot="start">
+      <ion-button class="indietro" routerLink="/reparto" routerDirection="back">
+        <ion-icon slot="start" [icon]="icone.indietro"></ion-icon>
+        Reparto
+      </ion-button>
+    </ion-buttons>
+    <a class="marchio" slot="end" routerLink="/home" routerDirection="back" aria-label="Palermo 11: torna alla home">
+      <span class="marchio__testo">
+        <strong>Palermo 11</strong>
+        <small>-Gruppo Scout-</small>
+      </span>
+      <img src="assets/icone/pa11-192.png" alt="" width="192" height="192" />
+    </a>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  <!-- Una pagina per squadriglia (in base all id) con i gridi. -->
+<ion-content class="squadriglia">
+
+  <header class="copertina">
+    <div class="copertina__contenuto">
+      @if (pagina) {
+        @if (urlFoto) {
+          <img class="copertina__foto" [src]="urlFoto" [alt]="'Squadriglia ' + pagina.squadriglia.nome" />
+        } @else {
+          <span class="copertina__iniziale" aria-hidden="true">{{ iniziale }}</span>
+        }
+        <div>
+          <h1>{{ pagina.squadriglia.nome }}</h1>
+          <p>{{ chiusa || 'Squadriglia del Reparto' }}</p>
+        </div>
+      } @else {
+        <div><h1>Squadriglia</h1></div>
+      }
+    </div>
+  </header>
+
+  <div class="corpo">
+    @if (errore) {
+      <p class="avviso-errore">{{ errore }}</p>
+    } @else if (caricamento) {
+      <div class="scheletro" aria-busy="true"><div></div></div>
+    } @else if (pagina) {
+
+      @if (pagina.puoGestire && !inModifica) {
+        <button type="button" class="modifica-pagina" (click)="apriModifica()">
+          <ion-icon [icon]="icone.modifica" aria-hidden="true"></ion-icon>
+          Modifica storia e gridi
+        </button>
+      }
+
+      @if (inModifica) {
+        <!-- La modifica: storia e gridi in un modulo solo. -->
+        <form class="scheda modulo" (ngSubmit)="salva()" (input)="erroreModifica = ''">
+          <label class="campo">
+            <span class="etichetta">La nostra storia</span>
+            <textarea name="storia" [(ngModel)]="storia" rows="8" maxlength="10000"
+                      placeholder="Quando è nata la squadriglia, i campi, le imprese, le persone che l'hanno fatta grande…"></textarea>
+          </label>
+
+          <div class="campo">
+            <span class="etichetta">I gridi</span>
+            @for (g of gridi; track $index; let i = $index) {
+              <div class="grido-modulo">
+                <input [name]="'titolo' + i" [(ngModel)]="g.titolo" maxlength="80"
+                       placeholder="Nome del grido (facoltativo), es. Grido di battaglia" />
+                <textarea [name]="'testo' + i" [(ngModel)]="g.testo" rows="4" maxlength="2000"
+                          placeholder="Il grido, va a capo come lo scrivi"></textarea>
+                <button type="button" class="link-piccolo link-piccolo--togli" (click)="togliGrido(i)">
+                  <ion-icon [icon]="icone.togli" aria-hidden="true"></ion-icon> Togli questo grido
+                </button>
+              </div>
+            }
+            <button type="button" class="aggiungi" (click)="aggiungiGrido()">
+              <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
+              Aggiungi un grido
+            </button>
+          </div>
+
+          @if (erroreModifica) {
+            <p class="avviso-errore" role="alert">{{ erroreModifica }}</p>
+          }
+          <div class="azioni">
+            <button type="button" class="secondario" (click)="annulla()" [disabled]="salvando">Annulla</button>
+            <button type="submit" class="principale" [disabled]="salvando">
+              <ion-icon [icon]="icone.fatto" aria-hidden="true"></ion-icon>
+              {{ salvando ? 'Salvataggio…' : 'Salva' }}
+            </button>
+          </div>
+        </form>
+      } @else {
+
+        <section class="scheda" aria-labelledby="titolo-storia">
+          <h2 id="titolo-storia"><ion-icon [icon]="icone.storia" aria-hidden="true"></ion-icon> La nostra storia</h2>
+          @if (pagina.squadriglia.storia) {
+            <p class="storia">{{ pagina.squadriglia.storia }}</p>
+          } @else {
+            <p class="nota">La storia della squadriglia è ancora da scrivere.</p>
+          }
+        </section>
+
+        <section class="scheda" aria-labelledby="titolo-gridi">
+          <h2 id="titolo-gridi"><ion-icon [icon]="icone.gridi" aria-hidden="true"></ion-icon> I gridi</h2>
+          @for (g of pagina.squadriglia.gridi; track $index) {
+            <figure class="grido">
+              @if (g.titolo) { <figcaption>{{ g.titolo }}</figcaption> }
+              <blockquote>{{ g.testo }}</blockquote>
+            </figure>
+          } @empty {
+            <p class="nota">Nessun grido scritto, per ora.</p>
+          }
+        </section>
+      }
+
+      @if (pagina.guidoncini.length) {
+        <section class="scheda" aria-labelledby="titolo-guidoncini">
+          <h2 id="titolo-guidoncini"><ion-icon [icon]="icone.guidoncini" aria-hidden="true"></ion-icon> Guidoncini conquistati</h2>
+          <ul class="guidoncini">
+            @for (g of pagina.guidoncini; track $index) {
+              <li><strong>{{ g.specialita }}</strong><small>{{ g.anno }}</small></li>
+            }
+          </ul>
+        </section>
+      }
+    }
+  </div>
+
 </ion-content>
+
+<app-barra-inferiore />

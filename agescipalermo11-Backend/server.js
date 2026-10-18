@@ -384,9 +384,29 @@ function postPubblico(p) {
         // I video caricati arrivano a parte (vedi inviaPost e il dettaglio): qui c'è solo quanti sono.
         video: p.video ?? [],
         etichetta: p.etichetta,
+        hashtag: hashtagDelPost(p),
         in_evidenza: p.in_evidenza === 1,
         data_creazione: p.data_creazione
     };
+}
+
+// ---------- Hashtag dei post ----------
+const MAX_HASHTAG_POST = 10;
+const MAX_LUNGHEZZA_HASHTAG = 40;
+
+/** Un hashtag pulito: senza "#", minuscolo, solo lettere, numeri e trattino basso. Vuoto se non va. */
+function pulisciHashtag(valore) {
+    return String(valore ?? '').trim().replace(/^#+/, '').toLowerCase()
+        .replace(/[^\p{L}\p{N}_]/gu, '').slice(0, MAX_LUNGHEZZA_HASHTAG);
+}
+
+function hashtagDelPost(p) {
+    try {
+        const elenco = JSON.parse(p.hashtag || '[]');
+        return Array.isArray(elenco) ? elenco.filter(h => typeof h === 'string') : [];
+    } catch {
+        return [];
+    }
 }
 
 /** Testo pulito dagli spazi ai bordi; con `max` viene anche accorciato. */
@@ -1314,7 +1334,14 @@ function validaPost(body, { fotoObbligatoria }) {
             if (!videoLink.includes(pulito)) videoLink.push(pulito);
         }
     }
-    return { dati: { didascalia, contenuto, colore, etichetta, foto, videoLink } };
+    // Gli hashtag: senza la voce nella richiesta (es. dalle app vecchie) restano quelli di prima.
+    let hashtag;
+    if (body.hashtag !== undefined) {
+        if (!Array.isArray(body.hashtag)) return { errore: "Elenco degli hashtag non valido." };
+        hashtag = [...new Set(body.hashtag.map(pulisciHashtag).filter(Boolean))];
+        if (hashtag.length > MAX_HASHTAG_POST) return { errore: `Al massimo ${MAX_HASHTAG_POST} hashtag per post.` };
+    }
+    return { dati: { didascalia, contenuto, colore, etichetta, foto, videoLink, hashtag } };
 }
 
 const MAX_FOTO_POST = 10;
@@ -1452,16 +1479,19 @@ function eliminaVideoDelPost(righe) {
 }
 
 // Elenco a pagine: i post in evidenza sempre per primi, poi dal più recente.
-// ?offset=N salta i primi N, ?limite=M (1-12), ?etichetta=branco|reparto|clan|gruppo filtra.
+// ?offset=N salta i primi N, ?limite=M (1-12), ?etichetta=branco|reparto|clan|gruppo filtra,
+// ?hashtag=campoestivo tiene solo i post con quell'hashtag.
 app.get('/api/post', (req, res) => {
     const offset = Math.max(0, Number.parseInt(req.query.offset, 10) || 0);
     const limite = Math.min(POST_PER_PAGINA, Math.max(1, Number.parseInt(req.query.limite, 10) || POST_PER_PAGINA));
     const etichetta = ETICHETTE_POST.includes(req.query.etichetta) ? req.query.etichetta : null;
+    const hashtag = pulisciHashtag(req.query.hashtag);
 
     const sql = `SELECT * FROM post WHERE archiviato = 0 AND in_attesa = 0 ${etichetta ? 'AND etichetta = ?' : ''}
+                 ${hashtag ? 'AND hashtag::jsonb @> ?::jsonb' : ''}
                  ORDER BY in_evidenza DESC, data_creazione DESC, id DESC
                  LIMIT ? OFFSET ?`;
-    const parametri = [...(etichetta ? [etichetta] : []), limite + 1, offset];
+    const parametri = [...(etichetta ? [etichetta] : []), ...(hashtag ? [JSON.stringify([hashtag])] : []), limite + 1, offset];
     db.all(sql, parametri, async (err, rows) => {
         if (err) return erroreInterno(res, err);
         const pagina = rows.slice(0, limite);
@@ -1554,12 +1584,30 @@ function sistemaArchivioPost(cb = () => {}) {
     });
 }
 
+// Gli hashtag usati nei post pubblicati, dai più usati: per i filtri della home e dell'archivio.
+// ?archivio=1 conta quelli dell'archivio, se no quelli della home.
+app.get('/api/post/hashtag', async (req, res) => {
+    try {
+        const archiviato = req.query.archivio === '1' ? 1 : 0;
+        const righe = await dbAll(`SELECT h AS hashtag, COUNT(*)::int AS quanti
+                                   FROM post, jsonb_array_elements_text(post.hashtag::jsonb) AS h
+                                   WHERE post.hashtag IS NOT NULL AND post.in_attesa = 0 AND post.archiviato = ?
+                                   GROUP BY h ORDER BY quanti DESC, h LIMIT 40`, [archiviato]);
+        res.json({ hashtag: righe });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
 // L'archivio: tutti i post messi da parte, dal più recente al più vecchio.
 app.get('/api/post/archivio', (req, res) => {
     const etichetta = ETICHETTE_POST.includes(req.query.etichetta) ? req.query.etichetta : null;
+    const hashtag = pulisciHashtag(req.query.hashtag);
     const sql = `SELECT * FROM post WHERE archiviato = 1 AND in_attesa = 0 ${etichetta ? 'AND etichetta = ?' : ''}
+                 ${hashtag ? 'AND hashtag::jsonb @> ?::jsonb' : ''}
                  ORDER BY data_creazione DESC, id DESC LIMIT 1000`;
-    db.all(sql, etichetta ? [etichetta] : [], (err, rows) => {
+    const parametri = [...(etichetta ? [etichetta] : []), ...(hashtag ? [JSON.stringify([hashtag])] : [])];
+    db.all(sql, parametri, (err, rows) => {
         if (err) return erroreInterno(res, err);
         res.json({ post: rows.map(postPubblico), massimo: MAX_POST_HOME });
     });
@@ -1638,10 +1686,11 @@ app.post('/api/post', verificaUtenteCensito, async (req, res) => {
     try {
         const [copertina, ...altre] = percorsi;
         const esito = await dbRun(`INSERT INTO post (didascalia, testo, colore, etichetta, foto, altre_foto, video_link,
-                                   rif_autore, in_attesa) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                                   rif_autore, in_attesa, hashtag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [dati.didascalia, dati.contenuto, dati.colore, dati.etichetta, copertina,
              altre.length ? JSON.stringify(altre) : null,
-             dati.videoLink?.length ? JSON.stringify(dati.videoLink) : null, req.user.id, permessi.subito ? 0 : 1]);
+             dati.videoLink?.length ? JSON.stringify(dati.videoLink) : null, req.user.id, permessi.subito ? 0 : 1,
+             dati.hashtag?.length ? JSON.stringify(dati.hashtag) : null]);
         // Un post in attesa non entra ancora nella home: l'archivio si sistema all'approvazione.
         if (!permessi.subito) return inviaPost(res, esito.lastID, 201);
         // Col post nuovo la home potrebbe superare i 50: i più vecchi vanno in archivio.
@@ -1695,10 +1744,12 @@ app.put('/api/post/:id', verificaUtenteCensito, async (req, res) => {
         // Senza video_link nella richiesta i link restano quelli di prima.
         const link = dati.videoLink === undefined ? esistente.video_link
             : (dati.videoLink.length ? JSON.stringify(dati.videoLink) : null);
+        const hashtag = dati.hashtag === undefined ? esistente.hashtag
+            : (dati.hashtag.length ? JSON.stringify(dati.hashtag) : null);
         await dbRun(`UPDATE post SET didascalia = ?, testo = ?, colore = ?, etichetta = ?, foto = ?, altre_foto = ?,
-                     video_link = ? WHERE id = ?`,
+                     video_link = ?, hashtag = ? WHERE id = ?`,
             [dati.didascalia, dati.contenuto, dati.colore, dati.etichetta, copertina,
-             altre.length ? JSON.stringify(altre) : null, link, esistente.id]);
+             altre.length ? JSON.stringify(altre) : null, link, hashtag, esistente.id]);
     } catch (err) {
         nuove.forEach(eliminaFotoPost);
         return erroreInterno(res, err);
@@ -4558,6 +4609,63 @@ function squadrigliaPubblica(sq) {
         data_chiusura: sq.data_chiusura,
     };
 }
+
+const MAX_STORIA_SQUADRIGLIA = 10000;
+const MAX_GRIDI = 20;
+const MAX_TITOLO_GRIDO = 80;
+const MAX_TESTO_GRIDO = 2000;
+
+function gridiDi(sq) {
+    try {
+        const elenco = JSON.parse(sq.gridi || '[]');
+        return Array.isArray(elenco) ? elenco.filter(g => g && typeof g.testo === 'string') : [];
+    } catch {
+        return [];
+    }
+}
+
+// La pagina di una squadriglia: storia, gridi e guidoncini conquistati. La vedono tutti.
+app.get('/api/squadriglie/:id', async (req, res) => {
+    try {
+        const sq = await dbGet('SELECT * FROM squadriglia WHERE id = ?', [req.params.id]);
+        if (!sq) return res.status(404).json({ error: "Squadriglia non trovata." });
+        const guidoncini = await dbAll(`SELECT specialita, anno FROM guidoncino WHERE rif_squadriglia = ?
+                                        ORDER BY anno DESC, specialita`, [sq.id]);
+        res.json({
+            squadriglia: { ...squadrigliaPubblica(sq), storia: sq.storia || '', gridi: gridiDi(sq) },
+            guidoncini,
+            puoGestire: await puoGestireSquadriglie(req),
+        });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+// Storia e gridi: li scrivono i capi reparto.
+app.put('/api/squadriglie/:id/racconto', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        if (!(await puoGestireSquadriglie(req)))
+            return res.status(403).json({ error: "Storia e gridi li scrivono i capi reparto." });
+        const sq = await dbGet('SELECT id FROM squadriglia WHERE id = ?', [req.params.id]);
+        if (!sq) return res.status(404).json({ error: "Squadriglia non trovata." });
+        const body = req.body || {};
+        // Il testo resta com'è scritto (a capo compresi), senza spazi in fondo.
+        const storia = String(body.storia ?? '').replace(/\r\n/g, '\n').trim().slice(0, MAX_STORIA_SQUADRIGLIA);
+        if (!Array.isArray(body.gridi)) return res.status(400).json({ error: "Elenco dei gridi non valido." });
+        const gridi = body.gridi
+            .map(g => ({
+                titolo: testo(g?.titolo, MAX_TITOLO_GRIDO),
+                testo: String(g?.testo ?? '').replace(/\r\n/g, '\n').trim().slice(0, MAX_TESTO_GRIDO),
+            }))
+            .filter(g => g.testo);
+        if (gridi.length > MAX_GRIDI) return res.status(400).json({ error: `Al massimo ${MAX_GRIDI} gridi.` });
+        await dbRun('UPDATE squadriglia SET storia = ?, gridi = ? WHERE id = ?',
+            [storia || null, gridi.length ? JSON.stringify(gridi) : null, sq.id]);
+        res.json({ storia, gridi });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
 
 app.get('/api/squadriglie', async (req, res) => {
     try {

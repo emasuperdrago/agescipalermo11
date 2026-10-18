@@ -1137,3 +1137,20 @@
     &:hover { background: rgba($viola-l, .14); }
   }
 }
+
+// Il collegamento alla pagina della squadriglia (storia e gridi).
+.squadriglia__pagina {
+  font-size: .78rem;
+  font-weight: 700;
+  color: $viola-m;
+  text-decoration: none;
+
+  &:hover { text-decoration: underline; }
+}
+
+.storiche__nome {
+  color: inherit;
+  text-decoration: none;
+
+  &:hover { text-decoration: underline; }
+}

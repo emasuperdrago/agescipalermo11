@@ -475,3 +475,66 @@
   input { display: none; }
   ion-icon { font-size: 1.2rem; }
 }
+
+// ---------- Hashtag ----------
+
+.hashtag {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 6px 10px;
+  border: 1.5px solid $slate-200;
+  border-radius: 12px;
+  background: $white;
+
+  &:focus-within {
+    border-color: $viola-m;
+    box-shadow: 0 0 0 4px rgba($viola-l, .2);
+  }
+
+  input {
+    flex: 1;
+    min-width: 120px;
+    min-height: 34px;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: .92rem;
+    color: $dark;
+    outline: none;
+  }
+
+  &__voce {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 4px 4px 10px;
+    border-radius: 999px;
+    background: rgba($viola-l, .16);
+    font-size: .82rem;
+    font-weight: 700;
+    color: $viola;
+
+    button {
+      display: grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: $viola;
+      cursor: pointer;
+
+      &:hover { background: rgba($viola-m, .15); }
+    }
+  }
+}
+
+.aiuto-hashtag {
+  font-size: .74rem;
+  color: $slate;
+}

@@ -42,6 +42,14 @@ export const MAX_VIDEO_POST = 3;
 export const MAX_BYTE_VIDEO_POST = 50 * 1024 * 1024;
 export const ESTENSIONI_VIDEO_POST = ['mp4', 'mov', 'm4v', 'webm'];
 
+/** Hashtag per post, come il server. */
+export const MAX_HASHTAG_POST = 10;
+
+/** Un hashtag pulito come lo pulisce il server: senza "#", minuscolo, solo lettere, numeri e _. */
+export function pulisciHashtag(valore: string): string {
+  return valore.trim().replace(/^#+/, '').toLowerCase().replace(/[^\p{L}\p{N}_]/gu, '').slice(0, 40);
+}
+
 /** Un link a un video che sappiamo mostrare dentro la pagina. */
 export interface VideoIncorporato {
   sito: 'youtube' | 'instagram';
@@ -77,9 +85,10 @@ export class PostService {
 
   /** Una pagina di post (in evidenza per primi), saltando i primi `offset` e filtrando per etichetta. */
   /** `quanti` serve per chiederne uno solo, quando si richiude il buco lasciato da un post tolto. */
-  elenco(offset = 0, etichetta: EtichettaPost | null = null, quanti = POST_PER_PAGINA) {
+  elenco(offset = 0, etichetta: EtichettaPost | null = null, quanti = POST_PER_PAGINA, hashtag: string | null = null) {
     const parametri: Record<string, string> = { offset: String(offset), limite: String(quanti) };
     if (etichetta) parametri['etichetta'] = etichetta;
+    if (hashtag) parametri['hashtag'] = hashtag;
     return this.http.get<PaginaPost>(`${apiUrl()}/post`, { params: parametri });
   }
 
@@ -117,9 +126,16 @@ export class PostService {
   }
 
   /** Tutti i post messi da parte, dal più recente: li raggruppa per anno la pagina. */
-  archivio(etichetta?: EtichettaPost | null) {
+  archivio(etichetta?: EtichettaPost | null, hashtag: string | null = null) {
     const params: Record<string, string> = etichetta ? { etichetta } : {};
+    if (hashtag) params['hashtag'] = hashtag;
     return this.http.get<{ post: Post[]; massimo: number }>(`${apiUrl()}/post/archivio`, { params });
+  }
+
+  /** Gli hashtag usati, dai più usati: quelli della home o, con `archivio`, dell'archivio. */
+  hashtag(archivio = false) {
+    return this.http.get<{ hashtag: { hashtag: string; quanti: number }[] }>(`${apiUrl()}/post/hashtag`,
+      { params: archivio ? { archivio: '1' } : {} }).pipe(map(r => r.hashtag));
   }
 
   /**

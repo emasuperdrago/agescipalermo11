@@ -42,6 +42,19 @@
       }
     </div>
 
+    <!-- Gli hashtag dei post archiviati. -->
+    @if (hashtagUsati.length) {
+      <div class="filtri filtri--hashtag" role="group" aria-label="Filtra per hashtag">
+        @for (h of hashtagUsati; track h.hashtag) {
+          <button type="button" class="filtro filtro--hashtag" [class.filtro--scelto]="hashtag === h.hashtag"
+                  [attr.aria-pressed]="hashtag === h.hashtag" (click)="filtraHashtag(h.hashtag)">
+            #{{ h.hashtag }}
+            @if (hashtag === h.hashtag) { ✕ } @else { <small>{{ h.quanti }}</small> }
+          </button>
+        }
+      </div>
+    }
+
     @if (errore) {
       <p class="vuoto vuoto--errore">{{ errore }}</p>
     } @else if (caricamento) {
@@ -51,7 +64,10 @@
         <span class="vuoto__icona" aria-hidden="true">
           <ion-icon [icon]="icone.archivio"></ion-icon>
         </span>
-        @if (etichetta) {
+        @if (hashtag) {
+          <p class="vuoto__titolo">Niente con #{{ hashtag }}{{ etichetta ? ' per ' + nomeEtichetta(etichetta) : '' }}</p>
+          <p class="vuoto__testo">Prova a togliere un filtro.</p>
+        } @else if (etichetta) {
           <p class="vuoto__titolo">Niente di {{ nomeEtichetta(etichetta) }} in archivio</p>
           <p class="vuoto__testo">Prova con un'altra branca, oppure guarda tutte.</p>
         } @else {
@@ -64,7 +80,7 @@
       </div>
     } @else {
       <p class="conteggio">
-        {{ quanti }} post in archivio@if (etichetta) { · {{ nomeEtichetta(etichetta) }}}
+        {{ quanti }} post in archivio@if (etichetta) { · {{ nomeEtichetta(etichetta) }}}@if (hashtag) { · #{{ hashtag }}}
       </p>
 
       @for (gruppo of anni; track gruppo.anno) {

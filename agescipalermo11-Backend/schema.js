@@ -173,6 +173,9 @@ const TABELLE = [
     )`,
     // "Falchi" e "falchi" sono la stessa squadriglia.
     `CREATE UNIQUE INDEX IF NOT EXISTS squadriglia_nome_unico ON squadriglia (lower(nome))`,
+    // La storia della squadriglia e i suoi gridi (elenco JSON di { titolo, testo }).
+    `ALTER TABLE squadriglia ADD COLUMN IF NOT EXISTS storia TEXT`,
+    `ALTER TABLE squadriglia ADD COLUMN IF NOT EXISTS gridi TEXT`,
 
     `CREATE TABLE IF NOT EXISTS guidoncino (
         id SERIAL PRIMARY KEY,
@@ -230,6 +233,9 @@ const TABELLE = [
         altre_foto TEXT,
         video_link TEXT
     )`,
+
+    // Gli hashtag del post: elenco JSON, già puliti (minuscoli, senza "#").
+    `ALTER TABLE post ADD COLUMN IF NOT EXISTS hashtag TEXT`,
 
     `CREATE TABLE IF NOT EXISTS post_video (
         id SERIAL PRIMARY KEY,

@@ -304,3 +304,28 @@
 @media (prefers-reduced-motion: reduce) {
   .scheletro > div { animation: none; }
 }
+
+// Gli hashtag: su una riga che scorre, sotto le branche.
+.filtri--hashtag {
+  flex-wrap: nowrap;
+  margin-top: -6px;
+  padding-bottom: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+.filtro--hashtag {
+  flex: none;
+  color: $viola;
+  white-space: nowrap;
+
+  small {
+    font-size: .7rem;
+    font-weight: 600;
+    color: $slate;
+  }
+
+  &.filtro--scelto small { color: inherit; }
+}

@@ -102,6 +102,7 @@
                   <span class="squadriglia__iniziale" aria-hidden="true">{{ iniziale(sq) }}</span>
                 }
                 <h3>{{ sq.nome }}</h3>
+                <a class="squadriglia__pagina" [routerLink]="['/reparto/squadriglie', sq.id]">Storia e gridi</a>
 
                 @if (puoGestire) {
                   <div class="squadriglia__azioni">
@@ -169,7 +170,8 @@
                         @if (urlFoto(sq)) {
                           <img [src]="urlFoto(sq)" [alt]="'Squadriglia ' + sq.nome" />
                         }
-                        {{ sq.nome }}
+                        <a class="storiche__nome" [routerLink]="['/reparto/squadriglie', sq.id]"
+                           [attr.aria-label]="'Storia e gridi della squadriglia ' + sq.nome">{{ sq.nome }}</a>
                         @if (puoGestire) {
                           <button type="button" class="storiche__riapri" (click)="confermaRiapertura(sq)"
                                   [attr.aria-label]="'Riapri la squadriglia ' + sq.nome" title="Riapri">

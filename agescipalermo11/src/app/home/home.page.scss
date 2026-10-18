@@ -1311,3 +1311,61 @@ $colori-etichetta: (
     color: rgba($white, .55);
   }
 }
+
+// ---------- Hashtag dei post ----------
+
+.filtro-hashtag {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding-bottom: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+.tag {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1.5px solid rgba($viola-m, .3);
+  border-radius: 999px;
+  background: $white;
+  font-family: inherit;
+  font-size: .8rem;
+  font-weight: 700;
+  color: $viola;
+  white-space: nowrap;
+  cursor: pointer;
+
+  small {
+    font-size: .7rem;
+    font-weight: 600;
+    color: $slate;
+  }
+
+  &:hover { border-color: $viola-m; }
+
+  &--scelto {
+    border-color: $viola-m;
+    background: $viola-m;
+    color: $white;
+  }
+
+  &--piccolo {
+    min-height: 26px;
+    padding: 0 9px;
+    font-size: .72rem;
+  }
+}
+
+.storia__hashtag {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 14px 12px;
+}

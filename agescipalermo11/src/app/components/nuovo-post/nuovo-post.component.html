@@ -89,6 +89,27 @@
       </div>
     </fieldset>
 
+    <!-- Hashtag: per ritrovare i post e filtrarli nella home e nell'archivio. -->
+    <div class="campo">
+      <label class="etichetta" for="nuovo-hashtag">Hashtag <small>(facoltativi, al massimo {{ maxHashtag }})</small></label>
+      <div class="hashtag">
+        @for (h of hashtag; track h; let i = $index) {
+          <span class="hashtag__voce">
+            #{{ h }}
+            <button type="button" (click)="togliHashtag(i)" [attr.aria-label]="'Togli #' + h">
+              <ion-icon [icon]="icone.chiudi" aria-hidden="true"></ion-icon>
+            </button>
+          </span>
+        }
+        @if (hashtag.length < maxHashtag) {
+          <input id="nuovo-hashtag" name="nuovoHashtag" [(ngModel)]="nuovoHashtag" autocomplete="off"
+                 autocapitalize="off" spellcheck="false" placeholder="#campoestivo"
+                 (keydown)="tastoHashtag($event)" (blur)="aggiungiHashtag()" />
+        }
+      </div>
+      <small class="aiuto-hashtag">Scrivi una parola e premi Invio, spazio o virgola. Niente spazi dentro: #campoinvernale.</small>
+    </div>
+
     <!-- Video: link a YouTube o Instagram, oppure video corti caricati qui. -->
     <fieldset class="campo">
       <legend class="etichetta">Video <small>(facoltativi)</small></legend>
