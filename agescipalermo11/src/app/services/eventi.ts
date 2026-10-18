@@ -20,7 +20,7 @@ export const BRANCHE_EVENTO: EtichettaEvento[] = ['branco', 'reparto', 'clan'];
 
 /** Stessi colori del calendario (calendario.page.scss). */
 export const COLORI_ETICHETTA_EVENTO: Record<EtichettaEvento, string> = {
-  branco: '#5A9E2A', reparto: '#B98A00', clan: '#D8392F', gruppo: '#E3C0FF', capi: '#7D57C2',
+  branco: '#B98A00', reparto: '#5A9E2A', clan: '#D8392F', gruppo: '#E3C0FF', capi: '#7D57C2',
 };
 
 /** Stessa regola del backend: branche in ordine, tutte e tre = gruppo; "gruppo" e "capi" da sole. */

@@ -277,8 +277,8 @@ $desktop: 992px;
   // Colore della sottolineatura al passaggio del cursore.
   --colore-tendina: transparent;
 
-  &--branco { --colore-tendina: #{$green}; }
-  &--reparto { --colore-tendina: #F2B705; }
+  &--branco { --colore-tendina: #F2B705; }
+  &--reparto { --colore-tendina: #{$green}; }
   &--clan { --colore-tendina: #D8392F; }
   &--capi { --colore-tendina: #{$viola-l}; }
 }
@@ -848,8 +848,8 @@ $desktop: 992px;
 
 // Colori delle etichette: gli stessi delle sottolineature del menu.
 $colori-etichetta: (
-  branco: $green-d,
-  reparto: #B98A00,
+  branco: #B98A00,
+  reparto: $green-d,
   clan: #D8392F,
   gruppo: $viola-m,
 );
@@ -866,7 +866,7 @@ $colori-etichetta: (
   }
 
   &--tutte {
-    background: conic-gradient($green-d 0 25%, #B98A00 0 50%, #D8392F 0 75%, $viola-m 0);
+    background: conic-gradient(#B98A00 0 25%, $green-d 0 50%, #D8392F 0 75%, $viola-m 0);
   }
 }
 

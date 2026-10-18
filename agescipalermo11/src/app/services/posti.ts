@@ -15,8 +15,8 @@ import { AllegatoPosto, BrancaPosto, CampoPosto, DatiPosto, Posto } from '../../
 export const BRANCHE_POSTO: {
   valore: BrancaPosto; nome: string; colore: string; testo: string; forte: string; bordo: string;
 }[] = [
-  { valore: 'branco', nome: 'Branco', colore: '#5A9E2A', testo: '#FFFFFF', forte: '#5A9E2A', bordo: '#FFFFFF' },
-  { valore: 'reparto', nome: 'Reparto', colore: '#B98A00', testo: '#FFFFFF', forte: '#B98A00', bordo: '#FFFFFF' },
+  { valore: 'branco', nome: 'Branco', colore: '#B98A00', testo: '#FFFFFF', forte: '#B98A00', bordo: '#FFFFFF' },
+  { valore: 'reparto', nome: 'Reparto', colore: '#5A9E2A', testo: '#FFFFFF', forte: '#5A9E2A', bordo: '#FFFFFF' },
   { valore: 'clan', nome: 'Clan', colore: '#D8392F', testo: '#FFFFFF', forte: '#D8392F', bordo: '#FFFFFF' },
   { valore: 'gruppo', nome: 'Gruppo', colore: '#E3C0FF', testo: '#2E1850', forte: '#7D57C2', bordo: '#7D57C2' },
 ];

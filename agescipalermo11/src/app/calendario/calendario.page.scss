@@ -4,8 +4,8 @@
 // Per ogni etichetta: colore, colore del testo che ci sta sopra e colore leggibile su bianco.
 // Il gruppo è un lilla chiaro, quindi sopra ci vuole una scritta scura.
 $colori-branca: (
-  branco: $green-d,
-  reparto: #B98A00,
+  branco: #B98A00,
+  reparto: $green-d,
   clan: #D8392F,
   gruppo: #E3C0FF,
   capi: $viola-m,
@@ -20,8 +20,8 @@ $testi-branca: (
 );
 
 $forti-branca: (
-  branco: $green-d,
-  reparto: #B98A00,
+  branco: #B98A00,
+  reparto: $green-d,
   clan: #D8392F,
   gruppo: $viola-m,
   capi: $viola-m,

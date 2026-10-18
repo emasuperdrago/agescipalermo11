@@ -9,8 +9,8 @@ import {
 /** Sezioni del canzoniere, nell'ordine del canzoniere di carta. */
 export const SEZIONI_CANTO: { valore: SezioneCanto; nome: string; colore: string }[] = [
   { valore: 'preghiere', nome: 'Preghiere', colore: '#7D57C2' },
-  { valore: 'branco', nome: 'Branco', colore: '#5A9E2A' },
-  { valore: 'reparto', nome: 'Reparto', colore: '#B98A00' },
+  { valore: 'branco', nome: 'Branco', colore: '#B98A00' },
+  { valore: 'reparto', nome: 'Reparto', colore: '#5A9E2A' },
   { valore: 'clan', nome: 'Clan', colore: '#D8392F' },
   { valore: 'liturgici', nome: 'Liturgici', colore: '#0B87A8' },
   { valore: 'fuoco', nome: 'Altro', colore: '#E36F3C' },

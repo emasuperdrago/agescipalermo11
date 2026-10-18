@@ -2482,7 +2482,7 @@ const VIOLA = '#462678';
 const VIOLA_CHIARO = '#7D57C2';
 const GRIGIO = '#64748B';
 const COLORI_SEZIONE = {
-    preghiere: '#7D57C2', branco: '#5A9E2A', reparto: '#B98A00',
+    preghiere: '#7D57C2', branco: '#B98A00', reparto: '#5A9E2A',
     clan: '#D8392F', liturgici: '#0B87A8', fuoco: '#E36F3C',
 };
 const NOMI_SEZIONE = {

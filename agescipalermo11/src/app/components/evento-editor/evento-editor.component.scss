@@ -136,8 +136,8 @@
 
   --su-etichetta: #{$white};
 
-  &--branco { --colore-etichetta: #{$green-d}; }
-  &--reparto { --colore-etichetta: #B98A00; }
+  &--branco { --colore-etichetta: #B98A00; }
+  &--reparto { --colore-etichetta: #{$green-d}; }
   &--clan { --colore-etichetta: #D8392F; }
   // Lilla chiaro: sopra ci va la scritta scura.
   &--gruppo { --colore-etichetta: #E3C0FF; --su-etichetta: #{$viola-d}; }
