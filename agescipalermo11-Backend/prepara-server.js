@@ -58,8 +58,20 @@ async function esportaDati() {
     return { tabelle, righe, adminDiProva };
 }
 
+/** I dati del database già scritti a mano in un .env preparato prima: rifacendo il pacchetto restano. */
+function databaseGiaScritto(fileEnv) {
+    const scritti = {};
+    try {
+        for (const riga of fs.readFileSync(fileEnv, 'utf8').split('\n')) {
+            const [, nome, valore] = riga.match(/^(PG_(?:NAME|USER|PASSWORD))=(.*)$/) ?? [];
+            if (nome && valore && !valore.startsWith('SCRIVI_QUI')) scritti[nome] = valore;
+        }
+    } catch { /* primo pacchetto: niente da tenere */ }
+    return scritti;
+}
+
 /** Il .env del server: le chiavi di qui (devono essere le stesse) e le impostazioni online. */
-function envDelServer() {
+function envDelServer(gia = {}) {
     const e = process.env;
     const riga = (nome, valore) => `${nome}=${valore ?? ''}`;
     return [
@@ -84,9 +96,9 @@ function envDelServer() {
         '# le DB_* il pannello le usa per un database MySQL che al backend non serve.',
         riga('PG_HOST', 'localhost'),
         riga('PG_PORT', '5432'),
-        riga('PG_NAME', 'SCRIVI_QUI_IL_NOME_DEL_DATABASE'),
-        riga('PG_USER', 'SCRIVI_QUI_L_UTENTE_DEL_DATABASE'),
-        riga('PG_PASSWORD', 'SCRIVI_QUI_LA_PASSWORD_DEL_DATABASE'),
+        riga('PG_NAME', gia.PG_NAME ?? 'SCRIVI_QUI_IL_NOME_DEL_DATABASE'),
+        riga('PG_USER', gia.PG_USER ?? 'SCRIVI_QUI_L_UTENTE_DEL_DATABASE'),
+        riga('PG_PASSWORD', gia.PG_PASSWORD ?? 'SCRIVI_QUI_LA_PASSWORD_DEL_DATABASE'),
         '',
         '# Email: per ora lo stesso Gmail del Mac; più avanti la casella del dominio.',
         riga('SMTP_HOST', e.SMTP_HOST),
@@ -107,7 +119,7 @@ function envDelServer() {
     fs.writeFileSync(fileDati, criptaFile(Buffer.from(JSON.stringify(pacchetto))), { mode: 0o600 });
 
     const fileEnv = path.join(CARTELLA, '.env');
-    fs.writeFileSync(fileEnv, envDelServer(), { mode: 0o600 });
+    fs.writeFileSync(fileEnv, envDelServer(databaseGiaScritto(fileEnv)), { mode: 0o600 });
     fs.chmodSync(fileEnv, 0o600);
 
     console.log(`📦 Dati: ${Object.keys(tabelle).length} tabelle, ${righe} righe → per-il-server/dati-palermo11.json.cif (cifrato)`);
