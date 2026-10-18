@@ -5,8 +5,51 @@ import {
   addOutline, arrowUpCircleOutline, documentTextOutline, downloadOutline, pencilOutline, trashOutline
 } from 'ionicons/icons';
 import { SfogliaPdfComponent } from '../sfoglia-pdf/sfoglia-pdf.component';
+import { Observable } from 'rxjs';
 import { CartaClanService } from '../../services/carta-clan';
 import { CartaDiClan } from '../../../types/models';
+
+/** Chi carica, cambia e toglie i documenti del riquadro (la Carta di Clan, il PEG). */
+export interface ServizioDocumenti {
+  readonly maxByte: number;
+  carica(file: Blob, nome: string, titolo: string, anno: string): Observable<CartaDiClan>;
+  aggiorna(id: number, dati: { titolo?: string; anno?: string | null; corrente?: boolean }): Observable<CartaDiClan>;
+  elimina(id: number): Observable<unknown>;
+  urlIntero(percorso: string): string;
+}
+
+/** Le parole del riquadro, che cambiano col documento. */
+export interface TestiDocumento {
+  nome: string;
+  titoloBase: string;
+  nuovo: string;
+  modifica: string;
+  caricaNuovo: string;
+  caricaPrimo: string;
+  nessuno: string;
+  chiCarica: string;
+  caricato: string;
+  mettiInVigore: string;
+  tornaInVigore: string;
+  rimuovere: string;
+  nomeFile: string;
+}
+
+export const TESTI_CARTA_CLAN: TestiDocumento = {
+  nome: 'la Carta di Clan',
+  titoloBase: 'Carta di Clan',
+  nuovo: 'Nuova Carta di Clan',
+  modifica: 'Modifica la Carta',
+  caricaNuovo: 'Carica una nuova Carta di Clan',
+  caricaPrimo: 'Carica la Carta di Clan',
+  nessuno: 'Ancora nessuna Carta di Clan caricata.',
+  chiCarica: 'La caricheranno i capi clan.',
+  caricato: 'Carta di Clan caricata: la precedente è finita nell\'archivio.',
+  mettiInVigore: 'Mettila in vigore',
+  tornaInVigore: "torna nel riquadro del Clan, e quella di adesso finisce nell'archivio",
+  rimuovere: 'Rimuovere la Carta?',
+  nomeFile: 'carta-di-clan.pdf',
+};
 
 /**
  * Il riquadro di una Carta di Clan: si sfoglia pagina per pagina e si scarica.
@@ -30,6 +73,9 @@ export class RiquadroCartaComponent {
   @Input() modo: 'riquadro' | 'pagina' = 'riquadro';
   /** Nell'archivio il titolo sta già nella riga sopra: qui dentro si toglie. */
   @Input() intestazione = true;
+  /** Il documento: di base la Carta di Clan; il PEG passa i suoi. */
+  @Input() servizio: ServizioDocumenti | null = null;
+  @Input() testi: TestiDocumento = TESTI_CARTA_CLAN;
 
   @Output() cambiate = new EventEmitter<void>();
 
@@ -41,7 +87,10 @@ export class RiquadroCartaComponent {
   /** Mentre il file sale: il pulsante resta spento. */
   caricamento = false;
 
-  private carte = inject(CartaClanService);
+  private cartaClan = inject(CartaClanService);
+  private get carte(): ServizioDocumenti {
+    return this.servizio ?? this.cartaClan;
+  }
   private alertCtrl = inject(AlertController);
   private toastCtrl = inject(ToastController);
 
@@ -70,7 +119,7 @@ export class RiquadroCartaComponent {
     if (!this.carta) return;
     const collegamento = document.createElement('a');
     collegamento.href = this.url;
-    collegamento.download = this.carta.nome_file || 'carta-di-clan.pdf';
+    collegamento.download = this.carta.nome_file || this.testi.nomeFile;
     collegamento.target = '_blank';
     document.body.appendChild(collegamento);
     collegamento.click();
@@ -85,30 +134,30 @@ export class RiquadroCartaComponent {
     if (!file) return;
 
     if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf')
-      return this.avvisa('La Carta di Clan dev\'essere un file PDF.');
+      return this.avvisa(`Per ${this.testi.nome} serve un file PDF.`);
     if (file.size > this.carte.maxByte)
       return this.avvisa('Il file è troppo grande: al massimo 20 MB.');
 
-    const dati = await this.chiediTitolo('Nuova Carta di Clan', 'Carta di Clan', '');
+    const dati = await this.chiediTitolo(this.testi.nuovo, this.testi.titoloBase, '');
     if (!dati) return;
 
     this.caricamento = true;
     this.carte.carica(file, file.name, dati.titolo, dati.anno).subscribe({
       next: () => {
         this.caricamento = false;
-        this.avvisa('Carta di Clan caricata: la precedente è finita nell\'archivio.');
+        this.avvisa(this.testi.caricato);
         this.cambiate.emit();
       },
       error: (err: HttpErrorResponse) => {
         this.caricamento = false;
-        this.avvisa(err.error?.error ?? 'Non sono riuscito a caricare la Carta.');
+        this.avvisa(err.error?.error ?? 'Non sono riuscito a caricare il file.');
       },
     });
   }
 
   async modifica() {
     if (!this.carta) return;
-    const dati = await this.chiediTitolo('Modifica la Carta', this.carta.titolo, this.carta.anno ?? '');
+    const dati = await this.chiediTitolo(this.testi.modifica, this.carta.titolo, this.carta.anno ?? '');
     if (!dati) return;
     this.carte.aggiorna(this.carta.id, { titolo: dati.titolo, anno: dati.anno || null }).subscribe({
       next: () => this.cambiate.emit(),
@@ -121,11 +170,11 @@ export class RiquadroCartaComponent {
     if (!this.carta) return;
     const alert = await this.alertCtrl.create({
       header: 'Rimetterla in vigore?',
-      message: `"${this.carta.titolo}" torna nel riquadro del Clan, e quella di adesso finisce nell'archivio.`,
+      message: `"${this.carta.titolo}" ${this.testi.tornaInVigore}.`,
       buttons: [
         { text: 'Annulla', role: 'cancel' },
         {
-          text: 'Mettila in vigore', handler: () => {
+          text: this.testi.mettiInVigore, handler: () => {
             this.carte.aggiorna(this.carta!.id, { corrente: true }).subscribe({
               next: () => this.cambiate.emit(),
               error: (err: HttpErrorResponse) => this.avvisa(err.error?.error ?? 'Non sono riuscito a cambiarla.'),
@@ -140,7 +189,7 @@ export class RiquadroCartaComponent {
   async rimuovi() {
     if (!this.carta) return;
     const alert = await this.alertCtrl.create({
-      header: 'Rimuovere la Carta?',
+      header: this.testi.rimuovere,
       message: `"${this.carta.titolo}" viene cancellata e il file non si potrà più riaprire.`
         + (this.carta.corrente ? '\nNel riquadro andrà la più recente dell\'archivio.' : ''),
       buttons: [

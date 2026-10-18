@@ -25,7 +25,7 @@
         @if (!carta.corrente) {
           <button type="button" class="tasto tasto--vigore" (click)="mettiInVigore()">
             <ion-icon [icon]="icone.inVigore" aria-hidden="true"></ion-icon>
-            Mettila in vigore
+            {{ testi.mettiInVigore }}
           </button>
         }
         <button type="button" class="tasto" (click)="modifica()">
@@ -45,7 +45,7 @@
       <label class="carica" [class.carica--spenta]="caricamento">
         <input type="file" accept="application/pdf,.pdf" (change)="scegliFile($event)" [disabled]="caricamento" />
         <ion-icon [icon]="icone.nuova" aria-hidden="true"></ion-icon>
-        <span>{{ caricamento ? 'Sto caricando…' : 'Carica una nuova Carta di Clan' }}</span>
+        <span>{{ caricamento ? 'Sto caricando…' : testi.caricaNuovo }}</span>
         <small>Un file PDF, max 20 MB. Questa finirà nell'archivio.</small>
       </label>
     }
@@ -55,16 +55,16 @@
 
   <div class="vuoto">
     <ion-icon [icon]="icone.carta" aria-hidden="true"></ion-icon>
-    <p>Ancora nessuna Carta di Clan caricata.</p>
+    <p>{{ testi.nessuno }}</p>
     @if (puoGestire) {
       <label class="carica" [class.carica--spenta]="caricamento">
         <input type="file" accept="application/pdf,.pdf" (change)="scegliFile($event)" [disabled]="caricamento" />
         <ion-icon [icon]="icone.nuova" aria-hidden="true"></ion-icon>
-        <span>{{ caricamento ? 'Sto caricando…' : 'Carica la Carta di Clan' }}</span>
+        <span>{{ caricamento ? 'Sto caricando…' : testi.caricaPrimo }}</span>
         <small>Un file PDF, max 20 MB.</small>
       </label>
     } @else {
-      <small>La caricheranno i capi clan.</small>
+      <small>{{ testi.chiCarica }}</small>
     }
   </div>
 

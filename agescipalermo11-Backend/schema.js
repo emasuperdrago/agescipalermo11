@@ -121,6 +121,19 @@ const TABELLE = [
         data_modifica TEXT NOT NULL DEFAULT ${ADESSO}
     )`,
 
+    // PEG, Progetto Educativo di Gruppo: come la Carta di Clan, un PDF in vigore e l'archivio.
+    `CREATE TABLE IF NOT EXISTS peg (
+        id SERIAL PRIMARY KEY,
+        titolo TEXT NOT NULL,
+        anno TEXT,
+        percorso TEXT NOT NULL,
+        nome_originale TEXT NOT NULL,
+        dimensione BIGINT NOT NULL DEFAULT 0,
+        corrente SMALLINT NOT NULL DEFAULT 0,
+        rif_autore INTEGER REFERENCES utenti(id) ON DELETE SET NULL,
+        data_creazione TEXT NOT NULL DEFAULT ${ADESSO}
+    )`,
+
     `CREATE TABLE IF NOT EXISTS carta_clan (
         id SERIAL PRIMARY KEY,
         titolo TEXT NOT NULL,

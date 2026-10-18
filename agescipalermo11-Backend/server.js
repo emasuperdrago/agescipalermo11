@@ -5104,6 +5104,107 @@ app.delete('/api/carta-clan/:id', verificaRuolo('capo', 'admin'), async (req, re
     }
 });
 
+// ---------- PEG, Progetto Educativo di Gruppo ----------
+// Come la Carta di Clan: il PDF in vigore (corrente = 1) e l'archivio dei precedenti.
+// Lo leggono tutti; lo caricano e lo cambiano i capigruppo.
+const CARTELLA_PEG = path.join(__dirname, 'uploads', 'peg');
+fs.mkdirSync(CARTELLA_PEG, { recursive: true });
+
+async function puoGestirePeg(req) {
+    const chi = utenteDaToken(req);
+    if (!chi) return false;
+    const utente = await dbGet('SELECT ruolo FROM utenti WHERE id = ?', [chi.id]);
+    return utente?.ruolo === 'admin';
+}
+
+const SELEZIONE_PEG = `SELECT p.*, u.nome AS autore_nome, u.cognome AS autore_cognome
+                       FROM peg p LEFT JOIN utenti u ON u.id = p.rif_autore`;
+
+app.get('/api/peg', async (req, res) => {
+    try {
+        const righe = await dbAll(`${SELEZIONE_PEG} ORDER BY p.corrente DESC, p.data_creazione DESC, p.id DESC`);
+        const tutti = righe.map(cartaPubblica);
+        res.json({
+            corrente: tutti.find(p => p.corrente) ?? null,
+            archivio: tutti.filter(p => !p.corrente),
+            puoGestire: await puoGestirePeg(req),
+        });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+// Il PDF arriva così com'è, col nome in X-Nome-File; quello in vigore scende nell'archivio.
+app.post('/api/peg', verificaRuolo('capo', 'admin'),
+    express.raw({ type: () => true, limit: MAX_BYTE_CARTA }),
+    async (req, res) => {
+        try {
+            if (!(await puoGestirePeg(req))) return res.status(403).json({ error: "Il PEG lo cambiano i capigruppo." });
+            const dati = Buffer.isBuffer(req.body) ? req.body : null;
+            if (!dati || !dati.length) return res.status(400).json({ error: "Il file è vuoto." });
+            if (!eUnPdf(dati)) return res.status(400).json({ error: "Il PEG dev'essere un PDF." });
+
+            let nome, titolo, anno;
+            try { nome = decodeURIComponent(String(req.headers['x-nome-file'] ?? '')); } catch { nome = ''; }
+            try { titolo = decodeURIComponent(String(req.headers['x-titolo'] ?? '')); } catch { titolo = ''; }
+            try { anno = decodeURIComponent(String(req.headers['x-anno'] ?? '')); } catch { anno = ''; }
+            nome = path.basename(nome).replace(/[\x00-\x1f\x7f]/g, '').trim().slice(-MAX_NOME_FILE) || 'peg.pdf';
+            titolo = testo(titolo, MAX_TITOLO_CARTA) || 'Progetto Educativo di Gruppo';
+            anno = testo(anno, 20) || null;
+
+            const nomeSuDisco = `${crypto.randomUUID()}.pdf`;
+            await fs.promises.writeFile(path.join(CARTELLA_PEG, nomeSuDisco), dati);
+            const percorso = `/uploads/peg/${nomeSuDisco}`;
+            try {
+                await dbRun('UPDATE peg SET corrente = 0 WHERE corrente = 1');
+                const esito = await dbRun(`INSERT INTO peg (titolo, anno, percorso, nome_originale, dimensione, corrente, rif_autore)
+                                           VALUES (?, ?, ?, ?, ?, 1, ?)`, [titolo, anno, percorso, nome, dati.length, req.user.id]);
+                res.status(201).json({ carta: cartaPubblica(await dbGet(`${SELEZIONE_PEG} WHERE p.id = ?`, [esito.lastID])) });
+            } catch (err) {
+                eliminaFile(CARTELLA_PEG, percorso);
+                throw err;
+            }
+        } catch (err) {
+            erroreInterno(res, err);
+        }
+    });
+
+// Cambia titolo e anno, o rimette in vigore un PEG dell'archivio.
+app.put('/api/peg/:id', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        if (!(await puoGestirePeg(req))) return res.status(403).json({ error: "Il PEG lo cambiano i capigruppo." });
+        const peg = await dbGet('SELECT * FROM peg WHERE id = ?', [req.params.id]);
+        if (!peg) return res.status(404).json({ error: "PEG non trovato." });
+        const body = req.body || {};
+        const titolo = testo(body.titolo, MAX_TITOLO_CARTA) || peg.titolo;
+        const anno = body.anno === null || body.anno === '' ? null : (testo(body.anno, 20) || peg.anno);
+        if (body.corrente === true && peg.corrente !== 1) await dbRun('UPDATE peg SET corrente = 0 WHERE corrente = 1');
+        const corrente = body.corrente === true ? 1 : peg.corrente;
+        await dbRun('UPDATE peg SET titolo = ?, anno = ?, corrente = ? WHERE id = ?', [titolo, anno, corrente, peg.id]);
+        res.json({ carta: cartaPubblica(await dbGet(`${SELEZIONE_PEG} WHERE p.id = ?`, [peg.id])) });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+app.delete('/api/peg/:id', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        if (!(await puoGestirePeg(req))) return res.status(403).json({ error: "Il PEG lo rimuovono i capigruppo." });
+        const peg = await dbGet('SELECT * FROM peg WHERE id = ?', [req.params.id]);
+        if (!peg) return res.status(404).json({ error: "PEG non trovato." });
+        await dbRun('DELETE FROM peg WHERE id = ?', [peg.id]);
+        eliminaFile(CARTELLA_PEG, peg.percorso);
+        // Se se ne va quello in vigore, torna in vigore il più recente dell'archivio.
+        if (peg.corrente === 1) {
+            const erede = await dbGet('SELECT id FROM peg ORDER BY data_creazione DESC, id DESC LIMIT 1');
+            if (erede) await dbRun('UPDATE peg SET corrente = 1 WHERE id = ?', [erede.id]);
+        }
+        res.json({ message: "PEG rimosso." });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
 // ---------- Avvisi sui contenuti (per ora: i capi clan sui ragazzi del clan) ----------
 
 /** Segna che un ragazzo ha aggiunto o cambiato qualcosa: lo vedranno i capi della sua branca. */
@@ -5279,6 +5380,7 @@ app.use((err, req, res, next) => {
         return res.status(413).json({ error: req.path.includes('/allegati')
             ? "File troppo grande: il massimo è 15 MB."
             : req.path.startsWith('/api/carta-clan') ? "La Carta di Clan è troppo grande: il massimo è 20 MB."
+            : req.path.startsWith('/api/peg') ? "Il PEG è troppo grande: il massimo è 20 MB."
                 : /^\/api\/post\/\d+\/video/.test(req.path) ? "Video troppo grande: il massimo è 50 MB (circa un minuto)."
                 : conFoto ? "File troppo grande: carica una foto più leggera."
                     : "Richiesta troppo grande." });

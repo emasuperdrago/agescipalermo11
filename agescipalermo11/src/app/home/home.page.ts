@@ -72,6 +72,7 @@ const MENU: MenuTendina[] = [
     chiave: 'capi',
     voci: [
       { etichetta: 'I nostri capi', link: '/capi' },
+      { etichetta: 'PEG', link: '/peg' },
       { etichetta: 'Staff e capi gruppo', link: '/capi-gruppo', ruoli: ['admin'] },
       { etichetta: 'Codici censimento', link: '/gestione-censiti', ruoli: ['capo', 'admin'] },
     ],
@@ -169,6 +170,7 @@ export class HomePage implements OnDestroy {
         { etichetta: 'Il Reparto', link: '/reparto' },
         { etichetta: 'Il Clan', link: '/clan' },
         { etichetta: 'I nostri capi', link: '/capi' },
+        { etichetta: 'Il PEG', link: '/peg' },
       ],
     },
     {

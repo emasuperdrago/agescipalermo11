@@ -120,6 +120,11 @@ export const routes: Routes = [
     path: 'capi',
     loadComponent: () => import('./gestione-capi/gestione-capi.page').then(m => m.GestioneCapiPage)
   },
+  // Il PEG, Progetto Educativo di Gruppo: lo vedono tutti.
+  {
+    path: 'peg',
+    loadComponent: () => import('./peg/peg.page').then(m => m.PegPage)
+  },
   {
     path: 'capi-gruppo',
     canActivate: [authGuard],
