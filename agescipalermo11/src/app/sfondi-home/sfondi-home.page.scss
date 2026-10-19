@@ -160,6 +160,34 @@
     color: $white;
   }
 
+  // Le frecce per cambiare l'ordine, in basso sulla foto.
+  &__frecce {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+    display: flex;
+    justify-content: space-between;
+
+    button {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 50%;
+      background: rgba($dark, .6);
+      backdrop-filter: blur(6px);
+      color: $white;
+      cursor: pointer;
+
+      ion-icon { font-size: 1.15rem; }
+
+      &:hover:not(:disabled) { background: $viola-m; }
+      &:disabled { opacity: .3; cursor: default; }
+    }
+  }
+
   &__elimina {
     position: absolute;
     top: 8px;

@@ -4559,6 +4559,29 @@ app.post('/api/sfondi', verificaRuolo('capo', 'admin'), async (req, res) => {
     }
 });
 
+// Il nuovo ordine delle foto: tutti gli id, nell'ordine in cui devono scorrere nella home.
+app.put('/api/sfondi/ordine', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(Number) : null;
+        const esistenti = (await dbAll(`SELECT id FROM sfondo_home`)).map(r => r.id);
+        // Devono esserci tutte e sole le foto di adesso, ognuna una volta.
+        const uguali = ids && ids.length === esistenti.length && new Set(ids).size === ids.length
+            && ids.every(id => esistenti.includes(id));
+        if (!uguali) return res.status(409).json({ error: "Le foto sono cambiate nel frattempo: ricarica la pagina." });
+        await dbRun('BEGIN');
+        try {
+            for (const [i, id] of ids.entries()) await dbRun(`UPDATE sfondo_home SET ordine = ? WHERE id = ?`, [i + 1, id]);
+            await dbRun('COMMIT');
+        } catch (err) {
+            await dbRun('ROLLBACK').catch(() => {});
+            throw err;
+        }
+        res.json({ message: "Ordine salvato." });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
 app.delete('/api/sfondi/:id', verificaRuolo('capo', 'admin'), async (req, res) => {
     try {
         const riga = await dbGet(`SELECT * FROM sfondo_home WHERE id = ?`, [req.params.id]);

@@ -48,10 +48,21 @@
           <div class="scheletro" aria-busy="true"><div></div><div></div></div>
         } @else {
           <ul class="galleria">
-            @for (s of sfondi; track s.id; let i = $index) {
+            @for (s of sfondi; track s.id; let i = $index; let prima = $first; let ultima = $last) {
               <li class="scatto">
                 <img [src]="url(s)" alt="" loading="lazy" />
                 <span class="scatto__posto">{{ i + 1 }}ª</span>
+                <!-- Per cambiare l'ordine: un posto prima o un posto dopo. -->
+                <div class="scatto__frecce">
+                  <button type="button" (click)="sposta(i, -1)" [disabled]="prima || spostando"
+                          [attr.aria-label]="'Sposta la ' + (i + 1) + 'ª foto un posto prima'" title="Prima">
+                    <ion-icon [icon]="icone.prima"></ion-icon>
+                  </button>
+                  <button type="button" (click)="sposta(i, 1)" [disabled]="ultima || spostando"
+                          [attr.aria-label]="'Sposta la ' + (i + 1) + 'ª foto un posto dopo'" title="Dopo">
+                    <ion-icon [icon]="icone.dopo"></ion-icon>
+                  </button>
+                </div>
                 <button type="button" class="scatto__elimina" (click)="confermaElimina(s)"
                         aria-label="Rimuovi questa foto" title="Rimuovi">
                   <ion-icon [icon]="icone.elimina"></ion-icon>
@@ -60,8 +71,8 @@
             }
           </ul>
           <p class="nota">
-            Scorrono nell'ordine in cui le vedi qui. Ne deve restare almeno una, e si arriva
-            al massimo a dodici.
+            Scorrono nell'ordine in cui le vedi qui: con le frecce ‹ › sposti una foto prima o dopo.
+            Ne deve restare almeno una, e si arriva al massimo a dodici.
           </p>
         }
       }

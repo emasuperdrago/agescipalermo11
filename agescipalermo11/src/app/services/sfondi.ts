@@ -24,6 +24,11 @@ export class SfondiService {
     return this.http.post<{ sfondo: SfondoHome }>(`${apiUrl()}/sfondi`, { foto }).pipe(map(r => r.sfondo));
   }
 
+  /** Il nuovo ordine: tutti gli id, nell'ordine in cui scorrono nella home. */
+  riordina(ids: number[]) {
+    return this.http.put<{ message: string }>(`${apiUrl()}/sfondi/ordine`, { ids });
+  }
+
   elimina(id: number) {
     return this.http.delete<{ message: string }>(`${apiUrl()}/sfondi/${id}`);
   }

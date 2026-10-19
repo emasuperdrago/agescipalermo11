@@ -5,7 +5,9 @@ import {
   AlertController, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonRouterLink,
   IonRouterLinkWithHref, IonContent, ToastController
 } from '@ionic/angular/standalone';
-import { addOutline, arrowBackOutline, imageOutline, trashOutline } from 'ionicons/icons';
+import {
+  addOutline, arrowBackOutline, chevronBackOutline, chevronForwardOutline, imageOutline, trashOutline
+} from 'ionicons/icons';
 import { BarraInferioreComponent } from '../components/barra-inferiore/barra-inferiore.component';
 import { SfondiService } from '../services/sfondi';
 import { preparaImmagine } from '../services/immagini';
@@ -26,7 +28,12 @@ import { SfondoHome } from '../../types/models';
   ],
 })
 export class SfondiHomePage {
-  readonly icone = { indietro: arrowBackOutline, aggiungi: addOutline, foto: imageOutline, elimina: trashOutline };
+  readonly icone = {
+    indietro: arrowBackOutline, aggiungi: addOutline, foto: imageOutline, elimina: trashOutline,
+    prima: chevronBackOutline, dopo: chevronForwardOutline,
+  };
+  /** Mentre si salva un nuovo ordine le frecce restano ferme. */
+  spostando = false;
 
   private sfondi$ = inject(SfondiService);
   private alertCtrl = inject(AlertController);
@@ -92,6 +99,27 @@ export class SfondiHomePage {
       error: (err: HttpErrorResponse) => {
         this.inCaricamento = false;
         this.avvisa(err.error?.error ?? 'Non sono riuscito a caricare la foto.');
+      },
+    });
+  }
+
+  /**
+   * Sposta una foto di un posto (prima o dopo) e salva subito il nuovo ordine.
+   * Se il server non lo accetta si torna all'ordine vero, ricaricando.
+   */
+  sposta(indice: number, verso: -1 | 1) {
+    const altro = indice + verso;
+    if (this.spostando || altro < 0 || altro >= this.sfondi.length) return;
+    const nuovo = [...this.sfondi];
+    [nuovo[indice], nuovo[altro]] = [nuovo[altro], nuovo[indice]];
+    this.sfondi = nuovo;
+    this.spostando = true;
+    this.sfondi$.riordina(nuovo.map(s => s.id)).subscribe({
+      next: () => this.spostando = false,
+      error: (err: HttpErrorResponse) => {
+        this.spostando = false;
+        this.avvisa(err.error?.error ?? 'Non sono riuscito a salvare il nuovo ordine.');
+        this.carica();
       },
     });
   }
