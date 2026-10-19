@@ -18,7 +18,9 @@ const { ORDINE_TABELLE } = require('./schema');
 const CARTELLA = path.join(__dirname, 'per-il-server');
 // Dove sarà il sito online (i link nelle email) e chi può parlare col backend.
 const SITO_ONLINE = 'https://newsite.palermo11.it';
-const ORIGINI_ONLINE = ['https://newsite.palermo11.it', 'https://www.newsite.palermo11.it'];
+// Anche il dominio vero: il giorno che palermo11.it passa a questa app basta cambiare SITO_URL.
+const ORIGINI_ONLINE = ['https://newsite.palermo11.it', 'https://www.newsite.palermo11.it',
+    'https://palermo11.it', 'https://www.palermo11.it'];
 // Link per email già scaduti o da usare una volta sola: online non servono.
 const TABELLE_SALTATE = new Set(['link_email']);
 // L'admin di prova (codice 1111111) ha ancora la password di prova, che sta scritta nel codice
