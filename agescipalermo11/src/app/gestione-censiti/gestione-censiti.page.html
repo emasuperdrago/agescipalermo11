@@ -83,7 +83,7 @@
             </span>
             Dall'elenco del censimento si prendono solo i capi (la Comunità capi): i ragazzi si
             saltano. Lì i capi risultano "Adulti", quindi la loro branca non cambia: la metti a mano
-            dalla Comunità capi oppure con il file delle branche qui sotto.
+            dalla Comunità capi.
           </p>
         } @else if (branca) {
           <p class="nota nota--branca">
@@ -201,93 +201,6 @@
                 } @else {
                   Carica {{ lettura.righe.length }} {{ chiCarico }}
                 }
-              </button>
-            </div>
-          </div>
-        }
-      </section>
-    }
-
-    <!-- Solo per i capigruppo: il secondo file con codice censimento e branca di ogni capo. -->
-    @if (tipo === 'capi' && capogruppo) {
-      <section class="scheda" aria-labelledby="titolo-branche">
-        <h2 id="titolo-branche">
-          <ion-icon [icon]="icone.file" aria-hidden="true"></ion-icon>
-          Branche dei capi da Excel
-        </h2>
-        <p class="descrizione">
-          Un file con due colonne, <strong>codice censimento</strong> e <strong>branca</strong>
-          (Branco, Reparto o Clan, oppure L/C, E/G, R/S). Si aggiorna la branca dei capi che sono
-          già nel sito; chi non è nel file resta com'è.
-        </p>
-
-        <label class="file">
-          <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                 (change)="scegliFileBranche($event)" />
-          <span class="file__icona" aria-hidden="true">
-            <ion-icon [icon]="icone.file"></ion-icon>
-          </span>
-          <span class="file__testo">{{ nomeFileBranche || 'Scegli il file delle branche…' }}</span>
-        </label>
-
-        @if (erroreBranche) {
-          <p class="messaggio messaggio--errore" role="alert">{{ erroreBranche }}</p>
-        }
-
-        @if (esitoBranche) {
-          <p class="messaggio messaggio--ok">
-            <ion-icon [icon]="icone.fatto" aria-hidden="true"></ion-icon>
-            Fatto: <strong>{{ esitoBranche.aggiornati }}</strong> capi con la branca aggiornata.
-          </p>
-          @if (esitoBranche.scartate.length) {
-            <details class="scartate">
-              <summary>{{ esitoBranche.scartate.length }} righe scartate</summary>
-              <ul>
-                @for (s of esitoBranche.scartate; track s.riga) {
-                  <li>Riga {{ s.riga }}: {{ s.motivo }}</li>
-                }
-              </ul>
-            </details>
-          }
-        }
-
-        @if (letturaBranche) {
-          <div class="anteprima">
-            <p class="anteprima__titolo">
-              Foglio «{{ letturaBranche.foglio }}»: <strong>{{ letturaBranche.righe.length }}</strong> righe buone@if (letturaBranche.scartate.length) {, <strong>{{ letturaBranche.scartate.length }}</strong> da scartare}
-            </p>
-            @if (letturaBranche.righe.length) {
-              <div class="tabella">
-                <table>
-                  <thead><tr><th>Riga</th><th>Codice</th><th>Capo</th><th>Branca</th></tr></thead>
-                  <tbody>
-                    @for (r of letturaBranche.righe; track r.riga) {
-                      <tr>
-                        <td class="muto">{{ r.riga }}</td>
-                        <td>{{ r.codice_censimento }}</td>
-                        <td>{{ nomeCapo(r.codice_censimento) }}</td>
-                        <td>{{ brancaScritta(r.branca) }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            }
-            @if (letturaBranche.scartate.length) {
-              <details class="scartate">
-                <summary>Righe che verranno scartate</summary>
-                <ul>
-                  @for (s of letturaBranche.scartate; track s.riga) {
-                    <li>Riga {{ s.riga }}: {{ s.motivo }}</li>
-                  }
-                </ul>
-              </details>
-            }
-            <div class="azioni">
-              <button type="button" class="pulsante" (click)="annullaBranche()">Annulla</button>
-              <button type="button" class="pulsante pulsante--primario" (click)="importaBranche()"
-                      [disabled]="caricamentoBranche || !letturaBranche.righe.length">
-                {{ caricamentoBranche ? 'Aggiornamento…' : 'Aggiorna ' + letturaBranche.righe.length + ' branche' }}
               </button>
             </div>
           </div>

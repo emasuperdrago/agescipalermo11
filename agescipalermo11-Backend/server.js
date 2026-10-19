@@ -1058,39 +1058,6 @@ function leggiEmailImport(valore) {
     return t.length <= 120 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t) ? t : null;
 }
 
-// Il secondo file dei capi: codice censimento e branca. Nell'elenco del censimento i capi sono
-// "Adulti", quindi la branca la mettono i capigruppo, a mano o con questo file.
-// Tocca solo chi è già nel sito come capo o capogruppo.
-app.post('/api/utenti/branche-capi', verificaRuolo('admin'), async (req, res) => {
-    const righe = req.body?.righe;
-    if (!Array.isArray(righe) || righe.length === 0)
-        return res.status(400).json({ error: "Nessuna riga da caricare." });
-    if (righe.length > MAX_RIGHE_IMPORT)
-        return res.status(400).json({ error: `Puoi caricare al massimo ${MAX_RIGHE_IMPORT} righe alla volta.` });
-    try {
-        const capi = await dbAll(`SELECT id, codice_censimento FROM utenti WHERE ruolo IN ('capo', 'admin')`);
-        const perCodice = new Map(capi.filter(c => c.codice_censimento).map(c => [c.codice_censimento, c]));
-        const scartate = [];
-        const daFare = [];
-        righe.forEach((r, i) => {
-            const riga = Number.isInteger(r?.riga) ? r.riga : i + 1;
-            const codice = leggiCodiceCensimento(String(r?.codice_censimento ?? ''));
-            if (!codice) return scartate.push({ riga, motivo: 'Codice censimento non valido' });
-            if (!BRANCHE.includes(r?.branca)) return scartate.push({ riga, motivo: 'Branca non riconosciuta' });
-            const capo = perCodice.get(codice);
-            if (!capo) return scartate.push({ riga, motivo: 'Nessun capo nel sito con questo codice' });
-            daFare.push({ id: capo.id, branca: r.branca });
-        });
-        await dbRun('BEGIN');
-        for (const d of daFare) await dbRun('UPDATE utenti SET branca = ? WHERE id = ?', [d.branca, d.id]);
-        await dbRun('COMMIT');
-        res.json({ inseriti: 0, aggiornati: daFare.length, scartate });
-    } catch (err) {
-        await dbRun('ROLLBACK').catch(() => {});
-        erroreInterno(res, err);
-    }
-});
-
 // Import da Excel: inserisce i nuovi codici e aggiorna nome, cognome, età (e branca se presente)
 // di quelli già esistenti. Ruolo e password degli utenti esistenti non vengono mai toccati.
 app.post('/api/utenti/importa', verificaRuolo('capo', 'admin'), async (req, res) => {

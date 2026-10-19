@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import readXlsxFile from 'read-excel-file/browser';
 import { apiUrl } from './api';
 import {
-  Branca, EsitoImport, RigaBrancaCapo, RigaImport, RigaScartata, UtenteElenco
+  Branca, EsitoImport, RigaImport, RigaScartata, UtenteElenco
 } from '../../types/models';
 
 export interface LetturaExcel {
@@ -16,13 +16,6 @@ export interface LetturaExcel {
    * di una branca salta le altre.
    */
   ignorate: number;
-}
-
-/** Il secondo file dei capi: solo codice censimento e branca. */
-export interface LetturaBrancheCapi {
-  foglio: string;
-  righe: RigaBrancaCapo[];
-  scartate: RigaScartata[];
 }
 
 type Campo = 'codice' | 'nome' | 'cognome' | 'eta' | 'nascita' | 'branca' | 'unita' | 'anno' | 'foca' | 'email';
@@ -196,11 +189,6 @@ export class CensitiService {
     return this.http.post<EsitoImport>(`${apiUrl()}/utenti/importa`, { ruolo, righe });
   }
 
-  /** Il secondo file dei capi: assegna la branca a chi c'è già. */
-  importaBrancheCapi(righe: RigaBrancaCapo[]) {
-    return this.http.post<EsitoImport>(`${apiUrl()}/utenti/branche-capi`, { righe });
-  }
-
   /**
    * Legge il file Excel: cerca in ogni foglio la riga con le intestazioni (servono almeno
    * codice censimento, nome e cognome) e restituisce le righe valide e quelle scartate con il motivo.
@@ -211,40 +199,6 @@ export class CensitiService {
       throw new Error('Non trovo le colonne necessarie. Il file deve avere almeno le intestazioni: codice censimento, nome, cognome (e possibilmente data di nascita).');
     }
     return this.leggiRighe(trovato.foglio, trovato.dati, trovato.primaRiga, trovato.colonne, opzioni);
-  }
-
-  /**
-   * Il secondo file dei capi: per ogni codice censimento la branca che segue. Basta che abbia
-   * le colonne del codice e della branca; tutto il resto non si legge.
-   */
-  async leggiBrancheCapi(file: File): Promise<LetturaBrancheCapi> {
-    const trovato = await this.trovaIntestazioni(file, c => c.has('codice') && (c.has('branca') || c.has('unita')));
-    if (!trovato) {
-      throw new Error('Non trovo le colonne necessarie: servono il codice censimento e la branca.');
-    }
-    const { foglio, dati, primaRiga, colonne } = trovato;
-    const cella = (riga: unknown[], campo: Campo) => colonne.has(campo) ? riga[colonne.get(campo)!] : null;
-    const righe: RigaBrancaCapo[] = [];
-    const scartate: RigaScartata[] = [];
-    const visti = new Set<number>();
-    dati.forEach((valori, i) => {
-      const riga = primaRiga + i;
-      if (valori.every(v => testoCella(v) === '')) return;
-      const codice = leggiCodice(cella(valori, 'codice'));
-      const scritta = cella(valori, 'branca') ?? cella(valori, 'unita');
-      const branca = leggiBranca(scritta);
-      let motivo: string | null = null;
-      if (!codice) motivo = codice === null ? 'Codice censimento mancante' : 'Codice censimento non numerico';
-      else if (!branca) motivo = 'Branca non riconosciuta: scrivi Branco, Reparto o Clan';
-      else if (visti.has(codice)) motivo = 'Codice ripetuto nel file';
-      if (motivo || !codice || !branca) {
-        scartate.push({ riga, motivo: motivo ?? 'Riga non valida' });
-        return;
-      }
-      visti.add(codice);
-      righe.push({ riga, codice_censimento: codice, branca });
-    });
-    return { foglio, righe, scartate };
   }
 
   /** Cerca in ogni foglio la riga delle intestazioni (sopra possono esserci titoli). */

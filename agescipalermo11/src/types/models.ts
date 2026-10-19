@@ -170,13 +170,6 @@ export interface RigaImport {
   email: string | null;
 }
 
-/** Una riga del secondo file dei capi: codice censimento e branca che segue. */
-export interface RigaBrancaCapo {
-  riga: number;
-  codice_censimento: number;
-  branca: Branca;
-}
-
 export interface RigaScartata {
   riga: number;
   motivo: string;
