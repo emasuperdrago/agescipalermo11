@@ -40,16 +40,20 @@
       <fieldset class="campo">
         <legend class="etichetta">Date dei campi</legend>
         @for (c of campi; track c.chiave; let i = $index) {
+          <!-- Date in tre tendine (giorno, mese, anno): il calendario del telefono sull'anno si inceppa. -->
           <div class="data-campo">
-            <label class="campo">
+            <div class="campo">
               <span class="sottoetichetta">Dal</span>
-              <input type="date" [name]="'campo-inizio-' + c.chiave" [(ngModel)]="c.data_inizio" />
-            </label>
-            <label class="campo">
-              <span class="sottoetichetta">Al <small>(se dura più giorni)</small></span>
-              <input type="date" [name]="'campo-fine-' + c.chiave" [(ngModel)]="c.data_fine" [min]="c.data_inizio"
-                     [disabled]="!c.data_inizio" />
-            </label>
+              <app-selettore-data [valore]="c.data_inizio || null" [anniIndietro]="60" [anniAvanti]="2"
+                                  (valoreChange)="c.data_inizio = $event ?? ''" />
+            </div>
+            @if (c.data_inizio) {
+              <div class="campo">
+                <span class="sottoetichetta">Al <small>(se dura più giorni)</small></span>
+                <app-selettore-data [valore]="c.data_fine || null" [anniIndietro]="60" [anniAvanti]="2"
+                                    (valoreChange)="c.data_fine = $event ?? ''" />
+              </div>
+            }
             <button type="button" class="data-campo__rimuovi" (click)="rimuoviCampo(i)"
                     aria-label="Rimuovi questo campo" title="Rimuovi">
               <ion-icon [icon]="icone.elimina" aria-hidden="true"></ion-icon>

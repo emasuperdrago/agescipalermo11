@@ -564,3 +564,6 @@
     &:hover { background: rgba($white, .28); }
   }
 }
+
+// La data in tre tendine: le serve un po' più spazio degli altri campi della riga.
+.campo--data { min-width: 260px; }

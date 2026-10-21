@@ -63,8 +63,13 @@
 // Una riga per campo: date affiancate e pulsante per toglierla.
 .data-campo {
   display: grid;
-  grid-template-columns: 1fr 1fr 44px;
+  // Una data per riga (ognuna ha tre tendine), il cestino in alto a destra.
+  grid-template-columns: minmax(0, 1fr) 44px;
   align-items: end;
+
+  > .campo { grid-column: 1; }
+  > .data-campo__rimuovi { grid-column: 2; grid-row: 1; }
+
   gap: 8px;
   padding: 10px;
   border: 1px solid $slate-200;

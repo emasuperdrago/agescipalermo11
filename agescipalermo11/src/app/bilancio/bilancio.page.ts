@@ -16,6 +16,7 @@ import { ZonaCapiService, euro } from '../services/zona-capi';
 import { backendUrl } from '../services/api';
 import { nomeBranca } from '../services/posti';
 import { AnnoDiCassa, AnnoScout, DatiMovimento, Movimento, NomeCassa } from '../../types/models';
+import { SelettoreDataComponent } from '../components/selettore-data/selettore-data.component';
 
 /**
  * Cassa di una branca o del gruppo: entrate, uscite e saldo dell'anno scout in corso.
@@ -28,7 +29,7 @@ import { AnnoDiCassa, AnnoScout, DatiMovimento, Movimento, NomeCassa } from '../
   standalone: true,
   imports: [
     FormsModule, RouterLink, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonRouterLink,
-    IonRouterLinkWithHref, IonContent, BarraInferioreComponent,
+    IonRouterLinkWithHref, IonContent, BarraInferioreComponent, SelettoreDataComponent,
   ],
 })
 export class BilancioPage {

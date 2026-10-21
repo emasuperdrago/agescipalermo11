@@ -16,6 +16,7 @@ import {
 } from '../../services/posti';
 import { GpsService } from '../../services/gps';
 import { AllegatoPosto, BrancaPosto, ContattoPosto, DatiPosto, Posto } from '../../../types/models';
+import { SelettoreDataComponent } from '../selettore-data/selettore-data.component';
 
 /** Stesso limite del backend. */
 const MAX_ALLEGATI = 30;
@@ -43,7 +44,9 @@ export interface EsitoPostoEditor {
   templateUrl: './posto-editor.component.html',
   styleUrls: ['./posto-editor.component.scss'],
   standalone: true,
-  imports: [FormsModule, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, IonIcon],
+  imports: [
+    FormsModule, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, IonIcon, SelettoreDataComponent,
+  ],
 })
 export class PostoEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() posto?: Posto;
