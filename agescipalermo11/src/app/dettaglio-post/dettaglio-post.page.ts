@@ -1,4 +1,4 @@
-import { Component, HostListener, inject } from '@angular/core';
+import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -18,7 +18,7 @@ import { Post } from '../../types/models';
     RouterLink, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonRouterLink, IonRouterLinkWithHref, IonContent,
   ],
 })
-export class DettaglioPostPage {
+export class DettaglioPostPage implements OnInit {
   readonly icone = {
     indietro: arrowBackOutline, data: calendarOutline, evidenza: flag,
     prima: chevronBackOutline, dopo: chevronForwardOutline,
@@ -40,7 +40,24 @@ export class DettaglioPostPage {
 
   constructor(private route: ActivatedRoute, private posts: PostService) {}
 
+  // Ionic a volte crea la pagina due volte e l'ingresso arriva a una copia sola: la pagina si
+  // prepara già alla creazione, e all'ingresso solo se non l'ha appena fatto.
+  private appenaCreata = false;
+
+  ngOnInit() {
+    this.appenaCreata = true;
+    this.entra();
+  }
+
   ionViewWillEnter() {
+    if (this.appenaCreata) {
+      this.appenaCreata = false;
+      return;
+    }
+    this.entra();
+  }
+
+  private entra() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (!Number.isInteger(id) || id <= 0) {
       this.caricamento = false;

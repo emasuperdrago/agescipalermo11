@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import {
@@ -27,7 +27,7 @@ import { SfondoHome } from '../../types/models';
     IonRouterLinkWithHref, IonContent, BarraInferioreComponent,
   ],
 })
-export class SfondiHomePage {
+export class SfondiHomePage implements OnInit {
   readonly icone = {
     indietro: arrowBackOutline, aggiungi: addOutline, foto: imageOutline, elimina: trashOutline,
     prima: chevronBackOutline, dopo: chevronForwardOutline,
@@ -44,7 +44,24 @@ export class SfondiHomePage {
   inCaricamento = false;
   errore = '';
 
+  // Ionic a volte crea la pagina due volte e l'ingresso arriva a una copia sola: la pagina si
+  // prepara già alla creazione, e all'ingresso solo se non l'ha appena fatto.
+  private appenaCreata = false;
+
+  ngOnInit() {
+    this.appenaCreata = true;
+    this.entra();
+  }
+
   ionViewWillEnter() {
+    if (this.appenaCreata) {
+      this.appenaCreata = false;
+      return;
+    }
+    this.entra();
+  }
+
+  private entra() {
     this.carica();
   }
 

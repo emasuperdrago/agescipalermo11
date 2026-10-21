@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -32,7 +32,7 @@ import { SelettoreDataComponent } from '../components/selettore-data/selettore-d
     IonRouterLinkWithHref, IonContent, BarraInferioreComponent, SelettoreDataComponent,
   ],
 })
-export class BilancioPage {
+export class BilancioPage implements OnInit {
   readonly icone = {
     indietro: arrowBackOutline, cassa: walletOutline, aggiungi: addOutline, modifica: pencilOutline,
     elimina: trashOutline, entrata: arrowDownCircleOutline, uscita: arrowUpCircleOutline,
@@ -73,7 +73,24 @@ export class BilancioPage {
   /** Foto aperta a schermo intero. */
   scontrinoAperto: string | null = null;
 
+  // Ionic a volte crea la pagina due volte e l'ingresso arriva a una copia sola: la pagina si
+  // prepara già alla creazione, e all'ingresso solo se non l'ha appena fatto.
+  private appenaCreata = false;
+
+  ngOnInit() {
+    this.appenaCreata = true;
+    this.entra();
+  }
+
   ionViewWillEnter() {
+    if (this.appenaCreata) {
+      this.appenaCreata = false;
+      return;
+    }
+    this.entra();
+  }
+
+  private entra() {
     // Da /clan/cassa non arriva nessun parametro: quella è per forza la cassa di clan.
     const chiesta = this.rotta.snapshot.paramMap.get('cassa')
       ?? (this.rotta.snapshot.url.some(p => p.path === 'cassa') ? 'clan' : null);

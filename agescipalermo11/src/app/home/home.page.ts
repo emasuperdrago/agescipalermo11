@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, NgZone, OnDestroy, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -101,7 +101,7 @@ const HOVER_DESKTOP = '(hover: hover) and (min-width: 992px)';
   standalone: true,
   imports: [NgTemplateOutlet, RouterLink, IonContent, IonIcon, BarraInferioreComponent],
 })
-export class HomePage implements OnDestroy {
+export class HomePage implements OnDestroy, OnInit {
   readonly menu = MENU;
   tendinaAperta: string | null = null;
   menuMobileAperto = false;
@@ -486,7 +486,24 @@ export class HomePage implements OnDestroy {
     this.filtroAperto = false;
   }
 
+  // Ionic a volte crea la pagina due volte e l'ingresso arriva a una copia sola: la pagina si
+  // prepara già alla creazione, e all'ingresso solo se non l'ha appena fatto.
+  private appenaCreata = false;
+
+  ngOnInit() {
+    this.appenaCreata = true;
+    this.entra();
+  }
+
   ionViewWillEnter() {
+    if (this.appenaCreata) {
+      this.appenaCreata = false;
+      return;
+    }
+    this.entra();
+  }
+
+  private entra() {
     // Arrivando da un hashtag toccato in un post (/home?hashtag=…) si filtra subito per quello.
     const daLink = this.route.snapshot.queryParamMap.get('hashtag');
     if (daLink) this.filtroHashtag = daLink;

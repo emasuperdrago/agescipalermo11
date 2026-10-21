@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   AlertController, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonRouterLink, IonRouterLinkWithHref,
@@ -37,7 +37,7 @@ interface CampoProfilo {
     BarraInferioreComponent,
   ],
 })
-export class ProfiloPage {
+export class ProfiloPage implements OnInit {
   readonly icone = { indietro: arrowBackOutline, avatar: person, modifica: pencilOutline, esci: logOutOutline };
 
   utente: Utente | null = null;
@@ -70,7 +70,24 @@ export class ProfiloPage {
   }
 
   // Si mostrano subito i dati della sessione, poi si aggiornano con quelli del server.
+  // Ionic a volte crea la pagina due volte e l'ingresso arriva a una copia sola: la pagina si
+  // prepara già alla creazione, e all'ingresso solo se non l'ha appena fatto.
+  private appenaCreata = false;
+
+  ngOnInit() {
+    this.appenaCreata = true;
+    this.entra();
+  }
+
   ionViewWillEnter() {
+    if (this.appenaCreata) {
+      this.appenaCreata = false;
+      return;
+    }
+    this.entra();
+  }
+
+  private entra() {
     this.utente = this.auth.utente;
     if (this.visitatore) return;
     this.auth.profilo().subscribe({

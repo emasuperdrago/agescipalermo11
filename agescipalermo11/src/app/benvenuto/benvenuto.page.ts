@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { IonContent, NavController } from '@ionic/angular/standalone';
 import { AuthService } from '../services/auth';
@@ -10,7 +10,7 @@ import { AuthService } from '../services/auth';
   standalone: true,
   imports: [IonContent, RouterLink],
 })
-export class BenvenutoPage {
+export class BenvenutoPage implements OnInit {
   caricamento = false;
   errore = '';
   messaggioSessione = '';
@@ -20,7 +20,24 @@ export class BenvenutoPage {
   }
 
   // Ionic riusa la pagina quando ci si torna: ricontrolla la sessione a ogni ingresso.
+  // Ionic a volte crea la pagina due volte e l'ingresso arriva a una copia sola: la pagina si
+  // prepara già alla creazione, e all'ingresso solo se non l'ha appena fatto.
+  private appenaCreata = false;
+
+  ngOnInit() {
+    this.appenaCreata = true;
+    this.entra();
+  }
+
   ionViewWillEnter() {
+    if (this.appenaCreata) {
+      this.appenaCreata = false;
+      return;
+    }
+    this.entra();
+  }
+
+  private entra() {
     this.caricamento = false;
     this.aggiornaSessione();
   }

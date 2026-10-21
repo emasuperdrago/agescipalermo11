@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -37,7 +37,7 @@ import {
     IonContent, BarraInferioreComponent,
   ],
 })
-export class AreaCapiPage {
+export class AreaCapiPage implements OnInit {
   readonly icone = {
     indietro: arrowBackOutline, notifiche: notificationsOutline, iscrizione: personAddOutline,
     telefono: callOutline, email: mailOutline, scuola: schoolOutline, genitori: peopleCircleOutline,
@@ -83,7 +83,24 @@ export class AreaCapiPage {
   compleanni: CompleannoOggi[] = [];
   apertura = false;
 
+  // Ionic a volte crea la pagina due volte e l'ingresso arriva a una copia sola: la pagina si
+  // prepara già alla creazione, e all'ingresso solo se non l'ha appena fatto.
+  private appenaCreata = false;
+
+  ngOnInit() {
+    this.appenaCreata = true;
+    this.entra();
+  }
+
   ionViewWillEnter() {
+    if (this.appenaCreata) {
+      this.appenaCreata = false;
+      return;
+    }
+    this.entra();
+  }
+
+  private entra() {
     this.carica();
     this.caricaAnno();
     this.caricaContenuti();

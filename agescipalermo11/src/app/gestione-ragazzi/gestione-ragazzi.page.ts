@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
@@ -33,7 +33,7 @@ import { AnnoScout, AttivitaQuota, Branca, QuotaRagazzo, RagazzoElenco } from '.
     IonRouterLinkWithHref, IonContent, BarraInferioreComponent,
   ],
 })
-export class GestioneRagazziPage {
+export class GestioneRagazziPage implements OnInit {
   readonly icone = {
     indietro: arrowBackOutline, aggiungi: addOutline, scarica: downloadOutline, quote: cashOutline,
     modifica: pencilOutline, elimina: trashOutline, ragazzi: peopleOutline, scheda: idCardOutline,
@@ -59,7 +59,24 @@ export class GestioneRagazziPage {
   nuovaAttivita = '';
   nuovoImporto: number | null = null;
 
+  // Ionic a volte crea la pagina due volte e l'ingresso arriva a una copia sola: la pagina si
+  // prepara già alla creazione, e all'ingresso solo se non l'ha appena fatto.
+  private appenaCreata = false;
+
+  ngOnInit() {
+    this.appenaCreata = true;
+    this.entra();
+  }
+
   ionViewWillEnter() {
+    if (this.appenaCreata) {
+      this.appenaCreata = false;
+      return;
+    }
+    this.entra();
+  }
+
+  private entra() {
     this.carica();
   }
 

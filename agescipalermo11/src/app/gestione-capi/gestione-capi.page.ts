@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -30,7 +30,7 @@ import { Branca, CapoElenco } from '../../types/models';
     IonRouterLinkWithHref, IonContent, BarraInferioreComponent,
   ],
 })
-export class GestioneCapiPage {
+export class GestioneCapiPage implements OnInit {
   readonly icone = {
     indietro: arrowBackOutline, capi: shieldCheckmarkOutline, sposta: swapHorizontalOutline,
     elimina: trashOutline, telefono: callOutline, email: mailOutline,
@@ -54,7 +54,24 @@ export class GestioneCapiPage {
   /** Riquadro scelto in alto: mostra solo quella branca. 'liberi' = chi è a disposizione. */
   filtro: Branca | 'liberi' | null = null;
 
+  // Ionic a volte crea la pagina due volte e l'ingresso arriva a una copia sola: la pagina si
+  // prepara già alla creazione, e all'ingresso solo se non l'ha appena fatto.
+  private appenaCreata = false;
+
+  ngOnInit() {
+    this.appenaCreata = true;
+    this.entra();
+  }
+
   ionViewWillEnter() {
+    if (this.appenaCreata) {
+      this.appenaCreata = false;
+      return;
+    }
+    this.entra();
+  }
+
+  private entra() {
     this.carica();
   }
 

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -35,7 +35,7 @@ const MAX_CAPOTASTO = 7;
     IonContent,
   ],
 })
-export class DettaglioCanzonierePage {
+export class DettaglioCanzonierePage implements OnInit {
   readonly icone = {
     indietro: arrowBackOutline, modifica: pencilOutline, elimina: trashOutline, canto: musicalNotesOutline,
     giu: removeOutline, su: addOutline, originale: refreshOutline, pdf: downloadOutline,
@@ -74,7 +74,24 @@ export class DettaglioCanzonierePage {
     this.id = Number(route.snapshot.paramMap.get('id'));
   }
 
+  // Ionic a volte crea la pagina due volte e l'ingresso arriva a una copia sola: la pagina si
+  // prepara già alla creazione, e all'ingresso solo se non l'ha appena fatto.
+  private appenaCreata = false;
+
+  ngOnInit() {
+    this.appenaCreata = true;
+    this.entra();
+  }
+
   ionViewWillEnter() {
+    if (this.appenaCreata) {
+      this.appenaCreata = false;
+      return;
+    }
+    this.entra();
+  }
+
+  private entra() {
     this.carica();
   }
 

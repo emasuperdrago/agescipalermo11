@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, OnDestroy, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
@@ -30,7 +30,7 @@ import { AllegatoPosto, Posto } from '../../types/models';
     IonContent,
   ],
 })
-export class DettaglioInformazioniMappaPage implements OnDestroy {
+export class DettaglioInformazioniMappaPage implements OnDestroy, OnInit {
   readonly icone = {
     indietro: arrowBackOutline, modifica: pencilOutline, elimina: trashOutline, indicazioni: navigateOutline,
     luogo: locationOutline, telefono: callOutline, email: mailOutline, persona: personOutline,
@@ -70,7 +70,24 @@ export class DettaglioInformazioniMappaPage implements OnDestroy {
     this.id = Number(route.snapshot.paramMap.get('id'));
   }
 
+  // Ionic a volte crea la pagina due volte e l'ingresso arriva a una copia sola: la pagina si
+  // prepara già alla creazione, e all'ingresso solo se non l'ha appena fatto.
+  private appenaCreata = false;
+
+  ngOnInit() {
+    this.appenaCreata = true;
+    this.entra();
+  }
+
   ionViewWillEnter() {
+    if (this.appenaCreata) {
+      this.appenaCreata = false;
+      return;
+    }
+    this.entra();
+  }
+
+  private entra() {
     this.carica();
   }
 

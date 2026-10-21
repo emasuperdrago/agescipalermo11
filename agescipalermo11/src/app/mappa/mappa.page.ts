@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
+import { Component, AfterViewInit, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
@@ -35,7 +35,7 @@ const TUTTE_LE_BRANCHE = BRANCHE_POSTO.map(b => b.valore);
     IonRouterLinkWithHref, IonContent, BarraInferioreComponent,
   ],
 })
-export class MappaPage implements AfterViewInit, OnDestroy {
+export class MappaPage implements AfterViewInit, OnDestroy, OnInit {
   @ViewChild('mappa') private contenitoreMappa?: ElementRef<HTMLDivElement>;
 
   readonly branche = BRANCHE_POSTO;
@@ -59,6 +59,8 @@ export class MappaPage implements AfterViewInit, OnDestroy {
   /** Bandierine per id del posto, per aprire il nome della sede dopo "Riposiziona". */
   private marcatori = new Map<number, L.Marker>();
   private osservatore?: ResizeObserver;
+  /** Posti da inquadrare appena la mappa ha una misura. */
+  private daInquadrare?: Posto[];
   /** La prima volta la mappa si adatta ai posti; dopo resta dove l'ha lasciata l'utente. */
   private inquadrata = false;
 
@@ -83,12 +85,34 @@ export class MappaPage implements AfterViewInit, OnDestroy {
     aggiungiSfondoMappa(this.mappa);
     this.strato.addTo(this.mappa);
     // Ionic mostra la pagina con un'animazione: la mappa va rimisurata quando cambia dimensione.
-    this.osservatore = new ResizeObserver(() => this.mappa?.invalidateSize());
+    this.osservatore = new ResizeObserver(() => {
+      this.mappa?.invalidateSize();
+      const posti = this.daInquadrare;
+      this.daInquadrare = undefined;
+      if (posti) this.inquadra(posti);
+    });
     this.osservatore.observe(el);
     this.disegnaBandierine();
   }
 
+  // Ionic a volte crea la pagina due volte e l'ingresso arriva a una copia sola: la pagina si
+  // prepara già alla creazione, e all'ingresso solo se non l'ha appena fatto.
+  private appenaCreata = false;
+
+  ngOnInit() {
+    this.appenaCreata = true;
+    this.entra();
+  }
+
   ionViewWillEnter() {
+    if (this.appenaCreata) {
+      this.appenaCreata = false;
+      return;
+    }
+    this.entra();
+  }
+
+  private entra() {
     // Al ritorno dal dettaglio un posto può essere stato modificato o eliminato.
     this.caricaPosti();
   }
@@ -198,6 +222,14 @@ export class MappaPage implements AfterViewInit, OnDestroy {
 
   private inquadra(posti: Posto[]) {
     if (!this.mappa || !posti.length) return;
+    // I posti possono arrivare prima che la pagina sia disegnata: con la mappa ancora senza
+    // misura l'inquadratura verrebbe sbagliata, quindi si fa appena la mappa ha la sua misura.
+    this.mappa.invalidateSize();
+    const misura = this.mappa.getSize();
+    if (!misura.x || !misura.y) {
+      this.daInquadrare = posti;
+      return;
+    }
     if (posti.length === 1) {
       this.mappa.setView([posti[0].latitudine, posti[0].longitudine], 13);
       return;
