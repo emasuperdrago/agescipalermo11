@@ -18,18 +18,19 @@
       <input name="titolo" [(ngModel)]="titolo" maxlength="120" placeholder="Es. Riunione di Reparto" />
     </label>
 
-    <div class="riga">
-      <label class="campo">
-        <span class="etichetta">{{ piuGiorni ? 'Dal *' : 'Data *' }}</span>
-        <input type="date" name="dataInizio" [(ngModel)]="dataInizio" />
-      </label>
-      @if (piuGiorni) {
-        <label class="campo">
-          <span class="etichetta">Al *</span>
-          <input type="date" name="dataFine" [(ngModel)]="dataFine" [min]="dataInizio" />
-        </label>
-      }
-    </div>
+    <!-- Le date in tre tendine (giorno, mese, anno): il calendario del telefono sull'anno si inceppa. -->
+    <fieldset class="campo campo--data">
+      <legend class="etichetta">{{ piuGiorni ? 'Dal *' : 'Data *' }}</legend>
+      <app-selettore-data [valore]="dataInizio || null" [anniIndietro]="2" [anniAvanti]="3"
+                          (valoreChange)="dataInizio = $event ?? ''" />
+    </fieldset>
+    @if (piuGiorni) {
+      <fieldset class="campo campo--data">
+        <legend class="etichetta">Al *</legend>
+        <app-selettore-data [valore]="dataFine || null" [anniIndietro]="2" [anniAvanti]="3"
+                            (valoreChange)="dataFine = $event ?? ''" />
+      </fieldset>
+    }
 
     <label class="interruttore">
       <input type="checkbox" name="piuGiorni" [(ngModel)]="piuGiorni" (ngModelChange)="alternaPiuGiorni()" />

@@ -9,6 +9,7 @@ import {
   BRANCHE_EVENTO, ETICHETTE_EVENTO, EventiService, aggiungiGiorni, normalizzaEtichette
 } from '../../services/eventi';
 import { DatiEvento, EtichettaEvento, Evento } from '../../../types/models';
+import { SelettoreDataComponent } from '../selettore-data/selettore-data.component';
 
 /** Pop-up per creare un evento o, se riceve `evento`, modificarlo. Si chiude con role "salvato". */
 @Component({
@@ -16,7 +17,9 @@ import { DatiEvento, EtichettaEvento, Evento } from '../../../types/models';
   templateUrl: './evento-editor.component.html',
   styleUrls: ['./evento-editor.component.scss'],
   standalone: true,
-  imports: [FormsModule, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, IonIcon],
+  imports: [
+    FormsModule, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, IonIcon, SelettoreDataComponent,
+  ],
 })
 export class EventoEditorComponent implements OnInit {
   @Input() evento?: Evento;
