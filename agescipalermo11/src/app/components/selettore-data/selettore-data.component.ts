@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 /**
@@ -37,6 +37,10 @@ export class SelettoreDataComponent {
   giorno = '';
   mese = '';
   anno = '';
+  /** La griglia dei giorni è aperta. */
+  giorniAperti = false;
+
+  constructor(private el: ElementRef<HTMLElement>) {}
 
   get anni(): number[] {
     const adesso = new Date().getFullYear();
@@ -50,6 +54,23 @@ export class SelettoreDataComponent {
     const mese = Number(this.mese);
     const quanti = mese ? new Date(Number(this.anno) || 2000, mese, 0).getDate() : 31;
     return Array.from({ length: quanti }, (_, i) => i + 1);
+  }
+
+  scegliGiorno(g: number) {
+    this.giorno = String(g);
+    this.giorniAperti = false;
+    this.cambia();
+  }
+
+  // La griglia si chiude toccando fuori o con Esc.
+  @HostListener('document:click', ['$event'])
+  clicFuori(evento: MouseEvent) {
+    if (this.giorniAperti && !this.el.nativeElement.contains(evento.target as Node)) this.giorniAperti = false;
+  }
+
+  @HostListener('document:keydown.escape')
+  esc() {
+    this.giorniAperti = false;
   }
 
   cambia() {
