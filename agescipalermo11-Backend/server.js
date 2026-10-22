@@ -193,23 +193,29 @@ app.post('/api/caricamenti', async (req, res) => {
     if (!archivio.SU_BLOB) return res.status(404).json({ error: "Non serve: qui i file arrivano direttamente." });
     const utente = utenteDaToken(req);
     if (!utente?.id) return res.status(401).json({ error: "Accesso negato. Token mancante." });
+    // Solo la richiesta di un indirizzo per caricare: la notizia "caricamento finito" non serve
+    // (il file lo riprende la richiesta vera, vedi sopra).
+    if (req.body?.type !== 'blob.generate-presigned-url') return res.status(400).json({ error: "Richiesta non valida." });
     try {
-        const { handleUpload } = require('@vercel/blob/client');
-        const risposta = await handleUpload({
+        // Su Vercel Blob si entra con chiavi a tempo (OIDC), non con una chiave fissa: per questo
+        // l'indirizzo di caricamento è "prefirmato", valido un quarto d'ora e solo per quel file.
+        const { handleUploadPresigned } = require('@vercel/blob/client');
+        const { issueSignedToken } = require('@vercel/blob');
+        const risposta = await handleUploadPresigned({
             request: req,
             body: req.body,
-            onBeforeGenerateToken: async (percorso) => {
+            getSignedToken: async (percorso) => {
                 if (!caricamentoDi(utente, percorso)) throw new Error('Percorso non valido');
-                return {
-                    maximumSizeInBytes: 60 * MB, validUntil: Date.now() + 15 * 60 * 1000,
-                    addRandomSuffix: false, allowOverwrite: false,
-                };
+                const validUntil = Date.now() + 15 * 60 * 1000;
+                const token = await issueSignedToken({
+                    pathname: percorso, operations: ['put'], validUntil, maximumSizeInBytes: 60 * MB,
+                });
+                return { token, urlOptions: { validUntil, maximumSizeInBytes: 60 * MB, addRandomSuffix: false, allowOverwrite: false } };
             },
         });
-        // Solo i permessi per caricare: la notizia "caricamento finito" non serve (vedi sopra).
-        if (risposta.type !== 'blob.generate-client-token') return res.status(400).json({ error: "Richiesta non valida." });
         res.json(risposta);
-    } catch {
+    } catch (err) {
+        console.error('Caricamento grande:', err.message);
         res.status(400).json({ error: "Caricamento non permesso." });
     }
 });

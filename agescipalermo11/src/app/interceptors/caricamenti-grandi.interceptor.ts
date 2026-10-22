@@ -35,10 +35,10 @@ function comeFile(corpo: unknown): Blob | null {
 
 async function caricaSuBlob(file: Blob, idUtente: number): Promise<string> {
   // La libreria di Blob si carica solo quando serve: chi non carica file grandi non la scarica.
-  const { upload } = await import('@vercel/blob/client');
+  const { uploadPresigned } = await import('@vercel/blob/client');
   const percorso = `tmp/${idUtente}/${crypto.randomUUID()}`;
   const token = localStorage.getItem('token');
-  await upload(percorso, file, {
+  await uploadPresigned(percorso, file, {
     access: 'private',
     handleUploadUrl: `${apiUrl()}/caricamenti`,
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,

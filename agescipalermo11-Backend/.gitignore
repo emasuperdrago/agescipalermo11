@@ -19,3 +19,7 @@ documenti-riservati/
 
 # Il sito compilato per Vercel (lo rifà "npm run build:vercel" a ogni deploy).
 public/
+# Le chiavi scaricate da Vercel ("npx vercel env pull") e il collegamento al progetto.
+.env.local
+.env*.local
+.vercel/
