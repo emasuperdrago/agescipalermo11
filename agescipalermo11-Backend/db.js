@@ -82,7 +82,22 @@ async function interroga(sql, parametri = []) {
 
 let pronto;
 
+// Su Vercel possono accendersi più copie del backend nello stesso momento: se il database è
+// ancora vuoto, creerebbero tabelle e dati di partenza tutte insieme, pestandosi i piedi.
+// Con questo "lucchetto" del database si prepara una copia alla volta (le altre aspettano e
+// poi trovano tutto già fatto). Con un solo collegamento (max: 1) il lucchetto resta suo.
+const LUCCHETTO_PREPARAZIONE = 1101983;
+
 async function prepara() {
+  await interroga('SELECT pg_advisory_lock($1)', [LUCCHETTO_PREPARAZIONE]);
+  try {
+    await preparaDavvero();
+  } finally {
+    await interroga('SELECT pg_advisory_unlock($1)', [LUCCHETTO_PREPARAZIONE]).catch(() => {});
+  }
+}
+
+async function preparaDavvero() {
   await creaSchema(sql => interroga(sql));
   await importaSeCiSonoDati();
   await controllaChiave();
@@ -97,13 +112,25 @@ async function prepara() {
   await popolaDatiEsempio();
 }
 
-pronto = prepara()
-  .then(() => console.log(`✅ Database pronto (PostgreSQL, ${DATABASE.database})`))
-  .catch((err) => {
-    console.error('❌ Database non disponibile:', err.code || '', err.message);
-    console.error('   Controlla che PostgreSQL sia acceso e i dati DB_* nel file .env.');
-    process.exit(1);
-  });
+function avvia() {
+  const preparazione = prepara()
+    .then(() => console.log(`✅ Database pronto (PostgreSQL, ${DATABASE.database})`))
+    .catch((err) => {
+      console.error('❌ Database non disponibile:', err.code || '', err.message);
+      // Su Vercel non si spegne niente: la prossima richiesta riprova a preparare il database.
+      if (process.env.VERCEL) {
+        pronto = null;
+        throw err;
+      }
+      console.error('   Controlla che PostgreSQL sia acceso e i dati DB_* nel file .env.');
+      process.exit(1);
+    });
+  // L'errore lo riceve chi aspetta il database; qui basta che non resti "non gestito".
+  preparazione.catch(() => {});
+  pronto = preparazione;
+  return preparazione;
+}
+avvia();
 
 /** Le righe di una query (per i dati di partenza qui sotto). */
 async function righe(sql, parametri) {
@@ -180,7 +207,7 @@ function parametriECallback(parametri, callback) {
 
 /** Esegue una query aspettando che il database sia pronto (le prime arrivano mentre si prepara). */
 function inCoda(sql, parametri) {
-  return pronto.then(() => interroga(sql, parametri));
+  return (pronto ?? avvia()).then(() => interroga(sql, parametri));
 }
 
 const db = {
@@ -213,7 +240,7 @@ const db = {
   },
   /** Per gli script (prove, controlli): le righe in forma di promessa, senza decifrare. */
   interroga: async (sql, parametri) => (await inCoda(sql, parametri)).rows,
-  pronto: () => pronto,
+  pronto: () => pronto ?? avvia(),
   chiudi: () => pool.end(),
 };
 
