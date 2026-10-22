@@ -15,8 +15,8 @@
     "foto:decifra": "node foto-cifrate.js decifra",
     "build:sito": "cd ../agescipalermo11 && npm ci --include=dev && npx ng build --configuration production",
     "build:vercel": "npm run build:sito && rm -rf public && cp -R ../agescipalermo11/www public",
-    "vercel:variabili": "node vercel.js variabili",
-    "vercel:carica": "node vercel.js carica"
+    "vercel:variabili": "node passa-a-vercel.js variabili",
+    "vercel:carica": "node passa-a-vercel.js carica"
   },
   "keywords": [],
   "author": "",

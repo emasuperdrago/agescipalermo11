@@ -112,7 +112,7 @@ async function carica() {
 
 const comando = process.argv[2];
 (comando === 'variabili' ? Promise.resolve().then(variabili) : comando === 'carica' ? carica()
-    : Promise.reject(new Error('uso: node vercel.js variabili | carica')))
+    : Promise.reject(new Error('uso: node passa-a-vercel.js variabili | carica')))
     .catch(err => {
         console.error('❌', err.message);
         process.exitCode = 1;
