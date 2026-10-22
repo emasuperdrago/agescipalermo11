@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { map } from 'rxjs';
 import { apiUrl } from './api';
-import { DatiParteStoria, DatiTappaStoria, PaginaMarco, Storia } from '../../types/models';
+import { DatiParteStoria, DatiTappaStoria, Fazzolettone, PaginaMarco, Storia } from '../../types/models';
 
 /** "tappe" per la linea in alto, "parti" per le schede sotto. */
 export type TipoStoria = 'tappe' | 'parti';
@@ -40,5 +41,27 @@ export class StoriaService {
 
   togli(tipo: TipoStoria, id: number) {
     return this.http.delete(`${apiUrl()}/storia/${tipo}/${id}`);
+  }
+
+  // ---------- La striscia dei fazzolettoni ----------
+
+  /** La foto arriva già rimpicciolita, come "data:image/…;base64,…". */
+  aggiungiFazzolettone(foto: string, didascalia: string) {
+    return this.http.post<{ fazzolettone: Fazzolettone }>(`${apiUrl()}/fazzolettoni`, { foto, didascalia })
+      .pipe(map(r => r.fazzolettone));
+  }
+
+  scrittaFazzolettone(id: number, didascalia: string) {
+    return this.http.put<{ fazzolettone: Fazzolettone }>(`${apiUrl()}/fazzolettoni/${id}`, { didascalia })
+      .pipe(map(r => r.fazzolettone));
+  }
+
+  /** Tutti gli id, nel nuovo ordine. */
+  riordinaFazzolettoni(ids: number[]) {
+    return this.http.put(`${apiUrl()}/fazzolettoni/ordine`, { ids });
+  }
+
+  togliFazzolettone(id: number) {
+    return this.http.delete(`${apiUrl()}/fazzolettoni/${id}`);
   }
 }

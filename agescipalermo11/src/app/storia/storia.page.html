@@ -96,6 +96,69 @@
         }
       </section>
 
+      <!-- I fazzolettoni del gruppo: una striscia di foto che scorre di lato. -->
+      @if (fazzolettoni.length || inModifica) {
+        <section class="scheda" aria-labelledby="titolo-fazzolettoni">
+          <div class="intestazione-striscia">
+            <h2 id="titolo-fazzolettoni">I nostri fazzolettoni</h2>
+            @if (fazzolettoni.length > 1) {
+              <div class="frecce-striscia">
+                <button type="button" (click)="scorriStriscia(-1)" aria-label="Scorri indietro" title="Scorri indietro">
+                  <ion-icon [icon]="icone.precedente" aria-hidden="true"></ion-icon>
+                </button>
+                <button type="button" (click)="scorriStriscia(1)" aria-label="Scorri avanti" title="Scorri avanti">
+                  <ion-icon [icon]="icone.successivo" aria-hidden="true"></ion-icon>
+                </button>
+              </div>
+            }
+          </div>
+          @if (fazzolettoni.length) {
+            <div class="striscia" #striscia>
+              @for (f of fazzolettoni; track f.id; let i = $index; let primo = $first; let ultimo = $last) {
+                <figure class="fazzolettone">
+                  <button type="button" class="fazzolettone__foto" (click)="apriFazzolettone(i)"
+                          [attr.aria-label]="'Apri la foto' + (f.didascalia ? ': ' + f.didascalia : '')">
+                    <img [src]="urlBackend(f.url)" [alt]="f.didascalia || 'Fazzolettone del gruppo'" loading="lazy" />
+                  </button>
+                  @if (f.didascalia) {
+                    <figcaption>{{ f.didascalia }}</figcaption>
+                  }
+                  @if (inModifica) {
+                    <div class="fazzolettone__comandi">
+                      <button type="button" (click)="spostaFazzolettone(i, -1)" [disabled]="occupato || primo"
+                              aria-label="Sposta prima" title="Sposta prima">
+                        <ion-icon [icon]="icone.sinistra" aria-hidden="true"></ion-icon>
+                      </button>
+                      <button type="button" (click)="spostaFazzolettone(i, 1)" [disabled]="occupato || ultimo"
+                              aria-label="Sposta dopo" title="Sposta dopo">
+                        <ion-icon [icon]="icone.destra" aria-hidden="true"></ion-icon>
+                      </button>
+                      <button type="button" (click)="cambiaScritta(f)" [disabled]="occupato"
+                              aria-label="Cambia la scritta" title="Cambia la scritta">
+                        <ion-icon [icon]="icone.modifica" aria-hidden="true"></ion-icon>
+                      </button>
+                      <button type="button" class="togli" (click)="togliFazzolettone(f)" [disabled]="occupato"
+                              aria-label="Togli la foto" title="Togli la foto">
+                        <ion-icon [icon]="icone.elimina" aria-hidden="true"></ion-icon>
+                      </button>
+                    </div>
+                  }
+                </figure>
+              }
+            </div>
+          } @else {
+            <p class="vuoto">Ancora nessuna foto dei fazzolettoni.</p>
+          }
+          @if (inModifica) {
+            <label class="aggiungi" [class.aggiungi--attesa]="caricandoFoto">
+              <ion-icon [icon]="icone.foto" aria-hidden="true"></ion-icon>
+              {{ caricandoFoto ? 'Carico la foto…' : 'Aggiungi la foto di un fazzolettone' }}
+              <input type="file" accept="image/*" (change)="scegliFazzolettone($event)" [disabled]="caricandoFoto" hidden />
+            </label>
+          }
+        </section>
+      }
+
       <!-- Le parti sotto la linea. -->
       @for (p of parti; track p.id; let primo = $first; let ultimo = $last) {
         <app-parte-racconto [parte]="p" [inModifica]="inModifica" [primo]="primo" [ultimo]="ultimo"
@@ -136,5 +199,30 @@
     </button>
   </div>
 </ng-template>
+
+<!-- Una foto dei fazzolettoni a schermo intero. -->
+@if (fazzolettoneAperto !== null && fazzolettoni[fazzolettoneAperto]; as f) {
+  <div class="foto-grande" role="dialog" aria-modal="true" aria-label="Foto del fazzolettone" (click)="chiudiFazzolettone()">
+    <button type="button" class="foto-grande__chiudi" (click)="chiudiFazzolettone()" aria-label="Chiudi">
+      <ion-icon [icon]="icone.chiudi" aria-hidden="true"></ion-icon>
+    </button>
+    @if (fazzolettoni.length > 1) {
+      <button type="button" class="foto-grande__freccia foto-grande__freccia--prima"
+              (click)="$event.stopPropagation(); scorriFazzolettoni(-1)" aria-label="Foto precedente">
+        <ion-icon [icon]="icone.precedente" aria-hidden="true"></ion-icon>
+      </button>
+      <button type="button" class="foto-grande__freccia foto-grande__freccia--dopo"
+              (click)="$event.stopPropagation(); scorriFazzolettoni(1)" aria-label="Foto successiva">
+        <ion-icon [icon]="icone.successivo" aria-hidden="true"></ion-icon>
+      </button>
+    }
+    <figure (click)="$event.stopPropagation()">
+      <img [src]="urlBackend(f.url)" [alt]="f.didascalia || 'Fazzolettone del gruppo'" />
+      @if (f.didascalia) {
+        <figcaption>{{ f.didascalia }}</figcaption>
+      }
+    </figure>
+  </div>
+}
 
 <app-barra-inferiore />

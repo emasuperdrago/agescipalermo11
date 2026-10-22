@@ -350,3 +350,178 @@
     border-radius: 22px;
   }
 }
+
+// ---------- La striscia dei fazzolettoni ----------
+
+.intestazione-striscia {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+
+  h2 { margin: 0 !important; }
+}
+
+.frecce-striscia {
+  display: flex;
+  gap: 6px;
+
+  button {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 1.4px solid rgba($slate, .3);
+    border-radius: 999px;
+    background: $white;
+    color: $slate-600;
+    cursor: pointer;
+
+    ion-icon { font-size: 1rem; }
+    &:hover { border-color: rgba($viola-m, .5); color: $viola; }
+  }
+}
+
+.striscia {
+  display: flex;
+  gap: 12px;
+  margin: 0 -16px;
+  padding: 4px 16px 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 16px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+
+  @media (min-width: 768px) {
+    margin: 0 -24px;
+    padding: 4px 24px 10px;
+    scroll-padding: 0 24px;
+  }
+}
+
+.fazzolettone {
+  flex: 0 0 auto;
+  width: clamp(150px, 42vw, 190px);
+  margin: 0;
+  scroll-snap-align: start;
+
+  &__foto {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    padding: 0;
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+    background: $slate-100;
+    box-shadow: 0 8px 18px rgba($dark, .1);
+    cursor: zoom-in;
+
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform .25s ease;
+    }
+
+    &:hover img { transform: scale(1.04); }
+  }
+
+  figcaption {
+    margin-top: 8px;
+    font-size: .8rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: $slate-600;
+    text-align: center;
+  }
+
+  &__comandi {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 8px;
+
+    button {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border: 1.4px solid rgba($slate, .3);
+      border-radius: 999px;
+      background: $white;
+      color: $slate-600;
+      cursor: pointer;
+
+      ion-icon { font-size: .9rem; }
+      &:hover:not(:disabled) { border-color: rgba($viola-m, .5); color: $viola; }
+      &.togli:hover:not(:disabled) { border-color: rgba($red, .45); color: $red; }
+      &:disabled { opacity: .35; cursor: default; }
+    }
+  }
+}
+
+.aggiungi--attesa {
+  opacity: .6;
+  cursor: progress;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fazzolettone__foto img { transition: none; }
+}
+
+// ---------- Una foto a schermo intero ----------
+
+.foto-grande {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 56px 16px;
+  background: rgba($dark, .9);
+
+  figure {
+    margin: 0;
+    text-align: center;
+  }
+
+  img {
+    display: block;
+    max-width: min(92vw, 900px);
+    max-height: 78vh;
+    border-radius: 12px;
+    object-fit: contain;
+  }
+
+  figcaption {
+    margin-top: 12px;
+    font-size: .92rem;
+    font-weight: 600;
+    color: $white;
+  }
+
+  &__chiudi, &__freccia {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 999px;
+    background: rgba($white, .14);
+    color: $white;
+    cursor: pointer;
+
+    ion-icon { font-size: 1.4rem; }
+    &:hover { background: rgba($white, .26); }
+  }
+
+  &__chiudi { top: 14px; right: 14px; }
+  &__freccia { top: 50%; transform: translateY(-50%); }
+  &__freccia--prima { left: 12px; }
+  &__freccia--dopo { right: 12px; }
+}

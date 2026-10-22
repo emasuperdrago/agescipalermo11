@@ -804,9 +804,18 @@ export interface ParteStoria {
   mostra_branche: boolean;
 }
 
+/** Una foto della striscia dei fazzolettoni, nella storia. */
+export interface Fazzolettone {
+  id: number;
+  url: string;
+  /** Scritta facoltativa sotto la foto (es. "1983–1995, il primo"). */
+  didascalia: string;
+}
+
 export interface Storia {
   tappe: TappaStoria[];
   parti: ParteStoria[];
+  fazzolettoni: Fazzolettone[];
   /** Vero per capi e capigruppo: a loro compare "Modifica la storia". */
   puoGestire: boolean;
 }

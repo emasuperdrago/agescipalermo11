@@ -110,7 +110,7 @@ if (process.env.FORZA_HTTPS === '1') {
 // così nessuno può intasare il server mandando file enormi a caso. Il limite grande vale solo
 // dove arrivano davvero delle foto (in base64: una foto da 5 MB ne pesa quasi 7) o il file
 // dei censiti. I file veri (allegati della mappa, Carta di Clan) hanno il loro limite nella rotta.
-const ROTTE_CON_FOTO = ['/api/post', '/api/utenti/me', '/api/sfondi', '/api/squadriglie', '/api/cassa'];
+const ROTTE_CON_FOTO = ['/api/post', '/api/utenti/me', '/api/sfondi', '/api/squadriglie', '/api/cassa', '/api/fazzolettoni'];
 // Un post può avere fino a MAX_FOTO_POST foto, già rimpicciolite nel browser: serve più spazio.
 app.use('/api/post', express.json({ limit: '30mb' }));
 app.use(ROTTE_CON_FOTO, express.json({ limit: '10mb' }));
@@ -4945,9 +4945,11 @@ app.get('/api/storia', async (req, res) => {
     try {
         const tappe = await dbAll('SELECT * FROM storia_tappa ORDER BY ordine, id');
         const parti = await dbAll(`SELECT * FROM storia_parte WHERE pagina = 'storia' ORDER BY ordine, id`);
+        const fazzolettoni = await dbAll('SELECT id, percorso, didascalia FROM storia_fazzolettone ORDER BY ordine, id');
         res.json({
             tappe: tappe.map(tappaPubblica),
             parti: parti.map(partePubblica),
+            fazzolettoni: fazzolettoni.map(fazzolettonePubblico),
             puoGestire: puoGestireStoria(req),
         });
     } catch (err) {
@@ -5053,6 +5055,97 @@ app.delete('/api/storia/:tipo/:id', verificaRuolo('capo', 'admin'), async (req, 
         const esito = await dbRun(`DELETE FROM ${tipo.tabella} WHERE id = ?`, [req.params.id]);
         if (!esito.changes) return res.status(404).json({ error: `Questa ${tipo.nome} non c'è più.` });
         res.json({ message: 'Tolta.' });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+// ---------- I fazzolettoni, nella storia ----------
+
+// Le foto dei fazzolettoni del gruppo: una striscia che scorre di lato nella pagina della storia.
+// Le vedono tutti, come la storia; le aggiungono, spostano e tolgono i capi e i capigruppo.
+const CARTELLA_FAZZOLETTONI = path.join(__dirname, 'uploads', 'fazzolettoni');
+fs.mkdirSync(CARTELLA_FAZZOLETTONI, { recursive: true });
+const MAX_FAZZOLETTONI = 40;
+const MAX_SCRITTA_FAZZOLETTONE = 80;
+
+function fazzolettonePubblico(f) {
+    return { id: f.id, url: f.percorso, didascalia: f.didascalia || '' };
+}
+
+/** La scritta sotto la foto (facoltativa): una riga, senza spazi doppi. */
+function didascaliaFazzolettone(valore) {
+    const testo = String(valore ?? '').replace(/\s+/g, ' ').trim();
+    if (testo.length > MAX_SCRITTA_FAZZOLETTONE) return { errore: `La scritta sotto la foto può avere al massimo ${MAX_SCRITTA_FAZZOLETTONE} caratteri.` };
+    return { didascalia: testo || null };
+}
+
+app.post('/api/fazzolettoni', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        const quante = await dbGet('SELECT COUNT(*) AS quante, MAX(ordine) AS ultimo FROM storia_fazzolettone');
+        if (quante.quante >= MAX_FAZZOLETTONI)
+            return res.status(409).json({ error: `Al massimo ${MAX_FAZZOLETTONI} foto: togline una prima di aggiungerne un'altra.` });
+        const { didascalia, errore } = didascaliaFazzolettone(req.body?.didascalia);
+        if (errore) return res.status(400).json({ error: errore });
+        const foto = leggiFoto(req.body?.foto);
+        if (!foto) return res.status(400).json({ error: "La foto non va bene: max 5 MB." });
+
+        const nomeFile = `${crypto.randomUUID()}.${foto.estensione}`;
+        fs.writeFileSync(path.join(CARTELLA_FAZZOLETTONI, nomeFile), foto.dati);
+        const esito = await dbRun(
+            'INSERT INTO storia_fazzolettone (percorso, didascalia, ordine, rif_autore) VALUES (?, ?, ?, ?)',
+            [`/uploads/fazzolettoni/${nomeFile}`, didascalia, (quante.ultimo ?? 0) + 1, req.user.id]);
+        const riga = await dbGet('SELECT * FROM storia_fazzolettone WHERE id = ?', [esito.lastID]);
+        res.status(201).json({ fazzolettone: fazzolettonePubblico(riga) });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+// Il nuovo ordine: tutti gli id, nell'ordine in cui devono comparire nella striscia.
+app.put('/api/fazzolettoni/ordine', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(Number) : null;
+        const esistenti = (await dbAll('SELECT id FROM storia_fazzolettone')).map(r => r.id);
+        // Devono esserci tutte e sole le foto di adesso, ognuna una volta.
+        const uguali = ids && ids.length === esistenti.length && new Set(ids).size === ids.length
+            && ids.every(id => esistenti.includes(id));
+        if (!uguali) return res.status(409).json({ error: "Le foto sono cambiate nel frattempo: ricarica la pagina." });
+        await dbRun('BEGIN');
+        try {
+            for (const [i, id] of ids.entries()) await dbRun('UPDATE storia_fazzolettone SET ordine = ? WHERE id = ?', [i + 1, id]);
+            await dbRun('COMMIT');
+        } catch (err) {
+            await dbRun('ROLLBACK').catch(() => {});
+            throw err;
+        }
+        res.json({ message: "Ordine salvato." });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+// Cambia solo la scritta sotto la foto.
+app.put('/api/fazzolettoni/:id', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        const { didascalia, errore } = didascaliaFazzolettone(req.body?.didascalia);
+        if (errore) return res.status(400).json({ error: errore });
+        const esito = await dbRun('UPDATE storia_fazzolettone SET didascalia = ? WHERE id = ?', [didascalia, req.params.id]);
+        if (!esito.changes) return res.status(404).json({ error: "Questa foto non c'è più." });
+        const riga = await dbGet('SELECT * FROM storia_fazzolettone WHERE id = ?', [req.params.id]);
+        res.json({ fazzolettone: fazzolettonePubblico(riga) });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+app.delete('/api/fazzolettoni/:id', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        const riga = await dbGet('SELECT * FROM storia_fazzolettone WHERE id = ?', [req.params.id]);
+        if (!riga) return res.status(404).json({ error: "Questa foto non c'è più." });
+        await dbRun('DELETE FROM storia_fazzolettone WHERE id = ?', [riga.id]);
+        eliminaFile(CARTELLA_FAZZOLETTONI, riga.percorso);
+        res.json({ message: "Foto tolta." });
     } catch (err) {
         erroreInterno(res, err);
     }

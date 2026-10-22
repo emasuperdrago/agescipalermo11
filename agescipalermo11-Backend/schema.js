@@ -375,6 +375,16 @@ const TABELLE = [
         data_modifica TEXT NOT NULL DEFAULT ${ADESSO},
         pagina TEXT NOT NULL DEFAULT 'storia'
     )`,
+
+    // Le foto dei fazzolettoni del gruppo, nella striscia della storia.
+    `CREATE TABLE IF NOT EXISTS storia_fazzolettone (
+        id SERIAL PRIMARY KEY,
+        percorso TEXT NOT NULL,
+        didascalia TEXT,
+        ordine INTEGER NOT NULL DEFAULT 0,
+        rif_autore INTEGER REFERENCES utenti(id) ON DELETE SET NULL,
+        data_creazione TEXT NOT NULL DEFAULT ${ADESSO}
+    )`,
 ];
 
 /** Le tabelle in un ordine in cui ognuna trova già quelle a cui è collegata. */
