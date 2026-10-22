@@ -15,6 +15,7 @@ const https = require('https');
 const path = require('path');
 const crypto = require('crypto');
 const db = require('./db');
+const archivio = require('./archivio');
 // Dati personali cifrati nel database: vedi cifratura.js.
 const {
     cripta, improntaEmail, emailDaSalvare, improntaCodice, codiceDaSalvare, criptaFile, decriptaFile,
@@ -26,6 +27,17 @@ const {
 } = require('./posta');
 
 const app = express();
+
+// Lavori da fare ogni giorno (pulizie). Su un server normale li fa partire il backend stesso;
+// su Vercel il backend si accende solo quando arriva una richiesta, quindi li chiama ogni notte
+// il Cron di Vercel (vedi vercel.json e /api/cron/giornaliero).
+const LAVORI_GIORNALIERI = [];
+function ogniGiorno(lavoro, primaVoltaDopo) {
+    LAVORI_GIORNALIERI.push(lavoro);
+    if (process.env.VERCEL) return;
+    setTimeout(lavoro, primaVoltaDopo);
+    setInterval(lavoro, 24 * 60 * 60 * 1000);
+}
 const PORT = Number(process.env.PORT) || 3000;
 // La chiave dei token sta solo nel file .env, mai nel codice: vedi configurazione.js.
 const SECRET_KEY = configurazione.JWT_SECRET;
@@ -44,6 +56,10 @@ function getLocalIP() {
 const HOST = process.env.HOST || getLocalIP();
 
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:8100').split(',');
+// Su Vercel il sito ha anche i suoi indirizzi (es. palermo11.vercel.app, e uno per ogni versione
+// di prova): Vercel li dà al backend, e valgono da soli senza scriverli in ALLOWED_ORIGINS.
+for (const nome of ['VERCEL_PROJECT_PRODUCTION_URL', 'VERCEL_BRANCH_URL', 'VERCEL_URL'])
+    if (process.env[nome]) ALLOWED_ORIGINS.push(`https://${process.env[nome]}`);
 // HTTPS diretto: con HTTPS_KEY e HTTPS_CERT nel .env (percorsi del certificato).
 const HTTPS_ACCESO = !!(process.env.HTTPS_KEY && process.env.HTTPS_CERT);
 
@@ -112,14 +128,91 @@ if (process.env.FORZA_HTTPS === '1') {
 // dei censiti. I file veri (allegati della mappa, Carta di Clan) hanno il loro limite nella rotta.
 const ROTTE_CON_FOTO = ['/api/post', '/api/utenti/me', '/api/sfondi', '/api/squadriglie', '/api/cassa', '/api/fazzolettoni'];
 // Un post può avere fino a MAX_FOTO_POST foto, già rimpicciolite nel browser: serve più spazio.
+// Chi sta chiamando, riletto dal database a ogni richiesta (vedi caricaUtente). Prima di leggere
+// il corpo: serve già per i caricamenti grandi qui sotto.
+app.use((req, res, next) => caricaUtente(req, res, next));
+
+// ---------- Caricamenti grandi su Vercel ----------
+// Vercel non fa arrivare al backend richieste oltre i 4,5 MB: il browser mette prima il corpo
+// in Blob (tmp/<id utente>/<codice>, vedi /api/caricamenti) e poi manda la richiesta vera vuota,
+// con quel nome in "X-Corpo-Caricato". Qui il corpo si riprende da Blob, coi limiti di sempre,
+// e la rotta lo trova in req.body come se fosse arrivato direttamente.
+const MB = 1024 * 1024;
+/** Gli stessi limiti dei lettori qui sotto e delle rotte con i file (express.raw). */
+function limiteCorpo(req) {
+    const p = req.path;
+    if (/^\/api\/post\/\d+\/video/.test(p)) return 50 * MB;
+    if (/\/allegati$/.test(p)) return 15 * MB;
+    if (p.startsWith('/api/carta-clan') || p.startsWith('/api/peg')) return 20 * MB;
+    if (p.startsWith('/api/post')) return 30 * MB;
+    if (ROTTE_CON_FOTO.some(r => p.startsWith(r))) return 10 * MB;
+    if (p.startsWith('/api/utenti/importa')) return 2 * MB;
+    return 100 * 1024;
+}
+/** Il nome che può avere un caricamento di questo utente (e di nessun altro). */
+function caricamentoDi(utente, percorso) {
+    return !!utente?.id && typeof percorso === 'string'
+        && new RegExp(`^tmp/${utente.id}/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`).test(percorso);
+}
+app.use(async (req, res, next) => {
+    const percorso = req.headers['x-corpo-caricato'];
+    if (percorso === undefined) return next();
+    if (!archivio.SU_BLOB) return res.status(400).json({ error: "Richiesta non valida." });
+    if (!caricamentoDi(utenteDaToken(req), percorso)) return res.status(403).json({ error: "Caricamento non valido." });
+    let dati;
+    try {
+        dati = await archivio.prendiCaricato(percorso);
+    } catch {
+        return res.status(410).json({ error: "Il file caricato non si trova più: riprova." });
+    }
+    if (dati.length > limiteCorpo(req)) return next(Object.assign(new Error('Corpo troppo grande'), { type: 'entity.too.large' }));
+    try {
+        req.body = String(req.headers['content-type'] || '').includes('application/json')
+            ? JSON.parse(dati.toString('utf8')) : dati;
+    } catch {
+        return res.status(400).json({ error: "Richiesta non valida." });
+    }
+    // Senza queste due intestazioni i lettori qui sotto vedono una richiesta "senza corpo" e
+    // lasciano req.body com'è.
+    delete req.headers['content-length'];
+    delete req.headers['transfer-encoding'];
+    next();
+});
+
 app.use('/api/post', express.json({ limit: '30mb' }));
 app.use(ROTTE_CON_FOTO, express.json({ limit: '10mb' }));
 app.use('/api/utenti/importa', express.json({ limit: '2mb' }));
 app.use(express.json({ limit: '100kb' }));
 // Nessuna pagina manda moduli classici: basta poco, e senza l'analisi "estesa" (che usa qs).
 app.use(express.urlencoded({ limit: '20kb', extended: false }));
-// Chi sta chiamando, riletto dal database a ogni richiesta (vedi caricaUtente).
-app.use((req, res, next) => caricaUtente(req, res, next));
+
+// Il sito chiede se deve usare i caricamenti grandi (solo su Vercel) e, se sì, un permesso
+// per mettere un file in tmp/<il suo id>/ su Blob: al massimo 60 MB, valido un quarto d'ora.
+app.get('/api/caricamenti', (req, res) => res.json({ diretto: archivio.SU_BLOB, soglia: 4 * MB }));
+app.post('/api/caricamenti', async (req, res) => {
+    if (!archivio.SU_BLOB) return res.status(404).json({ error: "Non serve: qui i file arrivano direttamente." });
+    const utente = utenteDaToken(req);
+    if (!utente?.id) return res.status(401).json({ error: "Accesso negato. Token mancante." });
+    try {
+        const { handleUpload } = require('@vercel/blob/client');
+        const risposta = await handleUpload({
+            request: req,
+            body: req.body,
+            onBeforeGenerateToken: async (percorso) => {
+                if (!caricamentoDi(utente, percorso)) throw new Error('Percorso non valido');
+                return {
+                    maximumSizeInBytes: 60 * MB, validUntil: Date.now() + 15 * 60 * 1000,
+                    addRandomSuffix: false, allowOverwrite: false,
+                };
+            },
+        });
+        // Solo i permessi per caricare: la notizia "caricamento finito" non serve (vedi sopra).
+        if (risposta.type !== 'blob.generate-client-token') return res.status(400).json({ error: "Richiesta non valida." });
+        res.json(risposta);
+    } catch {
+        res.status(400).json({ error: "Caricamento non permesso." });
+    }
+});
 
 // Ruoli assegnabili con l'import da Excel. 'admin' (capo gruppo) si assegna solo dal database.
 const RUOLI_IMPORTABILI = ['ragazzo', 'capo'];
@@ -130,16 +223,16 @@ const MAX_RIGHE_IMPORT = 2000;
 const CARTELLA_FOTO_POST = path.join(__dirname, 'uploads', 'post');
 // I video corti dei post: pubblici come le foto dei post.
 const CARTELLA_VIDEO_POST = path.join(__dirname, 'uploads', 'post-video');
-fs.mkdirSync(CARTELLA_VIDEO_POST, { recursive: true });
+archivio.prepara(CARTELLA_VIDEO_POST);
 const CARTELLA_FOTO_PROFILI = path.join(__dirname, 'uploads', 'profili');
 // Foto degli scontrini di cassa: sono conti del gruppo, quindi stanno dietro al link firmato.
 const CARTELLA_SCONTRINI = path.join(__dirname, 'uploads', 'scontrini');
 // Foto che scorrono nello sfondo della home: sono pubbliche come la home stessa.
 const CARTELLA_SFONDI = path.join(__dirname, 'uploads', 'sfondi');
-fs.mkdirSync(CARTELLA_FOTO_POST, { recursive: true });
-fs.mkdirSync(CARTELLA_FOTO_PROFILI, { recursive: true });
-fs.mkdirSync(CARTELLA_SCONTRINI, { recursive: true });
-fs.mkdirSync(CARTELLA_SFONDI, { recursive: true });
+archivio.prepara(CARTELLA_FOTO_POST);
+archivio.prepara(CARTELLA_FOTO_PROFILI);
+archivio.prepara(CARTELLA_SCONTRINI);
+archivio.prepara(CARTELLA_SFONDI);
 const MAX_NOME = 60;
 // ---------- File riservati: si aprono solo con un link firmato ----------
 
@@ -178,7 +271,28 @@ function soloConFirma(req, res, next) {
 app.use('/uploads/profili', soloConFirma);
 app.use('/uploads/posti', soloConFirma);
 app.use('/uploads/scontrini', soloConFirma);
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), { maxAge: '7d' }));
+// Le cartelle che si possono aprire da /uploads (le altre, come le schede, passano da rotte apposta).
+const CARTELLE_UPLOADS = new Set(['post', 'post-video', 'profili', 'posti', 'scontrini', 'sfondi', 'squadriglie',
+    'fazzolettoni', 'carte', 'peg']);
+const CARTELLE_FIRMATE = new Set(['profili', 'posti', 'scontrini']);
+if (!archivio.SU_BLOB) {
+    app.use('/uploads', express.static(path.join(__dirname, 'uploads'), { maxAge: '7d' }));
+} else {
+    // Su Vercel i file stanno in Blob (privato): li manda il backend. Quelli pubblici li tiene
+    // anche la cache di Vercel, così non si ripassa dal backend a ogni foto.
+    app.get('/uploads/:cartella/:file', async (req, res) => {
+        const { cartella, file } = req.params;
+        if (!CARTELLE_UPLOADS.has(cartella) || file !== path.basename(file) || file.startsWith('.'))
+            return res.status(404).json({ error: "File non trovato." });
+        try {
+            await archivio.invia(res, path.join(__dirname, 'uploads', cartella), file, {
+                cache: CARTELLE_FIRMATE.has(cartella) ? 'private, max-age=3600' : 'public, max-age=604800, s-maxage=604800',
+            });
+        } catch (err) {
+            if (!res.headersSent) res.status(404).json({ error: "File non trovato." });
+        }
+    });
+}
 
 // Stessa lista di src/app/services/post.ts: colori scuri abbastanza per la scritta bianca.
 const COLORI_POST = ['#E36F3C', '#0B87A8', '#3E8E48', '#7D57C2', '#C8372D', '#B07A00'];
@@ -354,9 +468,9 @@ function leggiScontrino(dataUrl) {
     return formato ? { dati, estensione: formato.estensione } : null;
 }
 
-function salvaScontrino(scontrino) {
+async function salvaScontrino(scontrino) {
     const nomeFile = `${crypto.randomUUID()}.${scontrino.estensione}`;
-    fs.writeFileSync(path.join(CARTELLA_SCONTRINI, nomeFile), scontrino.dati);
+    await archivio.scrivi(CARTELLA_SCONTRINI, nomeFile, scontrino.dati);
     return `/uploads/scontrini/${nomeFile}`;
 }
 
@@ -559,7 +673,10 @@ app.post('/api/login', (req, res) => {
 // ---------- Conferma dell'email ----------
 
 // L'indirizzo del sito a cui puntano i link nelle email (in locale: quello di ionic serve).
-const SITO_URL = (process.env.SITO_URL || 'http://localhost:8101').replace(/\/+$/, '');
+// L'indirizzo del sito nei link delle email. Su Vercel, se manca, quello principale del progetto.
+const SITO_URL = (process.env.SITO_URL
+    || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : '')
+    || 'http://localhost:8101').replace(/\/+$/, '');
 const ORE_LINK_CONFERMA = 24;
 /** Fra un'email di conferma e l'altra allo stesso utente: niente raffiche. */
 const SECONDI_FRA_EMAIL = 60;
@@ -908,10 +1025,9 @@ app.put('/api/utenti/me', verificaUtenteCensito, (req, res) => {
 
         if (!fotoNuova) return salva(rimuoviFoto ? null : utente.foto);
         const nomeFile = `${crypto.randomUUID()}.${fotoNuova.estensione}`;
-        fs.writeFile(path.join(CARTELLA_FOTO_PROFILI, nomeFile), fotoNuova.dati, (scriviErr) => {
-            if (scriviErr) return res.status(500).json({ error: "Impossibile salvare la foto." });
-            salva(`/uploads/profili/${nomeFile}`);
-        });
+        archivio.scrivi(CARTELLA_FOTO_PROFILI, nomeFile, fotoNuova.dati).then(
+            () => salva(`/uploads/profili/${nomeFile}`),
+            () => res.status(500).json({ error: "Impossibile salvare la foto." }));
     });
 });
 
@@ -1407,13 +1523,12 @@ async function salvaElencoFoto(elenco) {
 
 function salvaFotoPost(foto, cb) {
     const nomeFile = `${crypto.randomUUID()}.${foto.estensione}`;
-    fs.writeFile(path.join(CARTELLA_FOTO_POST, nomeFile), foto.dati, (err) => cb(err, `/uploads/post/${nomeFile}`));
+    archivio.scrivi(CARTELLA_FOTO_POST, nomeFile, foto.dati).then(() => cb(null, `/uploads/post/${nomeFile}`), cb);
 }
 
 // Cancella il file di una foto partendo dal percorso salvato nel database ("/uploads/<cartella>/<file>").
 function eliminaFile(cartella, percorso) {
-    if (!percorso) return;
-    fs.unlink(path.join(cartella, path.basename(percorso)), () => {});
+    archivio.elimina(cartella, percorso);
 }
 
 function eliminaFotoPost(percorso) {
@@ -1764,7 +1879,7 @@ app.post('/api/post/:id/video', verificaUtenteCensito,
                 return res.status(400).json({ error: `Un post può avere al massimo ${MAX_VIDEO_POST} video caricati.` });
 
             const nomeSuDisco = `${crypto.randomUUID()}.${estensione === 'm4v' ? 'mp4' : estensione}`;
-            await fs.promises.writeFile(path.join(CARTELLA_VIDEO_POST, nomeSuDisco), dati);
+            await archivio.scrivi(CARTELLA_VIDEO_POST, nomeSuDisco, dati);
             const percorso = `/uploads/post-video/${nomeSuDisco}`;
             try {
                 const esito = await dbRun(`INSERT INTO post_video (rif_post, percorso, nome_originale, tipo, dimensione)
@@ -1953,7 +2068,7 @@ app.patch('/api/eventi/:id/evidenza', verificaRuolo('capo', 'admin'), (req, res)
 // li aggiungono, modificano ed eliminano solo capi e admin.
 
 const CARTELLA_POSTI = path.join(__dirname, 'uploads', 'posti');
-fs.mkdirSync(CARTELLA_POSTI, { recursive: true });
+archivio.prepara(CARTELLA_POSTI);
 const MAX_NOME_POSTO = 100;
 const MAX_INDIRIZZO_POSTO = 200;
 const MAX_DESCRIZIONE_POSTO = 5000;
@@ -2194,7 +2309,7 @@ app.post('/api/posti/:id/allegati', verificaRuolo('capo', 'admin'),
                 return res.status(400).json({ error: `Un posto può avere al massimo ${MAX_ALLEGATI_POSTO} tra foto e file.` });
 
             const nomeSuDisco = `${crypto.randomUUID()}.${estensione === 'jpeg' ? 'jpg' : estensione}`;
-            await fs.promises.writeFile(path.join(CARTELLA_POSTI, nomeSuDisco), dati);
+            await archivio.scrivi(CARTELLA_POSTI, nomeSuDisco, dati);
             const percorso = `/uploads/posti/${nomeSuDisco}`;
             try {
                 const esito = await dbRun(`INSERT INTO posto_allegato (rif_posto, tipo, nome_originale, percorso, dimensione)
@@ -2232,8 +2347,8 @@ app.get('/api/posti/allegati/:file', async (req, res) => {
             return res.status(403).json({ error: "Link scaduto o non valido: riapri la pagina." });
         const allegato = await dbGet('SELECT * FROM posto_allegato WHERE percorso = ?', [`/uploads/posti/${file}`]);
         if (!allegato) return res.status(404).json({ error: "File non trovato." });
-        res.download(path.join(CARTELLA_POSTI, file), allegato.nome_originale, (err) => {
-            if (err && !res.headersSent) res.status(404).json({ error: "File non trovato." });
+        await archivio.invia(res, CARTELLA_POSTI, file, { scaricaCome: allegato.nome_originale }).catch(() => {
+            if (!res.headersSent) res.status(404).json({ error: "File non trovato." });
         });
     } catch (err) {
         erroreInterno(res, err);
@@ -3714,7 +3829,7 @@ app.delete('/api/ragazzi/:id', verificaRuolo('capo', 'admin'), async (req, res) 
 // Tutto è cifrato: i campi nel database, i PDF su disco, fuori dalle cartelle pubbliche.
 
 const CARTELLA_SCHEDE = path.join(__dirname, 'documenti-riservati', 'schede');
-fs.mkdirSync(CARTELLA_SCHEDE, { recursive: true, mode: 0o700 });
+archivio.prepara(CARTELLA_SCHEDE, { mode: 0o700 });
 const MAX_ALLEGATI_SCHEDA = 10;
 const CAMPI_SCHEDA = {
     indirizzo: MAX_INDIRIZZO,
@@ -3894,7 +4009,7 @@ app.post('/api/ragazzi/:id/scheda/allegati', verificaRuolo('capo', 'admin'),
             if (numero >= MAX_ALLEGATI_SCHEDA)
                 return res.status(400).json({ error: `Una scheda può avere al massimo ${MAX_ALLEGATI_SCHEDA} PDF.` });
             const file = `${crypto.randomUUID()}.pdf.cif`;
-            await fs.promises.writeFile(path.join(CARTELLA_SCHEDE, file), criptaFile(dati), { mode: 0o600 });
+            await archivio.scrivi(CARTELLA_SCHEDE, file, criptaFile(dati), { mode: 0o600 });
             try {
                 const esito = await dbRun(`INSERT INTO scheda_allegato (rif_utente, nome_originale, file, dimensione, rif_autore)
                                            VALUES (?, ?, ?, ?, ?)`, [ragazzo.id, cripta(nome), file, dati.length, req.user.id]);
@@ -3920,14 +4035,14 @@ app.get('/api/ragazzi/:id/scheda/allegati/:idAllegato', verificaRuolo('capo', 'a
         if (!allegato) return res.status(404).json({ error: "Documento non trovato." });
         let dati;
         try {
-            dati = decriptaFile(await fs.promises.readFile(path.join(CARTELLA_SCHEDE, path.basename(allegato.file))));
+            dati = decriptaFile(await archivio.leggi(CARTELLA_SCHEDE, allegato.file));
         } catch {
             return res.status(404).json({ error: "Il file del documento non c'è più sul server." });
         }
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(allegato.nome_originale)}`);
         res.setHeader('Cache-Control', 'no-store');
-        res.send(dati);
+        archivio.inviaDati(res, dati);
     } catch (err) {
         erroreInterno(res, err);
     }
@@ -3955,14 +4070,13 @@ app.delete('/api/ragazzi/:id/scheda/allegati/:idAllegato', verificaRuolo('capo',
 async function pulisciDocumentiOrfani() {
     try {
         const usati = new Set((await dbAll(`SELECT file FROM scheda_allegato`)).map(a => a.file));
-        for (const file of await fs.promises.readdir(CARTELLA_SCHEDE))
+        for (const file of await archivio.elenca(CARTELLA_SCHEDE))
             if (file.endsWith('.pdf.cif') && !usati.has(file)) eliminaFile(CARTELLA_SCHEDE, file);
     } catch (err) {
         console.error('❌ Pulizia dei documenti delle schede:', err.message);
     }
 }
-setTimeout(pulisciDocumentiOrfani, 60 * 1000);
-setInterval(pulisciDocumentiOrfani, 24 * 60 * 60 * 1000);
+ogniGiorno(pulisciDocumentiOrfani, 60 * 1000);
 
 // La tabella in un file da aprire con Excel (punto e virgola, come vuole Excel in italiano).
 app.get('/api/ragazzi/csv', verificaRuolo('capo', 'admin'), async (req, res) => {
@@ -4166,8 +4280,8 @@ async function pulisciRichiesteVecchie() {
         console.error('Pulizia delle richieste vecchie:', err.message);
     }
 }
-setTimeout(pulisciRichiesteVecchie, 5000);
-setInterval(pulisciRichiesteVecchie, 24 * 60 * 60 * 1000);
+ogniGiorno(pulisciRichiesteVecchie, 5000);
+ogniGiorno(() => archivio.pulisciCaricati().catch(err => console.error('❌ Pulizia dei caricamenti:', err.message)), 60 * 1000);
 
 // ---------- Cassa: bilancio di branco, reparto e gruppo ----------
 
@@ -4335,7 +4449,7 @@ app.post('/api/cassa/:cassa', verificaUtenteCensito, async (req, res) => {
         if (req.body?.scontrino) {
             const foto = leggiScontrino(req.body.scontrino);
             if (!foto) return res.status(400).json({ error: "La foto dello scontrino non va bene: max 3 MB." });
-            scontrino = salvaScontrino(foto);
+            scontrino = await salvaScontrino(foto);
         }
 
         const esito = await dbRun(`INSERT INTO movimento_cassa (rif_anno, cassa, data, descrizione, importo,
@@ -4383,7 +4497,7 @@ app.put('/api/cassa/movimenti/:id', verificaUtenteCensito, async (req, res) => {
             const foto = leggiScontrino(req.body.scontrino);
             if (!foto) return res.status(400).json({ error: "La foto dello scontrino non va bene: max 3 MB." });
             eliminaFile(CARTELLA_SCONTRINI, movimento.scontrino);
-            scontrino = salvaScontrino(foto);
+            scontrino = await salvaScontrino(foto);
         } else if (req.body?.rimuovi_scontrino === true) {
             eliminaFile(CARTELLA_SCONTRINI, movimento.scontrino);
             scontrino = null;
@@ -4516,7 +4630,7 @@ app.post('/api/sfondi', verificaRuolo('capo', 'admin'), async (req, res) => {
         if (!foto) return res.status(400).json({ error: "La foto non va bene: max 5 MB." });
 
         const nomeFile = `${crypto.randomUUID()}.${foto.estensione}`;
-        fs.writeFileSync(path.join(CARTELLA_SFONDI, nomeFile), foto.dati);
+        await archivio.scrivi(CARTELLA_SFONDI, nomeFile, foto.dati);
         const ultimo = await dbGet(`SELECT COALESCE(MAX(ordine), 0) AS massimo FROM sfondo_home`);
         const esito = await dbRun(`INSERT INTO sfondo_home (percorso, ordine, rif_autore) VALUES (?, ?, ?)`,
             [`/uploads/sfondi/${nomeFile}`, (ultimo?.massimo ?? 0) + 1, req.user.id]);
@@ -4574,7 +4688,7 @@ const MAX_NOME_SQUADRIGLIA = 40;
 // La foto dell'animale: arriva dal browser già rimpicciolita, sta in uploads/squadriglie
 // ed è pubblica come la sezione Reparto.
 const CARTELLA_SQUADRIGLIE = path.join(__dirname, 'uploads', 'squadriglie');
-fs.mkdirSync(CARTELLA_SQUADRIGLIE, { recursive: true });
+archivio.prepara(CARTELLA_SQUADRIGLIE);
 
 async function puoGestireSquadriglie(req) {
     const chi = utenteDaToken(req);
@@ -4584,9 +4698,9 @@ async function puoGestireSquadriglie(req) {
 }
 
 /** Salva la foto dell'animale e torna il suo percorso. */
-function salvaFotoSquadriglia(foto) {
+async function salvaFotoSquadriglia(foto) {
     const nomeFile = `${crypto.randomUUID()}.${foto.estensione}`;
-    fs.writeFileSync(path.join(CARTELLA_SQUADRIGLIE, nomeFile), foto.dati);
+    await archivio.scrivi(CARTELLA_SQUADRIGLIE, nomeFile, foto.dati);
     return `/uploads/squadriglie/${nomeFile}`;
 }
 
@@ -4695,7 +4809,7 @@ app.post('/api/squadriglie', verificaRuolo('capo', 'admin'), async (req, res) =>
         });
 
         const chi = utenteDaToken(req);
-        const percorso = foto ? salvaFotoSquadriglia(foto) : null;
+        const percorso = foto ? await salvaFotoSquadriglia(foto) : null;
         const esito = await dbRun('INSERT INTO squadriglia (nome, foto, attiva, rif_autore) VALUES (?, ?, 1, ?)',
             [nome, percorso, chi.id]);
         const riga = await dbGet('SELECT * FROM squadriglia WHERE id = ?', [esito.lastID]);
@@ -4728,7 +4842,7 @@ app.put('/api/squadriglie/:id', verificaRuolo('capo', 'admin'), async (req, res)
         if (body.foto) {
             const letta = leggiFoto(body.foto);
             if (!letta) return res.status(400).json({ error: "La foto non va bene: JPG, PNG o WebP, max 5 MB." });
-            percorso = salvaFotoSquadriglia(letta);
+            percorso = await salvaFotoSquadriglia(letta);
         } else if (body.rimuovi_foto === true) {
             percorso = null;
         }
@@ -5065,7 +5179,7 @@ app.delete('/api/storia/:tipo/:id', verificaRuolo('capo', 'admin'), async (req, 
 // Le foto dei fazzolettoni del gruppo: una striscia che scorre di lato nella pagina della storia.
 // Le vedono tutti, come la storia; le aggiungono, spostano e tolgono i capi e i capigruppo.
 const CARTELLA_FAZZOLETTONI = path.join(__dirname, 'uploads', 'fazzolettoni');
-fs.mkdirSync(CARTELLA_FAZZOLETTONI, { recursive: true });
+archivio.prepara(CARTELLA_FAZZOLETTONI);
 const MAX_FAZZOLETTONI = 40;
 const MAX_SCRITTA_FAZZOLETTONE = 80;
 
@@ -5091,7 +5205,7 @@ app.post('/api/fazzolettoni', verificaRuolo('capo', 'admin'), async (req, res) =
         if (!foto) return res.status(400).json({ error: "La foto non va bene: max 5 MB." });
 
         const nomeFile = `${crypto.randomUUID()}.${foto.estensione}`;
-        fs.writeFileSync(path.join(CARTELLA_FAZZOLETTONI, nomeFile), foto.dati);
+        await archivio.scrivi(CARTELLA_FAZZOLETTONI, nomeFile, foto.dati);
         const esito = await dbRun(
             'INSERT INTO storia_fazzolettone (percorso, didascalia, ordine, rif_autore) VALUES (?, ?, ?, ?)',
             [`/uploads/fazzolettoni/${nomeFile}`, didascalia, (quante.ultimo ?? 0) + 1, req.user.id]);
@@ -5157,7 +5271,7 @@ app.delete('/api/fazzolettoni/:id', verificaRuolo('capo', 'admin'), async (req, 
 // sezione Clan; le precedenti restano nell'archivio. La leggono tutti, come la sezione Clan;
 // la cambiano i capi clan (compreso un capogruppo che fa anche il capo clan).
 const CARTELLA_CARTE = path.join(__dirname, 'uploads', 'carte');
-fs.mkdirSync(CARTELLA_CARTE, { recursive: true });
+archivio.prepara(CARTELLA_CARTE);
 const MAX_BYTE_CARTA = 20 * 1024 * 1024;
 const MAX_TITOLO_CARTA = 120;
 
@@ -5227,7 +5341,7 @@ app.post('/api/carta-clan', verificaRuolo('capo', 'admin'),
             anno = testo(anno, 20) || null;
 
             const nomeSuDisco = `${crypto.randomUUID()}.pdf`;
-            await fs.promises.writeFile(path.join(CARTELLA_CARTE, nomeSuDisco), dati);
+            await archivio.scrivi(CARTELLA_CARTE, nomeSuDisco, dati);
             const percorso = `/uploads/carte/${nomeSuDisco}`;
             try {
                 await dbRun('UPDATE carta_clan SET corrente = 0 WHERE corrente = 1');
@@ -5299,7 +5413,7 @@ app.delete('/api/carta-clan/:id', verificaRuolo('capo', 'admin'), async (req, re
 // Come la Carta di Clan: il PDF in vigore (corrente = 1) e l'archivio dei precedenti.
 // Lo leggono tutti; lo caricano e lo cambiano i capigruppo.
 const CARTELLA_PEG = path.join(__dirname, 'uploads', 'peg');
-fs.mkdirSync(CARTELLA_PEG, { recursive: true });
+archivio.prepara(CARTELLA_PEG);
 
 async function puoGestirePeg(req) {
     const chi = utenteDaToken(req);
@@ -5344,7 +5458,7 @@ app.post('/api/peg', verificaRuolo('capo', 'admin'),
             anno = testo(anno, 20) || null;
 
             const nomeSuDisco = `${crypto.randomUUID()}.pdf`;
-            await fs.promises.writeFile(path.join(CARTELLA_PEG, nomeSuDisco), dati);
+            await archivio.scrivi(CARTELLA_PEG, nomeSuDisco, dati);
             const percorso = `/uploads/peg/${nomeSuDisco}`;
             try {
                 await dbRun('UPDATE peg SET corrente = 0 WHERE corrente = 1');
@@ -5565,6 +5679,18 @@ app.delete('/api/link-utili/:id', verificaRuolo('capo', 'admin'), async (req, re
     }
 });
 
+// ---------- Lavori di ogni giorno, chiamati dal Cron di Vercel ----------
+
+// Vercel manda "Authorization: Bearer <CRON_SECRET>": senza quella chiave non parte niente.
+app.get('/api/cron/giornaliero', async (req, res) => {
+    const attesa = Buffer.from(`Bearer ${process.env.CRON_SECRET || ''}`);
+    const ricevuta = Buffer.from(String(req.headers.authorization || ''));
+    if (!process.env.CRON_SECRET || attesa.length !== ricevuta.length || !crypto.timingSafeEqual(attesa, ricevuta))
+        return res.status(401).json({ error: 'Accesso negato.' });
+    for (const lavoro of LAVORI_GIORNALIERI) await lavoro();
+    res.json({ fatti: LAVORI_GIORNALIERI.length });
+});
+
 // ---------- Il sito (le pagine di Angular, già compilate) ----------
 // Online la stessa app fa da sito e da backend, sullo stesso indirizzo: le pagine stanno in
 // ../agescipalermo11/www (le crea "npm run build:sito" al deploy). Gli indirizzi del sito
@@ -5616,44 +5742,52 @@ app.use((err, req, res, next) => {
 // In produzione la terza strada non esiste: senza HTTPS il server non parte.
 const http = require('http');
 
-if (process.env.NODE_ENV === 'production' && !HTTPS_ACCESO && !DIETRO_PROXY) {
-    console.error('❌ In produzione il backend non parte senza HTTPS: password e token viaggerebbero in chiaro.');
-    console.error('   Metti HTTPS_KEY e HTTPS_CERT nel file .env, oppure un proxy HTTPS davanti con DIETRO_PROXY=1.');
-    process.exit(1);
-}
-
-/** Mette il server in ascolto su un indirizzo; se quell'indirizzo non esiste (niente IPv6), pazienza. */
-function ascolta(server, indirizzo, poi) {
-    server.once('error', (err) => {
-        if (err.code === 'EADDRNOTAVAIL' || err.code === 'EAFNOSUPPORT') return;
-        console.error(`❌ Non riesco ad ascoltare su ${indirizzo}:${PORT}:`, err.message);
-        process.exit(1);
-    });
-    server.listen(PORT, indirizzo, poi);
-}
-
-if (HTTPS_ACCESO) {
-    let credenziali;
-    try {
-        credenziali = { key: fs.readFileSync(process.env.HTTPS_KEY), cert: fs.readFileSync(process.env.HTTPS_CERT) };
-    } catch (err) {
-        console.error('❌ Non riesco a leggere il certificato HTTPS:', err.message);
+// Su Vercel il server non si accende da qui: Vercel prende l'app (module.exports, qui sotto)
+// e la chiama a ogni richiesta, con l'HTTPS già fatto da lui (vedi api/index.js).
+function accendi() {
+    if (process.env.NODE_ENV === 'production' && !HTTPS_ACCESO && !DIETRO_PROXY) {
+        console.error('❌ In produzione il backend non parte senza HTTPS: password e token viaggerebbero in chiaro.');
+        console.error('   Metti HTTPS_KEY e HTTPS_CERT nel file .env, oppure un proxy HTTPS davanti con DIETRO_PROXY=1.');
         process.exit(1);
     }
-    ascolta(https.createServer(credenziali, app), '0.0.0.0', () => {
-        console.log(`🔒 Backend agescipalermo11 in ascolto su https://${HOST}:${PORT} (e https://localhost:${PORT})`);
-    });
-} else if (DIETRO_PROXY) {
-    ascolta(http.createServer(app), '0.0.0.0', () => {
-        console.log(`🔒 Backend agescipalermo11 dietro al proxy HTTPS, porta ${PORT}`);
-    });
-} else {
-    // Due volte: "localhost" può voler dire 127.0.0.1 o ::1, a seconda del browser.
-    ascolta(http.createServer(app), '127.0.0.1', () => {
-        console.log(`🚀 Backend agescipalermo11 in ascolto su http://localhost:${PORT} (solo da questo computer)`);
-    });
-    ascolta(http.createServer(app), '::1');
+
+    /** Mette il server in ascolto su un indirizzo; se quell'indirizzo non esiste (niente IPv6), pazienza. */
+    function ascolta(server, indirizzo, poi) {
+        server.once('error', (err) => {
+            if (err.code === 'EADDRNOTAVAIL' || err.code === 'EAFNOSUPPORT') return;
+            console.error(`❌ Non riesco ad ascoltare su ${indirizzo}:${PORT}:`, err.message);
+            process.exit(1);
+        });
+        server.listen(PORT, indirizzo, poi);
+    }
+
+    if (HTTPS_ACCESO) {
+        let credenziali;
+        try {
+            credenziali = { key: fs.readFileSync(process.env.HTTPS_KEY), cert: fs.readFileSync(process.env.HTTPS_CERT) };
+        } catch (err) {
+            console.error('❌ Non riesco a leggere il certificato HTTPS:', err.message);
+            process.exit(1);
+        }
+        ascolta(https.createServer(credenziali, app), '0.0.0.0', () => {
+            console.log(`🔒 Backend agescipalermo11 in ascolto su https://${HOST}:${PORT} (e https://localhost:${PORT})`);
+        });
+    } else if (DIETRO_PROXY) {
+        ascolta(http.createServer(app), '0.0.0.0', () => {
+            console.log(`🔒 Backend agescipalermo11 dietro al proxy HTTPS, porta ${PORT}`);
+        });
+    } else {
+        // Due volte: "localhost" può voler dire 127.0.0.1 o ::1, a seconda del browser.
+        ascolta(http.createServer(app), '127.0.0.1', () => {
+            console.log(`🚀 Backend agescipalermo11 in ascolto su http://localhost:${PORT} (solo da questo computer)`);
+        });
+        ascolta(http.createServer(app), '::1');
+    }
+
+    // Dice subito nel terminale se le email partono o no (password per le app sbagliata, ecc.).
+    controllaPosta();
 }
 
-// Dice subito nel terminale se le email partono o no (password per le app sbagliata, ecc.).
-controllaPosta();
+if (require.main === module) accendi();
+
+module.exports = app;

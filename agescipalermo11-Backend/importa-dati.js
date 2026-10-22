@@ -20,11 +20,11 @@ const FILE = path.join(__dirname, 'dati-palermo11.json.cif');
  * { importato: false, motivo } se non c'era niente da fare; lancia un errore se il file
  * c'è ma non si può usare (DB_KEY diversa, file rovinato, database che rifiuta i dati).
  */
-async function importaDati() {
-    if (!fs.existsSync(FILE)) return { importato: false, motivo: 'nessun file da importare' };
+async function importaDati(file = FILE) {
+    if (!fs.existsSync(file)) return { importato: false, motivo: 'nessun file da importare' };
     let pacchetto;
     try {
-        pacchetto = JSON.parse(decriptaFile(fs.readFileSync(FILE)).toString('utf8'));
+        pacchetto = JSON.parse(decriptaFile(fs.readFileSync(file)).toString('utf8'));
     } catch {
         throw new Error('il file dei dati non si apre: la DB_KEY nel .env non è quella del Mac (o il file è rovinato)');
     }
@@ -68,7 +68,7 @@ async function importaDati() {
                 `INSERT INTO impostazioni (chiave, valore) VALUES ('dati_importati_il', $1)
                  ON CONFLICT (chiave) DO UPDATE SET valore = EXCLUDED.valore`, [new Date().toISOString()]);
             await client.query('COMMIT');
-            fs.renameSync(FILE, `${FILE}.importato`);
+            fs.renameSync(file, `${file}.importato`);
             return { importato: true, righe, creato: pacchetto.creato };
         } catch (err) {
             await client.query('ROLLBACK').catch(() => {});

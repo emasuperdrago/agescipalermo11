@@ -8,6 +8,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
 import { authInterceptor } from './app/interceptors/auth.interceptor';
+import { caricamentiGrandiInterceptor } from './app/interceptors/caricamenti-grandi.interceptor';
 import { defineCustomElements as pwaElements } from '@ionic/pwa-elements/loader';
 
 pwaElements();
@@ -16,7 +17,7 @@ bootstrapApplication(AppComponent, {
   providers: [
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     provideIonicAngular(),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor, caricamentiGrandiInterceptor])),
     provideRouter(routes, withPreloading(PreloadAllModules)),
   ],
 }).catch(err => console.error(err));

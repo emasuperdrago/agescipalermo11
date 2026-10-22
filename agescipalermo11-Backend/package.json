@@ -13,13 +13,17 @@
     "dati:importa": "node importa-dati.js",
     "foto:cifra": "node foto-cifrate.js cifra",
     "foto:decifra": "node foto-cifrate.js decifra",
-    "build:sito": "cd ../agescipalermo11 && npm ci --include=dev && npx ng build --configuration production"
+    "build:sito": "cd ../agescipalermo11 && npm ci --include=dev && npx ng build --configuration production",
+    "build:vercel": "npm run build:sito && rm -rf public && cp -R ../agescipalermo11/www public",
+    "vercel:variabili": "node vercel.js variabili",
+    "vercel:carica": "node vercel.js carica"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@vercel/blob": "2.8.1",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",

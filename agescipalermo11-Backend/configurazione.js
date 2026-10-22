@@ -42,6 +42,10 @@ function chiaveDeiToken() {
         process.exit(1);
     }
 
+    if (process.env.VERCEL) {
+        console.error('❌ Manca JWT_SECRET: su Vercel va messa nelle Environment Variables del progetto.');
+        process.exit(1);
+    }
     const nuova = crypto.randomBytes(48).toString('base64url');
     const aCapo = fs.existsSync(percorsoEnv) && fs.readFileSync(percorsoEnv, 'utf8').endsWith('\n') ? '' : '\n';
     try {
@@ -81,8 +85,8 @@ function chiaveDelDatabase() {
     }
     // Online i dati arrivano già cifrati con la chiave del Mac: una chiave nuova inventata qui
     // li renderebbe illeggibili. Sul server la DB_KEY si mette sempre a mano.
-    if (process.env.NODE_ENV === 'production') {
-        console.error('❌ Manca DB_KEY: sul server va messa a mano nel file .env (la stessa del Mac).');
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+        console.error('❌ Manca DB_KEY: sul server va messa a mano (nel .env, o su Vercel nelle Environment Variables): la stessa del Mac.');
         process.exit(1);
     }
 
@@ -110,6 +114,20 @@ function chiaveDelDatabase() {
  */
 function datiDatabase() {
     const e = process.env;
+    // Su Vercel il database (Neon) arriva come un indirizzo unico: postgresql://utente:password@host/nome.
+    if (e.DATABASE_URL) {
+        const u = new URL(e.DATABASE_URL);
+        return {
+            host: u.hostname,
+            port: Number(u.port) || 5432,
+            user: decodeURIComponent(u.username),
+            password: decodeURIComponent(u.password),
+            database: decodeURIComponent(u.pathname.replace(/^\//, '')),
+            // Il database sta su un altro server: il collegamento è sempre cifrato (tranne che
+            // per le prove sul Mac, con ?sslmode=disable).
+            ssl: u.searchParams.get('sslmode') === 'disable' ? false : { rejectUnauthorized: true },
+        };
+    }
     const usaPg = !!(e.PG_HOST || e.PG_NAME || e.PG_USER);
     const v = (nome) => usaPg ? e[`PG_${nome}`] : e[`DB_${nome}`];
     return {
