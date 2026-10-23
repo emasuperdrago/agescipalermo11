@@ -35,6 +35,16 @@ const pool = new Pool({
   // Un collegamento solo: le query aspettano in fila, come con SQLite.
   // (Se il database sta su un altro server, il collegamento va cifrato: PG_SSL=1 / DB_SSL=1.)
   max: 1,
+  // Su Vercel il backend viene "congelato" tra una visita e l'altra, mentre Neon chiude i suoi
+  // collegamenti quando si spegne: un collegamento tenuto aperto può risvegliarsi già morto e
+  // far aspettare la richiesta all'infinito. Lì quindi i collegamenti fermi si chiudono subito,
+  // e un'attesa troppo lunga diventa un errore (che per le letture si riprova, vedi interroga).
+  ...(process.env.VERCEL ? {
+    idleTimeoutMillis: 2000,
+    connectionTimeoutMillis: 10000,
+    query_timeout: 15000,
+    keepAlive: true,
+  } : {}),
 });
 pool.on('error', (err) => console.error('Database: collegamento interrotto, si riprova alla prossima query:', err.code || err.message));
 
@@ -72,10 +82,25 @@ function parametriPuliti(parametri) {
 }
 
 /** La query vera, verso PostgreSQL. Agli INSERT si aggiunge RETURNING, per sapere l'id nuovo. */
+/** Errori del collegamento (non della query): il database non ha risposto o ha chiuso. */
+function collegamentoCaduto(err) {
+  return ['ECONNRESET', 'EPIPE', 'ETIMEDOUT', 'ECONNREFUSED', '57P01', '57P03', '08006', '08003'].includes(err?.code)
+    || /Connection terminated|Query read timeout|timeout exceeded when trying to connect/i.test(err?.message ?? '');
+}
+
 async function interroga(sql, parametri = []) {
   let testo = segnaposti(sql);
   if (/^\s*INSERT\b/i.test(testo) && !/\bRETURNING\b/i.test(testo)) testo += ' RETURNING *';
-  return pool.query(testo, parametriPuliti(parametri));
+  const valori = parametriPuliti(parametri);
+  try {
+    return await pool.query(testo, valori);
+  } catch (err) {
+    // Una lettura si può rifare senza rischi con un collegamento nuovo; una scrittura no (potrebbe
+    // essere già arrivata), quindi l'errore va a chi l'ha chiesta.
+    if (!collegamentoCaduto(err) || !/^\s*SELECT\b/i.test(testo)) throw err;
+    console.error('Database: collegamento caduto, riprovo la lettura:', err.code || err.message);
+    return pool.query(testo, valori);
+  }
 }
 
 // ---------- Avvio: tabelle, controllo della chiave, dati di partenza ----------
