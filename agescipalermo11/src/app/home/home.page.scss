@@ -1369,3 +1369,78 @@ $colori-etichetta: (
   gap: 4px;
   padding: 0 14px 12px;
 }
+
+// ---------- Telefono: due post per riga ----------
+// Le card diventano strette (circa metà schermo): testi ed etichette più piccoli, la didascalia
+// si ferma a quattro righe e i comandi dei capi scendono sotto la card, dove c'è posto.
+@media (max-width: 599px) {
+  .storie {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .storia {
+    &:hover { transform: none; }
+
+    &__badge {
+      top: 7px;
+      left: 7px;
+      gap: 4px;
+    }
+
+    &__quante {
+      right: 7px;
+      bottom: 7px;
+      gap: 3px;
+      padding: 3px 7px;
+      font-size: .68rem;
+
+      ion-icon { font-size: .8rem; }
+    }
+
+    &__corpo {
+      min-height: 0;
+      padding: 10px 11px 13px;
+
+      h3 {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 4;
+        overflow: hidden;
+        font-size: .9rem;
+        line-height: 1.35;
+      }
+    }
+
+    &__hashtag {
+      padding: 0 9px 10px;
+    }
+
+    &__azioni {
+      position: static;
+      justify-content: space-between;
+      padding: 8px 9px 10px;
+      border-top: 1px solid rgba($white, .25);
+
+      button {
+        width: 32px;
+        height: 32px;
+
+        ion-icon { font-size: 1rem; }
+      }
+    }
+  }
+
+  .badge-evidenza,
+  .badge-etichetta {
+    gap: 4px;
+    padding: 3px 8px;
+    font-size: .64rem;
+  }
+
+  .tag--piccolo {
+    min-height: 22px;
+    padding: 0 7px;
+    font-size: .64rem;
+  }
+}
