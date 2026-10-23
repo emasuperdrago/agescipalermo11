@@ -393,9 +393,11 @@ async function popolaMarco() {
 }
 
 // Solo in sviluppo: un capogruppo di prova per poter entrare subito.
+// Un admin di prova solo per un database nuovo, vuoto (per entrare la prima volta sul Mac):
+// se ci sono già utenti non si crea, così una volta tolto non torna.
 async function popolaDatiEsempio() {
   if (process.env.NODE_ENV === 'production') return;
-  if ((await righe('SELECT id FROM utenti WHERE codice_impronta = ?', [improntaCodice(1111111)])).length) return;
+  if ((await righe('SELECT id FROM utenti LIMIT 1')).length) return;
   const impronta = await bcrypt.hash('password123', 12);
   const { email, impronta: improntaEmail } = emailDaSalvare(null);
   const codice = codiceDaSalvare(1111111);
