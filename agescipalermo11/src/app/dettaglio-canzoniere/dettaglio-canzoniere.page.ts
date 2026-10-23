@@ -107,6 +107,16 @@ export class DettaglioCanzonierePage implements OnInit {
       : [];
   }
 
+  /** Quanti caratteri ha la riga più lunga: da telefono il testo si rimpicciolisce per starci tutto. */
+  get caratteriRigaPiuLunga(): number {
+    return this.righe.reduce((massimo, r) => Math.max(massimo, r.testo.replace(/\t/g, '    ').length), 20);
+  }
+
+  /** Senza accordi da tenere allineati, le righe troppo lunghe possono andare a capo. */
+  get soloParole(): boolean {
+    return !this.conAccordi || !this.accordiVisibili;
+  }
+
   // ---------- Tonalità ----------
 
   get conAccordi(): boolean {
