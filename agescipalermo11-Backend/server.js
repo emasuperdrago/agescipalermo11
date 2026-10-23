@@ -4543,13 +4543,14 @@ app.get('/api/capi', async (req, res) => {
     try {
         const capogruppo = utenteDaToken(req)?.ruolo === 'admin';
         const capi = await dbAll(`SELECT id, codice_censimento, nome, cognome, eta, data_nascita, branca, ruolo,
-                                         telefono, email, livello_foca, (password IS NOT NULL)::int AS attivato
+                                         capogruppo, telefono, email, livello_foca, (password IS NOT NULL)::int AS attivato
                                   FROM utenti WHERE ruolo IN ('capo', 'admin')
                                   ORDER BY lower(cognome), lower(nome)`);
         res.json({
             puoGestire: capogruppo,
             capi: capi.map(c => ({
                 id: c.id, nome: c.nome, cognome: c.cognome, branca: c.branca, ruolo: c.ruolo,
+                capogruppo: c.ruolo === 'admin' && c.capogruppo === 1,
                 // Contatti, codice censimento, età e "non è ancora entrato": solo al capogruppo.
                 telefono: capogruppo ? c.telefono : null,
                 email: capogruppo ? c.email : null,
@@ -4579,19 +4580,22 @@ app.put('/api/capi/:id', verificaRuolo('admin'), async (req, res) => {
         // branca vuota = a disposizione del gruppo.
         const branca = BRANCHE.includes(body.branca) ? body.branca : null;
         const ruolo = body.ruolo === 'admin' || body.ruolo === 'capo' ? body.ruolo : capo.ruolo;
-        // Un capogruppo non può rimuoversi da solo il ruolo: resterebbe il gruppo senza nessuno.
+        // Un admin non può togliersi da solo il ruolo: il gruppo potrebbe restare senza nessuno.
         if (capo.id === req.user.id && ruolo !== 'admin')
-            return res.status(400).json({ error: "Non puoi rimuovere a te stesso il ruolo di capogruppo." });
+            return res.status(400).json({ error: "Non puoi rimuovere a te stesso il ruolo di admin." });
+        // Capogruppo si può essere solo da admin: togliendo admin si toglie anche quello.
+        const capogruppo = ruolo === 'admin'
+            && (typeof body.capogruppo === 'boolean' ? body.capogruppo : capo.capogruppo === 1);
 
         // Se l'email cambia da qui, vale questa: il file del censimento non la tocca più.
         const email = testo(body.email, 120).toLowerCase() || null;
         const emailCambiata = email !== (capo.email || null);
         const salvata = emailDaSalvare(email);
-        await dbRun(`UPDATE utenti SET nome = ?, cognome = ?, data_nascita = ?, branca = ?, ruolo = ?,
+        await dbRun(`UPDATE utenti SET nome = ?, cognome = ?, data_nascita = ?, branca = ?, ruolo = ?, capogruppo = ?,
                      telefono = ?, email = ?, email_impronta = ?,
                      email_a_mano = CASE WHEN ? = 1 THEN 1 ELSE email_a_mano END
                      WHERE id = ?`,
-            [nome, cognome, cripta(dataNascita || capo.data_nascita || null), branca, ruolo,
+            [nome, cognome, cripta(dataNascita || capo.data_nascita || null), branca, ruolo, capogruppo ? 1 : 0,
              cripta(testo(body.telefono, 20) || null), salvata.email, salvata.impronta, emailCambiata ? 1 : 0, capo.id]);
         const aggiornato = await dbGet(`SELECT * FROM utenti WHERE id = ?`, [capo.id]);
         res.json({ capo: utentePubblico(aggiornato) });

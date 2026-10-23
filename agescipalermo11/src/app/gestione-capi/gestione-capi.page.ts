@@ -144,14 +144,15 @@ export class GestioneCapiPage implements OnInit {
   async cambiaRuolo(capo: CapoElenco) {
     const diventa = capo.ruolo === 'admin' ? 'capo' : 'admin';
     if (capo.id === this.ioSono && diventa === 'capo') {
-      this.avvisa('Non puoi rimuoverti da solo il ruolo di capogruppo.');
+      this.avvisa('Non puoi rimuoverti da solo il ruolo di admin.');
       return;
     }
     const alert = await this.alertCtrl.create({
-      header: diventa === 'admin' ? 'Fare capogruppo?' : 'Rimuovere il ruolo di capogruppo?',
+      header: diventa === 'admin' ? 'Fare admin?' : 'Rimuovere il ruolo di admin?',
       message: diventa === 'admin'
-        ? `${capo.nome} ${capo.cognome} potrà aprire l'anno, caricare i capi e vedere la cassa del gruppo.`
-        : `${capo.nome} ${capo.cognome} tornerà a essere un capo di branca.`,
+        ? `${capo.nome} ${capo.cognome} avrà gli stessi permessi del capogruppo: aprire l'anno, caricare i capi, `
+          + `vedere la cassa del gruppo. Nell'elenco però non comparirà come capogruppo, a meno di metterlo con "Metti capogruppo".`
+        : `${capo.nome} ${capo.cognome} tornerà a essere un capo di branca${capo.capogruppo ? ' e non sarà più capogruppo' : ''}.`,
       buttons: [
         { text: 'Annulla', role: 'cancel' },
         { text: 'Conferma', handler: () => { this.salva(capo, { ruolo: diventa }); } },
@@ -160,13 +161,30 @@ export class GestioneCapiPage implements OnInit {
     await alert.present();
   }
 
-  private salva(capo: CapoElenco, cambi: { branca?: Branca | null; ruolo?: 'capo' | 'admin' }) {
+  /** Capogruppo è solo il nome nell'elenco: i permessi restano quelli di admin. */
+  async cambiaCapogruppo(capo: CapoElenco) {
+    const diventa = !capo.capogruppo;
+    const alert = await this.alertCtrl.create({
+      header: diventa ? 'Mettere capogruppo?' : 'Togliere da capogruppo?',
+      message: diventa
+        ? `${capo.nome} ${capo.cognome} comparirà come capogruppo nell'elenco dei capi.`
+        : `${capo.nome} ${capo.cognome} non comparirà più come capogruppo, ma resta admin con gli stessi permessi.`,
+      buttons: [
+        { text: 'Annulla', role: 'cancel' },
+        { text: 'Conferma', handler: () => { this.salva(capo, { capogruppo: diventa }); } },
+      ],
+    });
+    await alert.present();
+  }
+
+  private salva(capo: CapoElenco, cambi: { branca?: Branca | null; ruolo?: 'capo' | 'admin'; capogruppo?: boolean }) {
     this.zona.aggiornaCapo(capo.id, {
       nome: capo.nome,
       cognome: capo.cognome,
       data_nascita: capo.data_nascita,
       branca: cambi.branca !== undefined ? cambi.branca : capo.branca,
       ruolo: cambi.ruolo ?? capo.ruolo,
+      capogruppo: cambi.capogruppo ?? capo.capogruppo,
       telefono: capo.telefono,
       email: capo.email,
     }).subscribe({

@@ -92,7 +92,8 @@
                   <div class="capo__chi">
                     <strong>
                       {{ c.cognome }} {{ c.nome }}
-                      @if (c.ruolo === 'admin') { <span class="segno-capogruppo">capogruppo</span> }
+                      @if (c.capogruppo) { <span class="segno-capogruppo">capogruppo</span> }
+                      @else if (puoGestire && c.ruolo === 'admin') { <span class="segno-capogruppo segno-capogruppo--admin">admin</span> }
                       @if (c.id === ioSono) { <span class="segno-io">tu</span> }
                     </strong>
                     @if (puoGestire) {
@@ -146,8 +147,13 @@
                     A disposizione
                   </button>
                   <button type="button" class="ruolo" (click)="cambiaRuolo(c)">
-                    {{ c.ruolo === 'admin' ? 'Rimuovi capogruppo' : 'Fai capogruppo' }}
+                    {{ c.ruolo === 'admin' ? 'Rimuovi admin' : 'Fai admin' }}
                   </button>
+                  @if (c.ruolo === 'admin') {
+                    <button type="button" class="ruolo" (click)="cambiaCapogruppo(c)">
+                      {{ c.capogruppo ? 'Togli da capogruppo' : 'Metti capogruppo' }}
+                    </button>
+                  }
                 </div>
                 }
               </li>

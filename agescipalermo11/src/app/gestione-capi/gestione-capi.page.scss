@@ -264,6 +264,12 @@
 .segno-capogruppo {
   background: $sfumatura-viola;
   color: $white;
+
+  // Admin ma non capogruppo: stessi permessi, segno più leggero (lo vede solo chi gestisce i capi).
+  &--admin {
+    background: rgba($viola-l, .14);
+    color: $viola;
+  }
 }
 
 .segno-io {

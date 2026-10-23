@@ -38,6 +38,9 @@ const TABELLE = [
         email_a_mano SMALLINT NOT NULL DEFAULT 0,
         email_confermata SMALLINT NOT NULL DEFAULT 0
     )`,
+    // "Capogruppo" è il nome che compare nell'elenco dei capi; i permessi li dà il ruolo admin.
+    // Un admin può esserlo o no (vale solo per gli admin).
+    `ALTER TABLE utenti ADD COLUMN IF NOT EXISTS capogruppo SMALLINT NOT NULL DEFAULT 0`,
 
     `CREATE TABLE IF NOT EXISTS anno_scout (
         id SERIAL PRIMARY KEY,

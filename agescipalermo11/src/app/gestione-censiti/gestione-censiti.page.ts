@@ -16,7 +16,7 @@ import { nomeBranca, stiliBranca } from '../services/posti';
 import { Branca, EsitoImport, UtenteElenco } from '../../types/models';
 
 const ETICHETTE_RUOLO: Record<UtenteElenco['ruolo'], string> = {
-  ragazzo: 'Ragazzo/a', capo: 'Capo', admin: 'Capogruppo',
+  ragazzo: 'Ragazzo/a', capo: 'Capo', admin: 'Admin',
 };
 
 /**

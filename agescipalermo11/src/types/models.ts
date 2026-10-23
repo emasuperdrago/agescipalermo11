@@ -665,6 +665,8 @@ export interface CapoElenco {
   /** null = a disposizione del gruppo. */
   branca: Branca | null;
   ruolo: 'capo' | 'admin';
+  /** Compare come capogruppo nell'elenco (solo per gli admin, che ne hanno i permessi). */
+  capogruppo: boolean;
   telefono: string | null;
   email: string | null;
   attivato: boolean;
@@ -679,6 +681,7 @@ export interface DatiCapo {
   data_nascita: string | null;
   branca: Branca | null;
   ruolo: 'capo' | 'admin';
+  capogruppo: boolean;
   telefono: string | null;
   email: string | null;
 }

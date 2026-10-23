@@ -135,6 +135,15 @@ async function preparaDavvero() {
   await popolaStoria();
   await popolaMarco();
   await popolaDatiEsempio();
+  await separaCapogruppo();
+}
+
+// Prima admin e capogruppo erano la stessa cosa: chi era admin resta segnato come capogruppo.
+// Una volta sola, così poi un admin si può togliere da capogruppo.
+async function separaCapogruppo() {
+  if (await impostazione('capogruppo_separato')) return;
+  await interroga(`UPDATE utenti SET capogruppo = 1 WHERE ruolo = 'admin'`);
+  await segnaImpostazione('capogruppo_separato');
 }
 
 function avvia() {
