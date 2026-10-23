@@ -593,11 +593,17 @@ export class HomePage implements OnDestroy, OnInit {
   // ---------- Foto che scorrono nell'apertura ----------
 
   /** Le foto le cambiano i capi: qui si prendono come stanno adesso. */
+  /** Le foto già chieste al server (indici in `sfondi`). */
+  scaricate = new Set<number>();
+
   private caricaSfondi() {
     this.sfondiService.elenco().subscribe({
       next: sfondi => {
         this.sfondi = sfondi.map(s => this.sfondiService.urlIntero(s.url));
         this.sfondoAttuale = 0;
+        // Si scarica la foto che si vede e la prossima; le altre arrivano una alla volta,
+        // un giro prima di comparire: così la prima non aspetta tutte le altre.
+        this.scaricate = new Set([0, 1]);
         this.avviaGiostra();
       },
       // Se il server non risponde resta la foto fissa dello sfondo: la home si vede lo stesso.
@@ -613,7 +619,10 @@ export class HomePage implements OnDestroy, OnInit {
     // Fuori da Angular: è un timer che gira sempre, non deve far ridisegnare tutta la pagina.
     this.zone.runOutsideAngular(() => {
       this.giostra = setInterval(() => {
-        this.zone.run(() => this.sfondoAttuale = (this.sfondoAttuale + 1) % this.sfondi.length);
+        this.zone.run(() => {
+          this.sfondoAttuale = (this.sfondoAttuale + 1) % this.sfondi.length;
+          this.scaricate.add((this.sfondoAttuale + 1) % this.sfondi.length);
+        });
       }, this.sfondiService.durata);
     });
   }

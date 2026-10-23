@@ -38,7 +38,7 @@
       <div class="eroe__foto" aria-hidden="true">
         @for (foto of sfondi; track foto; let i = $index) {
           <div class="eroe__scatto" [class.eroe__scatto--visibile]="i === sfondoAttuale"
-               [style.background-image]="'url(' + foto + ')'"></div>
+               [style.background-image]="scaricate.has(i) ? 'url(' + foto + ')' : null"></div>
         }
       </div>
     }
