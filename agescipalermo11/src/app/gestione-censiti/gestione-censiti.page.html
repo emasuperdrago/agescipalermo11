@@ -244,7 +244,7 @@
                   <td>{{ u.nome }}</td>
                   <td>{{ dataItaliana(u.data_nascita) }}</td>
                   <td>{{ u.eta ?? '—' }}</td>
-                  <td>{{ etichettaRuolo(u.ruolo) }}</td>
+                  <td>{{ etichettaRuolo(u) }}</td>
                   <td>{{ brancaScritta(u.branca) }}</td>
                   @if (tipo === 'capi') { <td>{{ nomeFoca(u.livello_foca) }}</td> }
                   <td>

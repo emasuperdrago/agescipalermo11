@@ -48,6 +48,8 @@ export class GestioneCapiPage implements OnInit {
   capi: CapoElenco[] = [];
   /** Vero solo per i capigruppo: a loro compaiono i pulsanti per gestirla. */
   puoGestire = false;
+  /** Chi gestisce il sito: l'unico che vede e cambia chi è admin. */
+  gestore = false;
   caricamento = true;
   errore = '';
   ricerca = '';
@@ -123,6 +125,7 @@ export class GestioneCapiPage implements OnInit {
       next: dati => {
         this.capi = dati.capi;
         this.puoGestire = dati.puoGestire;
+        this.gestore = dati.gestore ?? false;
         this.caricamento = false;
         this.errore = '';
       },
@@ -164,11 +167,21 @@ export class GestioneCapiPage implements OnInit {
   /** Capogruppo è solo il nome nell'elenco: i permessi restano quelli di admin. */
   async cambiaCapogruppo(capo: CapoElenco) {
     const diventa = !capo.capogruppo;
+    if (!this.gestore && !diventa && capo.id === this.ioSono) {
+      this.avvisa('Non puoi toglierti da solo da capogruppo.');
+      return;
+    }
+    // Per chi gestisce il sito capogruppo è solo il nome; per gli altri porta con sé i permessi.
+    const message = this.gestore
+      ? (diventa
+        ? `${capo.nome} ${capo.cognome} comparirà come capogruppo nell'elenco dei capi.`
+        : `${capo.nome} ${capo.cognome} non comparirà più come capogruppo, ma resta admin con gli stessi permessi.`)
+      : (diventa
+        ? `${capo.nome} ${capo.cognome} potrà aprire l'anno, caricare i capi e vedere la cassa del gruppo.`
+        : `${capo.nome} ${capo.cognome} tornerà a essere un capo di branca.`);
     const alert = await this.alertCtrl.create({
       header: diventa ? 'Mettere capogruppo?' : 'Togliere da capogruppo?',
-      message: diventa
-        ? `${capo.nome} ${capo.cognome} comparirà come capogruppo nell'elenco dei capi.`
-        : `${capo.nome} ${capo.cognome} non comparirà più come capogruppo, ma resta admin con gli stessi permessi.`,
+      message,
       buttons: [
         { text: 'Annulla', role: 'cancel' },
         { text: 'Conferma', handler: () => { this.salva(capo, { capogruppo: diventa }); } },

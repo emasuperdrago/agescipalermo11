@@ -149,7 +149,7 @@ export class ZonaCapiService {
 
   /** L'elenco della comunità capi, con il permesso di gestirla (vero per i capigruppo). */
   capi() {
-    return this.http.get<{ capi: CapoElenco[]; puoGestire: boolean }>(`${apiUrl()}/capi`);
+    return this.http.get<{ capi: CapoElenco[]; puoGestire: boolean; gestore: boolean }>(`${apiUrl()}/capi`);
   }
 
   aggiornaCapo(id: number, dati: DatiCapo) {

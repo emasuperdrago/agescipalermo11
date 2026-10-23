@@ -393,10 +393,13 @@ async function caricaUtente(req, res, next) {
     if (!dati?.id) return next();
     try {
         const utente = await dbGet(
-            'SELECT id, codice_censimento, ruolo, sessioni_valide_da FROM utenti WHERE id = ?', [dati.id]);
+            'SELECT id, codice_censimento, ruolo, gestore_sito, sessioni_valide_da FROM utenti WHERE id = ?', [dati.id]);
         if (!utente) return next();
         if (utente.sessioni_valide_da && (dati.iat ?? 0) < utente.sessioni_valide_da) return next();
-        req.utenteCorrente = { id: utente.id, codice_censimento: utente.codice_censimento, ruolo: utente.ruolo };
+        req.utenteCorrente = {
+            id: utente.id, codice_censimento: utente.codice_censimento, ruolo: utente.ruolo,
+            gestore: utente.gestore_sito === 1,
+        };
     } catch (err) {
         console.error('Controllo della sessione:', err.message);
     }
@@ -423,6 +426,20 @@ function verificaRuolo(...ruoli) {
 /** Chi fa la richiesta, se ha un accesso valido; altrimenti null (senza bloccare). Vedi caricaUtente. */
 function utenteDaToken(req) {
     return req.utenteCorrente?.id ? req.utenteCorrente : null;
+}
+
+/** Vero per chi gestisce il sito: l'unico che vede chi è admin (vedi utenti.gestore_sito). */
+function eGestore(req) {
+    return !!req.utenteCorrente?.gestore;
+}
+
+/**
+ * Il ruolo di un capo come lo vede chi chiede. Gli admin che non sono capogruppo, per tutti
+ * tranne chi gestisce il sito, sono capi come gli altri: "admin" lo vede solo lui.
+ */
+function ruoloMostrato(u, gestore) {
+    if (u.ruolo !== 'admin' || gestore) return u.ruolo;
+    return u.capogruppo === 1 ? 'admin' : 'capo';
 }
 
 /** Ruolo di chi fa la richiesta, preso dal database; null se non ha un accesso valido. */
@@ -1149,7 +1166,7 @@ app.get('/api/utenti', verificaRuolo('capo', 'admin'), async (req, res) => {
                 : (capogruppo ? '' : 'WHERE branca = ?');
         const valori = dove.includes('?') ? [branca] : [];
 
-        const sql = `SELECT id, codice_censimento, nome, cognome, eta, data_nascita, ruolo, branca,
+        const sql = `SELECT id, codice_censimento, nome, cognome, eta, data_nascita, ruolo, capogruppo, branca,
                             livello_foca, (password IS NOT NULL)::int AS attivato
                      FROM utenti ${dove}
                      ORDER BY lower(cognome), lower(nome)`;
@@ -1158,6 +1175,7 @@ app.get('/api/utenti', verificaRuolo('capo', 'admin'), async (req, res) => {
             // L'età si ricalcola qui a ogni richiesta: al compleanno cambia da sola.
             utenti: righe.map(u => ({
                 ...u, eta: etaDiOggi(u), attivato: u.attivato === 1,
+                ruolo: ruoloMostrato(u, eGestore(req)), capogruppo: u.ruolo === 'admin' && u.capogruppo === 1,
                 // Il livello Fo.Ca. è dei capi: per i ragazzi non c'è.
                 livello_foca: u.ruolo === 'ragazzo' ? null : (u.livello_foca || null),
             })),
@@ -4542,15 +4560,21 @@ app.delete('/api/cassa/movimenti/:id', verificaUtenteCensito, async (req, res) =
 app.get('/api/capi', async (req, res) => {
     try {
         const capogruppo = utenteDaToken(req)?.ruolo === 'admin';
+        const gestore = eGestore(req);
         const capi = await dbAll(`SELECT id, codice_censimento, nome, cognome, eta, data_nascita, branca, ruolo,
-                                         capogruppo, telefono, email, livello_foca, (password IS NOT NULL)::int AS attivato
+                                         capogruppo, gestore_sito, telefono, email, livello_foca,
+                                         (password IS NOT NULL)::int AS attivato
                                   FROM utenti WHERE ruolo IN ('capo', 'admin')
                                   ORDER BY lower(cognome), lower(nome)`);
         res.json({
             puoGestire: capogruppo,
+            // Solo chi gestisce il sito vede chi è admin e lo cambia.
+            gestore,
             capi: capi.map(c => ({
-                id: c.id, nome: c.nome, cognome: c.cognome, branca: c.branca, ruolo: c.ruolo,
+                id: c.id, nome: c.nome, cognome: c.cognome, branca: c.branca, ruolo: ruoloMostrato(c, gestore),
                 capogruppo: c.ruolo === 'admin' && c.capogruppo === 1,
+                // Il suo account non lo cambia nessun altro: agli altri i comandi non compaiono.
+                protetto: capogruppo && !gestore && c.gestore_sito === 1,
                 // Contatti, codice censimento, età e "non è ancora entrato": solo al capogruppo.
                 telefono: capogruppo ? c.telefono : null,
                 email: capogruppo ? c.email : null,
@@ -4571,6 +4595,9 @@ app.put('/api/capi/:id', verificaRuolo('admin'), async (req, res) => {
     try {
         const capo = await dbGet(`SELECT * FROM utenti WHERE id = ? AND ruolo IN ('capo', 'admin')`, [req.params.id]);
         if (!capo) return res.status(404).json({ error: "Capo non trovato." });
+        const gestore = eGestore(req);
+        if (capo.gestore_sito === 1 && !gestore)
+            return res.status(403).json({ error: "Questo account lo cambia solo chi gestisce il sito." });
         const body = req.body || {};
         const nome = testo(body.nome, MAX_NOME) || capo.nome;
         const cognome = testo(body.cognome, MAX_NOME) || capo.cognome;
@@ -4579,13 +4606,23 @@ app.put('/api/capi/:id', verificaRuolo('admin'), async (req, res) => {
             return res.status(400).json({ error: "La data di nascita va scritta come AAAA-MM-GG." });
         // branca vuota = a disposizione del gruppo.
         const branca = BRANCHE.includes(body.branca) ? body.branca : null;
-        const ruolo = body.ruolo === 'admin' || body.ruolo === 'capo' ? body.ruolo : capo.ruolo;
-        // Un admin non può togliersi da solo il ruolo: il gruppo potrebbe restare senza nessuno.
+        // Chi gestisce il sito cambia admin e capogruppo separatamente. Per gli altri capogruppo
+        // esiste solo "capogruppo": metterlo dà anche i permessi, toglierlo li toglie. Se il valore
+        // non cambia, il ruolo resta com'è (un admin che per loro è un capo qualsiasi resta admin).
+        let ruolo = capo.ruolo;
+        let capogruppo = capo.ruolo === 'admin' && capo.capogruppo === 1;
+        if (gestore) {
+            if (body.ruolo === 'admin' || body.ruolo === 'capo') ruolo = body.ruolo;
+            capogruppo = ruolo === 'admin' && (typeof body.capogruppo === 'boolean' ? body.capogruppo : capogruppo);
+        } else if (typeof body.capogruppo === 'boolean' && body.capogruppo !== capogruppo) {
+            capogruppo = body.capogruppo;
+            ruolo = capogruppo ? 'admin' : 'capo';
+        }
+        // Nessuno si toglie da solo i permessi: il gruppo potrebbe restare senza nessuno.
         if (capo.id === req.user.id && ruolo !== 'admin')
-            return res.status(400).json({ error: "Non puoi rimuovere a te stesso il ruolo di admin." });
-        // Capogruppo si può essere solo da admin: togliendo admin si toglie anche quello.
-        const capogruppo = ruolo === 'admin'
-            && (typeof body.capogruppo === 'boolean' ? body.capogruppo : capo.capogruppo === 1);
+            return res.status(400).json({ error: gestore
+                ? "Non puoi rimuovere a te stesso il ruolo di admin."
+                : "Non puoi toglierti da solo da capogruppo." });
 
         // Se l'email cambia da qui, vale questa: il file del censimento non la tocca più.
         const email = testo(body.email, 120).toLowerCase() || null;
@@ -4598,7 +4635,7 @@ app.put('/api/capi/:id', verificaRuolo('admin'), async (req, res) => {
             [nome, cognome, cripta(dataNascita || capo.data_nascita || null), branca, ruolo, capogruppo ? 1 : 0,
              cripta(testo(body.telefono, 20) || null), salvata.email, salvata.impronta, emailCambiata ? 1 : 0, capo.id]);
         const aggiornato = await dbGet(`SELECT * FROM utenti WHERE id = ?`, [capo.id]);
-        res.json({ capo: utentePubblico(aggiornato) });
+        res.json({ capo: { ...utentePubblico(aggiornato), ruolo: ruoloMostrato(aggiornato, gestore) } });
     } catch (err) {
         erroreInterno(res, err);
     }
@@ -4608,6 +4645,9 @@ app.delete('/api/capi/:id', verificaRuolo('admin'), async (req, res) => {
     try {
         if (Number(req.params.id) === req.user.id)
             return res.status(400).json({ error: "Non puoi eliminare te stesso." });
+        const capo = await dbGet(`SELECT gestore_sito FROM utenti WHERE id = ?`, [req.params.id]);
+        if (capo?.gestore_sito === 1 && !eGestore(req))
+            return res.status(403).json({ error: "Questo account lo cambia solo chi gestisce il sito." });
         const esito = await dbRun(`DELETE FROM utenti WHERE id = ? AND ruolo IN ('capo', 'admin')`, [req.params.id]);
         if (esito.changes === 0) return res.status(404).json({ error: "Capo non trovato." });
         res.json({ message: "Capo rimosso dalla comunità capi." });

@@ -16,7 +16,7 @@ import { nomeBranca, stiliBranca } from '../services/posti';
 import { Branca, EsitoImport, UtenteElenco } from '../../types/models';
 
 const ETICHETTE_RUOLO: Record<UtenteElenco['ruolo'], string> = {
-  ragazzo: 'Ragazzo/a', capo: 'Capo', admin: 'Admin',
+  ragazzo: 'Ragazzo/a', capo: 'Capo', admin: 'Capogruppo',
 };
 
 /**
@@ -128,8 +128,9 @@ export class GestioneCensitiPage implements OnInit {
     return b ? nomeBranca(b) : '—';
   }
 
-  etichettaRuolo(r: UtenteElenco['ruolo']): string {
-    return ETICHETTE_RUOLO[r];
+  /** Un admin che non è capogruppo (lo vede così solo chi gestisce il sito) si chiama admin. */
+  etichettaRuolo(u: UtenteElenco): string {
+    return u.ruolo === 'admin' && !u.capogruppo ? 'Admin' : ETICHETTE_RUOLO[u.ruolo];
   }
 
   async scegliFile(event: Event) {

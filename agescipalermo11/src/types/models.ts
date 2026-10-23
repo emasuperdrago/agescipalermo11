@@ -194,6 +194,8 @@ export interface UtenteElenco {
   cognome: string;
   eta: number | null;
   ruolo: 'capo' | 'admin' | 'ragazzo';
+  /** Per gli admin: se compare anche come capogruppo. */
+  capogruppo?: boolean;
   branca: Branca | null;
   data_nascita: string | null;
   /** true quando l'utente ha già creato la password con il primo accesso. */
@@ -667,6 +669,8 @@ export interface CapoElenco {
   ruolo: 'capo' | 'admin';
   /** Compare come capogruppo nell'elenco (solo per gli admin, che ne hanno i permessi). */
   capogruppo: boolean;
+  /** L'account di chi gestisce il sito: per gli altri capogruppo non ha comandi. */
+  protetto: boolean;
   telefono: string | null;
   email: string | null;
   attivato: boolean;

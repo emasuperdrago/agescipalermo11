@@ -41,6 +41,9 @@ const TABELLE = [
     // "Capogruppo" è il nome che compare nell'elenco dei capi; i permessi li dà il ruolo admin.
     // Un admin può esserlo o no (vale solo per gli admin).
     `ALTER TABLE utenti ADD COLUMN IF NOT EXISTS capogruppo SMALLINT NOT NULL DEFAULT 0`,
+    // Chi gestisce il sito: l'unico che vede chi è admin e lo cambia; il suo account non lo
+    // tocca nessun altro. Si mette dal database (non sta nel codice, che è pubblico).
+    `ALTER TABLE utenti ADD COLUMN IF NOT EXISTS gestore_sito SMALLINT NOT NULL DEFAULT 0`,
 
     `CREATE TABLE IF NOT EXISTS anno_scout (
         id SERIAL PRIMARY KEY,
