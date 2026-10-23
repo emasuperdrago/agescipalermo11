@@ -342,21 +342,9 @@
 }
 
 // ---------- Telefono: le righe si vedono tutte ----------
-// Con gli accordi le righe non possono andare a capo (gli accordi non starebbero più sopra le
-// parole): il carattere si rimpicciolisce quanto basta perché la riga più lunga stia nello
-// schermo. Il carattere è a larghezza fissa (circa 0,6 volte la sua altezza): dalla larghezza
-// del foglio e dai caratteri della riga più lunga (--caratteri) si ricava la misura giusta.
-// Senza accordi invece le righe lunghe vanno a capo e il testo resta grande, da leggere bene.
-.foglio { container-type: inline-size; }
-
+// La misura del carattere la calcola la pagina (misuraTesto), perché la riga più lunga stia
+// tutta nello schermo. Solo se anche alla misura più piccola non ci sta, una riga di sole
+// parole va a capo (quelle con gli accordi si fanno scorrere di lato, come sempre).
 @media (max-width: 767px) {
-  .testo {
-    font-size: clamp(8.5px, calc((100cqi - 28px) / (var(--caratteri, 40) * .61)), .84rem);
-  }
-
-  .testo--parole {
-    font-size: .84rem;
-
-    .riga { white-space: pre-wrap; }
-  }
+  .testo--parole .riga { white-space: pre-wrap; }
 }

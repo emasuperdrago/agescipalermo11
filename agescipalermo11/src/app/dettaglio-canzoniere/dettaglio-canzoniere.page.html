@@ -107,7 +107,7 @@
             }
           </section>
         }
-        <div class="testo" [class.testo--parole]="soloParole" [style.--caratteri]="caratteriRigaPiuLunga">
+        <div class="testo" #testo [class.testo--parole]="soloParole" [style.font-size.px]="misuraTesto">
           @for (r of righe; track $index) {
             <pre class="riga" [class.riga--accordi]="r.accordi">@for (p of r.pezzi; track $index) {<span
               [class.grassetto]="p.grassetto">{{ p.testo }}</span>}</pre>

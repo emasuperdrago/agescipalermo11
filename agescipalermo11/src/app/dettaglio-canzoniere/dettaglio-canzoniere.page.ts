@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -35,7 +35,7 @@ const MAX_CAPOTASTO = 7;
     IonContent,
   ],
 })
-export class DettaglioCanzonierePage implements OnInit {
+export class DettaglioCanzonierePage implements OnInit, OnDestroy {
   readonly icone = {
     indietro: arrowBackOutline, modifica: pencilOutline, elimina: trashOutline, canto: musicalNotesOutline,
     giu: removeOutline, su: addOutline, originale: refreshOutline, pdf: downloadOutline,
@@ -107,9 +107,53 @@ export class DettaglioCanzonierePage implements OnInit {
       : [];
   }
 
+  // ---------- Da telefono: ogni riga sta tutta nello schermo ----------
+  // Le righe non vanno a capo (gli accordi resterebbero sopra le parole sbagliate, e un verso
+  // spezzato si legge male): il carattere si rimpicciolisce quanto basta perché la riga più
+  // lunga stia nel foglio. La larghezza del foglio si misura sullo schermo vero.
+
+  private zone = inject(NgZone);
+  private osservatore?: ResizeObserver;
+  /** Spazio per il testo dentro il foglio, in pixel (0 = non ancora misurato). */
+  private larghezzaTesto = 0;
+  /** Quanto è largo un carattere rispetto alla sua altezza (il carattere è a larghezza fissa). */
+  private proporzione = 0.62;
+
+  /** Il foglio col testo compare solo dopo il caricamento: si misura quando c'è. */
+  @ViewChild('testo') set elementoTesto(el: ElementRef<HTMLElement> | undefined) {
+    this.osservatore?.disconnect();
+    if (!el) return;
+    const nodo = el.nativeElement;
+    this.proporzione = proporzioneCarattere(nodo);
+    const misura = () => {
+      const stile = getComputedStyle(nodo);
+      const larghezza = nodo.clientWidth - parseFloat(stile.paddingLeft) - parseFloat(stile.paddingRight);
+      if (Math.abs(larghezza - this.larghezzaTesto) > 0.5) this.zone.run(() => this.larghezzaTesto = larghezza);
+    };
+    // Subito (appena il canto è sulla pagina) e poi a ogni cambio di larghezza (telefono girato).
+    setTimeout(misura);
+    this.osservatore = new ResizeObserver(misura);
+    this.osservatore.observe(nodo);
+  }
+
+  ngOnDestroy() {
+    this.osservatore?.disconnect();
+  }
+
+  /** Da telefono, la misura del carattere in pixel; null = quella di sempre (computer, tablet). */
+  get misuraTesto(): number | null {
+    if (!this.larghezzaTesto || window.innerWidth >= 768) return null;
+    const normale = 13.4;
+    // Sotto questa misura non si legge più: le righe ancora troppo lunghe vanno a capo.
+    const minima = 8.5;
+    const giusta = this.larghezzaTesto / (this.caratteriRigaPiuLunga * this.proporzione);
+    return Math.max(minima, Math.min(normale, Math.floor(giusta * 10) / 10));
+  }
+
   /** Quanti caratteri ha la riga più lunga: da telefono il testo si rimpicciolisce per starci tutto. */
   get caratteriRigaPiuLunga(): number {
-    return this.righe.reduce((massimo, r) => Math.max(massimo, r.testo.replace(/\t/g, '    ').length), 20);
+    // Gli spazi in fondo alla riga non contano: non c'è niente da vedere.
+    return this.righe.reduce((massimo, r) => Math.max(massimo, r.testo.replace(/\t/g, '    ').trimEnd().length), 20);
   }
 
   /** Senza accordi da tenere allineati, le righe troppo lunghe possono andare a capo. */
@@ -270,4 +314,16 @@ export class DettaglioCanzonierePage implements OnInit {
     const toast = await this.toastCtrl.create({ message: messaggio, duration: 1800, position: 'top' });
     await toast.present();
   }
+}
+
+/**
+ * Quanto è largo un carattere del testo rispetto alla sua altezza, misurato col carattere vero
+ * (cambia un po' da telefono a telefono). In più c'è il poco spazio tra le lettere degli accordi.
+ */
+function proporzioneCarattere(el: HTMLElement): number {
+  const tela = document.createElement('canvas').getContext('2d');
+  if (!tela) return 0.62;
+  tela.font = `700 100px ${getComputedStyle(el).fontFamily}`;
+  const misurata = tela.measureText('M'.repeat(10)).width / 1000;
+  return misurata > 0.3 && misurata < 1 ? misurata + 0.02 : 0.62;
 }
