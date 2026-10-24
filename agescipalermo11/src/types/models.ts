@@ -679,6 +679,16 @@ export interface CapoElenco {
 }
 
 /** Dati che il capogruppo può cambiare di un capo. */
+/** Un capo aggiunto a mano dalla comunità capi. */
+export interface NuovoCapo {
+  nome: string;
+  cognome: string;
+  codice_censimento: string;
+  /** Facoltativa: se c'è, è quella con cui farà il primo accesso. */
+  email: string;
+  branca: Branca | null;
+}
+
 export interface DatiCapo {
   nome: string;
   cognome: string;

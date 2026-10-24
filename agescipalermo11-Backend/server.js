@@ -4590,6 +4590,40 @@ app.get('/api/capi', async (req, res) => {
     }
 });
 
+// Un capo aggiunto a mano dalla comunità capi (senza passare dal file del censimento).
+// Lo aggiungono i capigruppo; entra come capo, poi gli si può dare un altro ruolo dall'elenco.
+app.post('/api/capi', verificaRuolo('admin'), async (req, res) => {
+    try {
+        const body = req.body || {};
+        const nome = testo(body.nome, MAX_NOME);
+        const cognome = testo(body.cognome, MAX_NOME);
+        const codice = leggiCodiceCensimento(body.codice_censimento);
+        const emailScritta = String(body.email ?? '').trim();
+        const email = emailScritta ? leggiEmailImport(emailScritta) : null;
+        const branca = BRANCHE.includes(body.branca) ? body.branca : null;
+        if (!nome || !cognome) return res.status(400).json({ error: "Scrivi nome e cognome." });
+        if (!codice) return res.status(400).json({ error: "Il codice censimento deve contenere solo cifre." });
+        if (emailScritta && !email) return res.status(400).json({ error: "L'email non è scritta bene." });
+
+        const gia = await dbGet('SELECT id, ruolo FROM utenti WHERE codice_impronta = ?', [improntaCodice(codice)]);
+        if (gia) return res.status(409).json({ error: gia.ruolo === 'ragazzo'
+            ? "Questo codice è già di un ragazzo: si cambia dalla sua branca."
+            : "Questo capo c'è già nell'elenco." });
+        if (email && await dbGet('SELECT id FROM utenti WHERE email_impronta = ?', [improntaEmail(email)]))
+            return res.status(409).json({ error: "Questa email è già usata da un altro account." });
+
+        const salvato = codiceDaSalvare(codice);
+        const salvata = emailDaSalvare(email);
+        const esito = await dbRun(`INSERT INTO utenti (codice_censimento, codice_impronta, nome, cognome, ruolo, branca,
+                                   email, email_impronta, email_a_mano) VALUES (?, ?, ?, ?, 'capo', ?, ?, ?, ?)`,
+            [salvato.codice, salvato.impronta, nome, cognome, branca, salvata.email, salvata.impronta, email ? 1 : 0]);
+        const nuovo = await dbGet('SELECT * FROM utenti WHERE id = ?', [esito.lastID]);
+        res.status(201).json({ capo: utentePubblico(nuovo) });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
 // Cambio di branca di un capo (anche "a disposizione del gruppo", cioè senza branca) e suoi dati.
 app.put('/api/capi/:id', verificaRuolo('admin'), async (req, res) => {
     try {

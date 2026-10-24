@@ -3,11 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { map } from 'rxjs';
 import { apiUrl } from './api';
 import { BRANCHE_POSTO } from './posti';
-import {
-  AllegatoScheda, AnnoScout, AttivitaQuota, Branca, CampiScheda, CapoElenco, CompleannoOggi, DatiCapo, DatiMovimento,
-  DatiRagazzo, EsitoApertura,
-  Movimento, NomeCassa, NotificaContenuto, QuotaRagazzo, RagazzoElenco, RiepilogoCassa, SchedaRagazzo, TabellaRagazzi
-} from '../../types/models';
+import { AllegatoScheda, AnnoScout, AttivitaQuota, Branca, CampiScheda, CapoElenco, CompleannoOggi, DatiCapo, DatiMovimento, DatiRagazzo, EsitoApertura, Movimento, NomeCassa, NotificaContenuto, QuotaRagazzo, RagazzoElenco, RiepilogoCassa, SchedaRagazzo, TabellaRagazzi, NuovoCapo } from '../../types/models';
 
 /** Le tre branche vere, con i loro colori: la stessa lista della mappa, senza "gruppo". */
 export const BRANCHE_VERE = BRANCHE_POSTO
@@ -150,6 +146,11 @@ export class ZonaCapiService {
   /** L'elenco della comunità capi, con il permesso di gestirla (vero per i capigruppo). */
   capi() {
     return this.http.get<{ capi: CapoElenco[]; puoGestire: boolean; gestore: boolean }>(`${apiUrl()}/capi`);
+  }
+
+  /** Un capo aggiunto a mano (senza il file del censimento): entra come capo. */
+  aggiungiCapo(dati: NuovoCapo) {
+    return this.http.post<{ capo: CapoElenco }>(`${apiUrl()}/capi`, dati).pipe(map(r => r.capo));
   }
 
   aggiornaCapo(id: number, dati: DatiCapo) {
