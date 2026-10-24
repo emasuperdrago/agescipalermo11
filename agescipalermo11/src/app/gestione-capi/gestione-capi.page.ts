@@ -7,10 +7,12 @@ import {
   IonRouterLinkWithHref, IonContent, ToastController
 } from '@ionic/angular/standalone';
 import {
-  arrowBackOutline, callOutline, mailOutline, shieldCheckmarkOutline, swapHorizontalOutline, trashOutline
+  arrowBackOutline, callOutline, mailOutline, pencilOutline, shieldCheckmarkOutline, swapHorizontalOutline,
+  trashOutline
 } from 'ionicons/icons';
 import { BarraInferioreComponent } from '../components/barra-inferiore/barra-inferiore.component';
 import { AggiungiCapoComponent } from '../components/aggiungi-capo/aggiungi-capo.component';
+import { ModificaCapoComponent } from '../components/modifica-capo/modifica-capo.component';
 import { BRANCHE_VERE, ZonaCapiService } from '../services/zona-capi';
 import { nomeBranca, stiliBranca } from '../services/posti';
 import { AuthService } from '../services/auth';
@@ -29,12 +31,13 @@ import { Branca, CapoElenco } from '../../types/models';
   imports: [
     FormsModule, RouterLink, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonRouterLink,
     IonRouterLinkWithHref, IonContent, BarraInferioreComponent, AggiungiCapoComponent,
+    ModificaCapoComponent,
   ],
 })
 export class GestioneCapiPage implements OnInit {
   readonly icone = {
     indietro: arrowBackOutline, capi: shieldCheckmarkOutline, sposta: swapHorizontalOutline,
-    elimina: trashOutline, telefono: callOutline, email: mailOutline,
+    elimina: trashOutline, telefono: callOutline, email: mailOutline, modifica: pencilOutline,
   };
   readonly branche = BRANCHE_VERE;
   readonly nomeBranca = nomeBranca;
@@ -51,6 +54,8 @@ export class GestioneCapiPage implements OnInit {
   puoGestire = false;
   /** Chi gestisce il sito: l'unico che vede e cambia chi è admin. */
   gestore = false;
+  /** Il capo di cui si stanno cambiando i dati (la matita), oppure null. */
+  inModifica: number | null = null;
   caricamento = true;
   errore = '';
   ricerca = '';
@@ -137,6 +142,17 @@ export class GestioneCapiPage implements OnInit {
             : 'Impossibile caricare la comunità capi. Riprova tra poco.';
       },
     });
+  }
+
+  apriModifica(capo: CapoElenco) {
+    this.inModifica = this.inModifica === capo.id ? null : capo.id;
+  }
+
+  chiudiModifica(salvato: boolean) {
+    this.inModifica = null;
+    if (!salvato) return;
+    this.avvisa('Dati salvati.');
+    this.carica();
   }
 
   /** Sposta un capo in un'altra branca, o lo mette a disposizione del gruppo (branca vuota). */

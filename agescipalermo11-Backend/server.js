@@ -2845,13 +2845,31 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, copertina 
         } else paginaNuova();
     };
 
+    // Con gli accordi nessuna riga può andare a capo (gli accordi finirebbero sopra le parole
+    // sbagliate): conta solo la riga più lunga. Le sole parole invece possono andare a capo.
+    const entraInLarghezza = (righe) => !conAccordi || righe.every(r => !r.troppoLunga);
+    // Nel libretto tutti i canti hanno la stessa misura: la più grande con cui ognuno sta nella sua
+    // colonna (si scende fino a un quarto più piccolo). Chi non ci sta nemmeno così va a tutta
+    // larghezza e non la fa scendere per gli altri.
+    const minima = dimensioneBase * 0.75;
+    const larghezzaPrevista = due ? larghezzaColonna : larghezza;
+    const misuraDi = (c) => {
+        for (let d = dimensioneBase; d >= minima; d -= 0.5)
+            if (entraInLarghezza(righeDi(c, d, larghezzaPrevista))) return d;
+        return null;
+    };
+    const misure = voci.length > 1 ? voci.map(v => misuraDi(v.canto)).filter(d => d !== null) : [];
+    const misuraComune = misure.length ? Math.min(...misure) : null;
+
     /** Le righe del canto per questa larghezza: si stringe (fino a un quarto) se di poco non ci sta. */
     const preparaCanto = (c, titoletto, tono, larghezza, altezzaUtile) => {
         const intestazione = altezzaIntestazione(c, titoletto, tono, larghezza);
         const misura = (righe) => intestazione + righe.reduce((somma, r) => somma + r.altezza, 0) + 2;
-        // Con gli accordi nessuna riga può andare a capo (gli accordi finirebbero sopra le parole
-        // sbagliate): conta solo la riga più lunga. Le sole parole invece possono andare a capo.
-        const entraInLarghezza = (righe) => !conAccordi || righe.every(r => !r.troppoLunga);
+        if (misuraComune !== null) {
+            const righe = righeDi(c, misuraComune, larghezza);
+            return { righe, altezza: misura(righe), entra: entraInLarghezza(righe) };
+        }
+        // Un canto solo: si stringe quanto serve a lui (anche per non lasciare un "Rit." da solo).
         let righe = righeDi(c, dimensioneBase, larghezza);
         for (let d = dimensioneBase - 0.5; (!entraInLarghezza(righe) || misura(righe) > altezzaUtile)
             && d >= dimensioneBase * 0.75; d -= 0.5)
@@ -4788,15 +4806,23 @@ app.put('/api/capi/:id', verificaRuolo('admin'), async (req, res) => {
                 : "Non puoi toglierti da solo da capogruppo." });
 
         // Se l'email cambia da qui, vale questa: il file del censimento non la tocca più.
-        const email = testo(body.email, 120).toLowerCase() || null;
+        const emailScritta = testo(body.email, 120).toLowerCase();
+        const email = emailScritta ? leggiEmailImport(emailScritta) : null;
+        if (emailScritta && !email) return res.status(400).json({ error: "L'email non è scritta bene." });
         const emailCambiata = email !== (capo.email || null);
+        if (email && emailCambiata
+            && await dbGet('SELECT id FROM utenti WHERE email_impronta = ? AND id <> ?', [improntaEmail(email), capo.id]))
+            return res.status(409).json({ error: "Questa email è già usata da un altro account." });
+        const telefono = testo(body.telefono, 20);
+        if (telefono && !/^[+\d][\d\s./-]{4,19}$/.test(telefono))
+            return res.status(400).json({ error: "Il telefono può avere solo cifre, spazi e il + davanti." });
         const salvata = emailDaSalvare(email);
         await dbRun(`UPDATE utenti SET nome = ?, cognome = ?, data_nascita = ?, branca = ?, ruolo = ?, capogruppo = ?,
                      telefono = ?, email = ?, email_impronta = ?,
                      email_a_mano = CASE WHEN ? = 1 THEN 1 ELSE email_a_mano END
                      WHERE id = ?`,
             [nome, cognome, cripta(dataNascita || capo.data_nascita || null), branca, ruolo, capogruppo ? 1 : 0,
-             cripta(testo(body.telefono, 20) || null), salvata.email, salvata.impronta, emailCambiata ? 1 : 0, capo.id]);
+             cripta(telefono || null), salvata.email, salvata.impronta, emailCambiata ? 1 : 0, capo.id]);
         const aggiornato = await dbGet(`SELECT * FROM utenti WHERE id = ?`, [capo.id]);
         res.json({ capo: { ...utentePubblico(aggiornato), ruolo: ruoloMostrato(aggiornato, gestore) } });
     } catch (err) {

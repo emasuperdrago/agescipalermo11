@@ -113,6 +113,10 @@
                     }
                   </div>
                   @if (puoGestire && !c.protetto) {
+                    <button type="button" class="icona" (click)="apriModifica(c)" [class.icona--attiva]="inModifica === c.id"
+                            aria-label="Cambia i dati del capo" title="Cambia i dati">
+                      <ion-icon [icon]="icone.modifica"></ion-icon>
+                    </button>
                     <button type="button" class="icona icona--elimina" (click)="confermaElimina(c)"
                             aria-label="Rimuovi dalla comunità capi" title="Rimuovi">
                       <ion-icon [icon]="icone.elimina"></ion-icon>
@@ -120,7 +124,12 @@
                   }
                 </div>
 
-                @if (puoGestire && (c.telefono || c.email)) {
+                <!-- La matita: i dati del capo, al posto dei contatti e dei pulsanti finché si cambiano. -->
+                @if (inModifica === c.id) {
+                  <app-modifica-capo [capo]="c" (fatto)="chiudiModifica($event)" />
+                }
+
+                @if (inModifica !== c.id && puoGestire && (c.telefono || c.email)) {
                   <div class="capo__contatti">
                     @if (c.telefono) {
                       <a class="contatto" [href]="'tel:' + c.telefono">
@@ -136,7 +145,7 @@
                 }
 
                 <!-- Lo switch della branca: basta toccare quella nuova. Solo ai capigruppo. -->
-                @if (puoGestire && !c.protetto) {
+                @if (inModifica !== c.id && puoGestire && !c.protetto) {
                 <div class="switch" role="group" [attr.aria-label]="'Branca di ' + c.nome">
                   @for (b of branche; track b.valore) {
                     <button type="button" class="pasticca" [style]="stiliBranca(b.valore)"

@@ -1,0 +1,39 @@
+<!-- I dati di un capo: si aprono con la matita accanto al suo nome. -->
+<form class="nuovo-capo" (ngSubmit)="salva()">
+  <div class="nuovo-capo__campi">
+    <label>Nome
+      <input name="nome" [(ngModel)]="dati.nome" autocomplete="off" maxlength="60" required />
+    </label>
+    <label>Cognome
+      <input name="cognome" [(ngModel)]="dati.cognome" autocomplete="off" maxlength="60" required />
+    </label>
+    <label>Email
+      <input name="email" type="email" [(ngModel)]="dati.email" autocomplete="off" maxlength="120" />
+    </label>
+    <label>Telefono
+      <input name="telefono" type="tel" [(ngModel)]="dati.telefono" autocomplete="off" maxlength="20" />
+    </label>
+    <label>Data di nascita
+      <app-selettore-data [valore]="dati.data_nascita" [anniIndietro]="80" [anniAvanti]="-16"
+                          (valoreChange)="dati.data_nascita = $event" />
+    </label>
+    <label>Branca
+      <select name="branca" [(ngModel)]="dati.branca">
+        <option [ngValue]="null">A disposizione del gruppo</option>
+        @for (b of branche; track b.valore) {
+          <option [ngValue]="b.valore">{{ b.nome }}</option>
+        }
+      </select>
+    </label>
+  </div>
+  <p class="nuovo-capo__aiuto">
+    Il codice censimento non si cambia da qui. Un'email cambiata a mano resta anche dopo i prossimi file del censimento.
+  </p>
+  @if (errore) { <p class="avviso avviso--errore">{{ errore }}</p> }
+  <div class="nuovo-capo__azioni">
+    <button type="button" class="mostra-tutti" (click)="fatto.emit(false)" [disabled]="salvando">Annulla</button>
+    <button type="submit" class="aggiungi-capo aggiungi-capo--conferma" [disabled]="salvando">
+      {{ salvando ? 'Salvo…' : 'Salva' }}
+    </button>
+  </div>
+</form>

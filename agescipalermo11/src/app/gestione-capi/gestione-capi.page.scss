@@ -358,10 +358,22 @@
 
   ion-icon { font-size: 1.05rem; }
 
+  &:hover { border-color: $viola-m; color: $viola; }
+
+  // La matita e il cestino uno accanto all'altro.
+  & + & { margin-left: 6px; }
+
+  // Matita accesa: si stanno cambiando i dati di questo capo.
+  &--attiva {
+    border-color: $viola-m;
+    background: rgba($viola-l, .14);
+    color: $viola;
+  }
+
   &--elimina {
     color: $red;
 
-    &:hover { border-color: $red; }
+    &:hover { border-color: $red; color: $red; }
   }
 }
 
