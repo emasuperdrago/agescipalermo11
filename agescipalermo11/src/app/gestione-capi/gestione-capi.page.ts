@@ -7,13 +7,14 @@ import {
   IonRouterLinkWithHref, IonContent, ToastController
 } from '@ionic/angular/standalone';
 import {
-  addOutline, arrowBackOutline, callOutline, mailOutline, shieldCheckmarkOutline, swapHorizontalOutline, trashOutline
+  arrowBackOutline, callOutline, mailOutline, shieldCheckmarkOutline, swapHorizontalOutline, trashOutline
 } from 'ionicons/icons';
 import { BarraInferioreComponent } from '../components/barra-inferiore/barra-inferiore.component';
+import { AggiungiCapoComponent } from '../components/aggiungi-capo/aggiungi-capo.component';
 import { BRANCHE_VERE, ZonaCapiService } from '../services/zona-capi';
 import { nomeBranca, stiliBranca } from '../services/posti';
 import { AuthService } from '../services/auth';
-import { Branca, CapoElenco, NuovoCapo } from '../../types/models';
+import { Branca, CapoElenco } from '../../types/models';
 
 /**
  * L'elenco dei capi. Per il capogruppo è la "Comunità capi" della sua zona, e da qui
@@ -27,13 +28,13 @@ import { Branca, CapoElenco, NuovoCapo } from '../../types/models';
   standalone: true,
   imports: [
     FormsModule, RouterLink, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonRouterLink,
-    IonRouterLinkWithHref, IonContent, BarraInferioreComponent,
+    IonRouterLinkWithHref, IonContent, BarraInferioreComponent, AggiungiCapoComponent,
   ],
 })
 export class GestioneCapiPage implements OnInit {
   readonly icone = {
     indietro: arrowBackOutline, capi: shieldCheckmarkOutline, sposta: swapHorizontalOutline,
-    elimina: trashOutline, telefono: callOutline, email: mailOutline, aggiungi: addOutline,
+    elimina: trashOutline, telefono: callOutline, email: mailOutline,
   };
   readonly branche = BRANCHE_VERE;
   readonly nomeBranca = nomeBranca;
@@ -53,12 +54,6 @@ export class GestioneCapiPage implements OnInit {
   caricamento = true;
   errore = '';
   ricerca = '';
-  /** Il riquadro per aggiungere un capo a mano (solo per chi gestisce i capi). */
-  aggiuntaAperta = false;
-  nuovo: NuovoCapo = capoVuoto();
-  aggiungendo = false;
-  erroreAggiunta = '';
-
   /** Riquadro scelto in alto: mostra solo quella branca. 'liberi' = chi è a disposizione. */
   filtro: Branca | 'liberi' | null = null;
 
@@ -140,40 +135,6 @@ export class GestioneCapiPage implements OnInit {
         this.errore = err.status === 403 ? 'Questa zona è dei capigruppo.'
           : err.status === 404 ? 'Il server non gestisce ancora questa parte: va riavviato il backend.'
             : 'Impossibile caricare la comunità capi. Riprova tra poco.';
-      },
-    });
-  }
-
-  // ---------- Aggiungere un capo a mano ----------
-
-  alternaAggiunta() {
-    this.aggiuntaAperta = !this.aggiuntaAperta;
-    this.erroreAggiunta = '';
-  }
-
-  aggiungi() {
-    const n = this.nuovo;
-    if (!n.nome.trim() || !n.cognome.trim()) {
-      this.erroreAggiunta = 'Scrivi nome e cognome.';
-      return;
-    }
-    if (!/^\d+$/.test(n.codice_censimento.trim())) {
-      this.erroreAggiunta = 'Il codice censimento deve contenere solo cifre.';
-      return;
-    }
-    this.aggiungendo = true;
-    this.erroreAggiunta = '';
-    this.zona.aggiungiCapo({ ...n, codice_censimento: n.codice_censimento.trim(), email: n.email.trim() }).subscribe({
-      next: () => {
-        this.aggiungendo = false;
-        this.avvisa(`${n.nome.trim()} ${n.cognome.trim()} è nella comunità capi.`);
-        this.nuovo = capoVuoto();
-        this.aggiuntaAperta = false;
-        this.carica();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.aggiungendo = false;
-        this.erroreAggiunta = err.error?.error ?? 'Non sono riuscito ad aggiungerlo. Riprova.';
       },
     });
   }
@@ -279,8 +240,4 @@ export class GestioneCapiPage implements OnInit {
     const toast = await this.toastCtrl.create({ message: messaggio, duration: 1800, position: 'top' });
     await toast.present();
   }
-}
-
-function capoVuoto(): NuovoCapo {
-  return { nome: '', cognome: '', codice_censimento: '', email: '', branca: null };
 }

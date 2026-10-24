@@ -215,6 +215,9 @@
         <span class="conta">{{ utenti.length }}</span>
       </h2>
 
+      <!-- Un capo solo, senza il file del censimento: per i capigruppo. -->
+      @if (tipo === 'capi' && capogruppo) { <app-aggiungi-capo (aggiunto)="ricarica()" /> }
+
       @if (utenti.length) {
         <p class="nota">{{ attivati }} hanno già creato la password.</p>
 

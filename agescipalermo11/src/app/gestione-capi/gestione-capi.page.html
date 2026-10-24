@@ -68,50 +68,7 @@
         </h2>
 
         <!-- Per i capigruppo: un capo nuovo, senza passare dal file del censimento. -->
-        @if (puoGestire) {
-          @if (!aggiuntaAperta) {
-            <button type="button" class="aggiungi-capo" (click)="alternaAggiunta()">
-              <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
-              Aggiungi un capo
-            </button>
-          } @else {
-            <form class="nuovo-capo" (ngSubmit)="aggiungi()">
-              <div class="nuovo-capo__campi">
-                <label>Nome
-                  <input name="nome" [(ngModel)]="nuovo.nome" autocomplete="off" maxlength="60" required />
-                </label>
-                <label>Cognome
-                  <input name="cognome" [(ngModel)]="nuovo.cognome" autocomplete="off" maxlength="60" required />
-                </label>
-                <label>Codice censimento
-                  <input name="codice" [(ngModel)]="nuovo.codice_censimento" inputmode="numeric" autocomplete="off"
-                         maxlength="10" required />
-                </label>
-                <label>Email <small>(facoltativa)</small>
-                  <input name="email" type="email" [(ngModel)]="nuovo.email" autocomplete="off" maxlength="120" />
-                </label>
-                <label>Branca
-                  <select name="branca" [(ngModel)]="nuovo.branca">
-                    <option [ngValue]="null">A disposizione del gruppo</option>
-                    @for (b of branche; track b.valore) {
-                      <option [ngValue]="b.valore">{{ b.nome }}</option>
-                    }
-                  </select>
-                </label>
-              </div>
-              <p class="nuovo-capo__aiuto">
-                Entra come capo. Con l'email scritta qui farà il primo accesso; se la lasci vuota, la sceglie lui.
-              </p>
-              @if (erroreAggiunta) { <p class="avviso avviso--errore">{{ erroreAggiunta }}</p> }
-              <div class="nuovo-capo__azioni">
-                <button type="button" class="mostra-tutti" (click)="alternaAggiunta()" [disabled]="aggiungendo">Annulla</button>
-                <button type="submit" class="aggiungi-capo aggiungi-capo--conferma" [disabled]="aggiungendo">
-                  {{ aggiungendo ? 'Aggiungo…' : 'Aggiungi' }}
-                </button>
-              </div>
-            </form>
-          }
-        }
+        @if (puoGestire) { <app-aggiungi-capo (aggiunto)="carica()" /> }
 
         @if (capi.length) {
           <label class="cerca">

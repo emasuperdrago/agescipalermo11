@@ -12,6 +12,7 @@ import {
 import { CensitiService, LetturaExcel } from '../services/censiti';
 import { AuthService } from '../services/auth';
 import { BarraInferioreComponent } from '../components/barra-inferiore/barra-inferiore.component';
+import { AggiungiCapoComponent } from '../components/aggiungi-capo/aggiungi-capo.component';
 import { nomeBranca, stiliBranca } from '../services/posti';
 import { Branca, EsitoImport, UtenteElenco } from '../../types/models';
 
@@ -32,7 +33,7 @@ const ETICHETTE_RUOLO: Record<UtenteElenco['ruolo'], string> = {
   standalone: true,
   imports: [
     FormsModule, RouterLink, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonRouterLink,
-    IonRouterLinkWithHref, IonContent, BarraInferioreComponent,
+    IonRouterLinkWithHref, IonContent, BarraInferioreComponent, AggiungiCapoComponent,
   ],
 })
 export class GestioneCensitiPage implements OnInit {
@@ -188,6 +189,11 @@ export class GestioneCensitiPage implements OnInit {
         this.errore = this.messaggioErrore(err, 'Importazione non riuscita.');
       },
     });
+  }
+
+  /** Dopo aver aggiunto un capo a mano: l'elenco si rilegge. */
+  ricarica() {
+    this.caricaElenco();
   }
 
   private caricaElenco() {
