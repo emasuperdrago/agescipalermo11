@@ -1,7 +1,7 @@
-import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { catchError, tap, throwError } from 'rxjs';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
@@ -12,6 +12,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     : req;
 
   return next(authReq).pipe(
+    // Il server allunga la sessione di chi sta usando il sito mandando un token nuovo.
+    tap(evento => {
+      const nuovo = evento instanceof HttpResponse ? evento.headers.get('X-Token-Nuovo') : null;
+      if (nuovo && localStorage.getItem('token')) localStorage.setItem('token', nuovo);
+    }),
     catchError((err: HttpErrorResponse) => {
       // Un 401 sul login significa solo credenziali errate: la pagina gestisce l'errore da sola.
       // Anche l'uscita: se la sessione era già finita non c'è niente da segnalare.

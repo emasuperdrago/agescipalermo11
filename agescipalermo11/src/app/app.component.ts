@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { NavigationHistoryService } from './services/navigation-history';
+import { InattivitaService } from './services/inattivita';
 
 // Safari può mostrare ancora l'icona di PeekBox (stesso indirizzo localhost:8100):
 // togliere e rimettere i link alle icone lo costringe ad aggiornare quella della scheda.
@@ -20,7 +21,9 @@ function aggiornaIconaScheda(): void {
   imports: [IonApp, IonRouterOutlet],
 })
 export class AppComponent {
-  constructor(private navHistory: NavigationHistoryService) {
+  constructor(private navHistory: NavigationHistoryService, inattivita: InattivitaService) {
     aggiornaIconaScheda();
+    // Dopo 15 minuti senza usare il sito si esce da soli.
+    inattivita.avvia();
   }
 }

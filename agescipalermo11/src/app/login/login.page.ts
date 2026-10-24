@@ -4,6 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { IonContent, NavController } from '@ionic/angular/standalone';
 import { AuthService } from '../services/auth';
+import { CHIAVE_USCITO } from '../services/inattivita';
 
 type Modalita = 'accedi' | 'primo-accesso' | 'recupero';
 
@@ -32,6 +33,26 @@ export class LoginPage {
   conferma = '';
 
   constructor(private auth: AuthService, private navCtrl: NavController) {}
+
+  // Ionic a volte crea la pagina due volte: l'avviso si guarda sia alla creazione sia all'ingresso.
+  ngOnInit() {
+    this.avvisoInattivita();
+  }
+
+  ionViewWillEnter() {
+    this.avvisoInattivita();
+  }
+
+  /** Se si è usciti da soli dopo 15 minuti, lo si dice (una volta). */
+  private avvisoInattivita() {
+    try {
+      if (sessionStorage.getItem(CHIAVE_USCITO) !== '1') return;
+      sessionStorage.removeItem(CHIAVE_USCITO);
+    } catch {
+      return;
+    }
+    this.avviso = 'Sei uscito perché non hai usato il sito per 15 minuti. Rientra quando vuoi.';
+  }
 
   get titolo(): string {
     if (this.modalita === 'accedi') return 'Accedi';
@@ -166,6 +187,7 @@ export class LoginPage {
 
   private messaggioErrore(err: HttpErrorResponse): string {
     if (err.status === 0) return 'Server non raggiungibile. Riprova tra poco.';
-    return err.error?.error ?? 'Si è verificato un errore. Riprova.';
+    // Solo i messaggi scritti dal nostro server (testo): altro non si mostra così com'è.
+    return typeof err.error?.error === 'string' ? err.error.error : 'Si è verificato un errore. Riprova.';
   }
 }

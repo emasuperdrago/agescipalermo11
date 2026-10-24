@@ -86,7 +86,7 @@ function origineAmmessa(origine, risposta) {
     }
     risposta(null, false);
 }
-app.use(cors({ origin: origineAmmessa }));
+app.use(cors({ origin: origineAmmessa, exposedHeaders: ['X-Token-Nuovo'] }));
 
 // Dietro un proxy (es. Nginx o il servizio di hosting) l'indirizzo di chi chiama e il fatto
 // che la connessione sia protetta arrivano nelle intestazioni: senza questo Express non li legge.
@@ -403,6 +403,9 @@ async function caricaUtente(req, res, next) {
             id: utente.id, codice_censimento: utente.codice_censimento, ruolo: utente.ruolo,
             gestore: utente.gestore_sito === 1,
         };
+        // Sta usando il sito: dopo i primi minuti gli si allunga la sessione con un token nuovo.
+        if (Math.floor(Date.now() / 1000) - (dati.iat ?? 0) > RINNOVO_DOPO_SECONDI)
+            res.setHeader('X-Token-Nuovo', tokenUtente(utente));
     } catch (err) {
         // Il database non ha risposto: non vuol dire che l'accesso non vale. Meglio dire di
         // riprovare (il sito lo fa da solo per le letture) che trattare la persona come uscita.
@@ -453,12 +456,19 @@ function ruoloDaToken(req) {
     return req.utenteCorrente?.ruolo ?? null;
 }
 
-function firmaToken(payload) {
-    return jwt.sign(payload, SECRET_KEY, { expiresIn: '24h' });
+// Chi ha un account resta dentro finché usa il sito: il token dura 15 minuti e, a ogni richiesta
+// dopo i primi 5, il server ne manda uno nuovo (intestazione X-Token-Nuovo). Dopo 15 minuti
+// senza usare il sito il token scade e si deve rientrare. Il visitatore non ha niente di
+// privato: il suo vale un giorno.
+const DURATA_SESSIONE = '15m';
+const RINNOVO_DOPO_SECONDI = 5 * 60;
+
+function firmaToken(payload, durata = '24h') {
+    return jwt.sign(payload, SECRET_KEY, { expiresIn: durata });
 }
 
 function tokenUtente(utente) {
-    return firmaToken({ id: utente.id, codice_censimento: utente.codice_censimento, ruolo: utente.ruolo });
+    return firmaToken({ id: utente.id, codice_censimento: utente.codice_censimento, ruolo: utente.ruolo }, DURATA_SESSIONE);
 }
 
 // Il codice censimento è numerico: accetta sia 123456 sia "123456".
@@ -990,6 +1000,10 @@ app.post('/api/logout', verificaUtenteCensito, async (req, res) => {
         erroreInterno(res, err);
     }
 });
+
+// Il sito la chiama quando si sta usando senza fare richieste (es. scrivendo un post): serve
+// solo a ricevere il token nuovo, così la sessione non scade a metà.
+app.get('/api/sessione', verificaToken, (req, res) => res.json({ attiva: true }));
 
 app.post('/api/login/visitatore', (req, res) => {
     const token = firmaToken({ ruolo: 'visitatore' });
