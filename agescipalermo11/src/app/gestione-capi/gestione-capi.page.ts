@@ -161,44 +161,44 @@ export class GestioneCapiPage implements OnInit {
     this.salva(capo, { branca });
   }
 
-  async cambiaRuolo(capo: CapoElenco) {
-    const diventa = capo.ruolo === 'admin' ? 'capo' : 'admin';
-    if (capo.id === this.ioSono && diventa === 'capo') {
-      this.avvisa('Non puoi rimuoverti da solo il ruolo di admin.');
+  /** Il titolo di admin: solo chi gestisce il sito lo vede e lo cambia. Dà i permessi del capogruppo. */
+  async cambiaAdmin(capo: CapoElenco) {
+    const diventa = !capo.admin;
+    if (!diventa && capo.id === this.ioSono && !capo.capogruppo) {
+      this.avvisa('Non puoi toglierti da solo i permessi: prima mettiti capogruppo.');
       return;
     }
     const alert = await this.alertCtrl.create({
-      header: diventa === 'admin' ? 'Fare admin?' : 'Rimuovere il ruolo di admin?',
-      message: diventa === 'admin'
-        ? `${capo.nome} ${capo.cognome} avrà gli stessi permessi del capogruppo: aprire l'anno, caricare i capi, `
-          + `vedere la cassa del gruppo. Nell'elenco però non comparirà come capogruppo, a meno di metterlo con "Metti capogruppo".`
-        : `${capo.nome} ${capo.cognome} tornerà a essere un capo di branca${capo.capogruppo ? ' e non sarà più capogruppo' : ''}.`,
+      header: diventa ? 'Fare admin?' : 'Togliere admin?',
+      message: diventa
+        ? `${capo.nome} ${capo.cognome} avrà i permessi del capogruppo (aprire l'anno, caricare i capi, vedere la `
+          + `cassa del gruppo) senza comparire come capogruppo. Lo vedi solo tu.`
+        : capo.capogruppo
+          ? `${capo.nome} ${capo.cognome} resta capogruppo, con i suoi permessi.`
+          : `${capo.nome} ${capo.cognome} tornerà a essere un capo di branca.`,
       buttons: [
         { text: 'Annulla', role: 'cancel' },
-        { text: 'Conferma', handler: () => { this.salva(capo, { ruolo: diventa }); } },
+        { text: 'Conferma', handler: () => { this.salva(capo, { admin: diventa }); } },
       ],
     });
     await alert.present();
   }
 
-  /** Capogruppo è solo il nome nell'elenco: i permessi restano quelli di admin. */
+  /** Il titolo di capogruppo: compare nell'elenco e dà i permessi del capogruppo. */
   async cambiaCapogruppo(capo: CapoElenco) {
     const diventa = !capo.capogruppo;
-    if (!this.gestore && !diventa && capo.id === this.ioSono) {
+    if (!diventa && capo.id === this.ioSono && !capo.admin) {
       this.avvisa('Non puoi toglierti da solo da capogruppo.');
       return;
     }
-    // Per chi gestisce il sito capogruppo è solo il nome; per gli altri porta con sé i permessi.
-    const message = this.gestore
-      ? (diventa
-        ? `${capo.nome} ${capo.cognome} comparirà come capogruppo nell'elenco dei capi.`
-        : `${capo.nome} ${capo.cognome} non comparirà più come capogruppo, ma resta admin con gli stessi permessi.`)
-      : (diventa
-        ? `${capo.nome} ${capo.cognome} potrà aprire l'anno, caricare i capi e vedere la cassa del gruppo.`
-        : `${capo.nome} ${capo.cognome} tornerà a essere un capo di branca.`);
     const alert = await this.alertCtrl.create({
-      header: diventa ? 'Mettere capogruppo?' : 'Togliere da capogruppo?',
-      message,
+      header: diventa ? 'Fare capogruppo?' : 'Togliere da capogruppo?',
+      message: diventa
+        ? `${capo.nome} ${capo.cognome} comparirà come capogruppo e potrà aprire l'anno, caricare i capi e `
+          + `vedere la cassa del gruppo.`
+        : this.gestore && capo.admin
+          ? `${capo.nome} ${capo.cognome} non comparirà più come capogruppo, ma resta admin con gli stessi permessi.`
+          : `${capo.nome} ${capo.cognome} tornerà a essere un capo di branca.`,
       buttons: [
         { text: 'Annulla', role: 'cancel' },
         { text: 'Conferma', handler: () => { this.salva(capo, { capogruppo: diventa }); } },
@@ -207,14 +207,16 @@ export class GestioneCapiPage implements OnInit {
     await alert.present();
   }
 
-  private salva(capo: CapoElenco, cambi: { branca?: Branca | null; ruolo?: 'capo' | 'admin'; capogruppo?: boolean }) {
+  private salva(capo: CapoElenco, cambi: { branca?: Branca | null; admin?: boolean; capogruppo?: boolean }) {
     this.zona.aggiornaCapo(capo.id, {
       nome: capo.nome,
       cognome: capo.cognome,
       data_nascita: capo.data_nascita,
       branca: cambi.branca !== undefined ? cambi.branca : capo.branca,
-      ruolo: cambi.ruolo ?? capo.ruolo,
+      ruolo: capo.ruolo,
       capogruppo: cambi.capogruppo ?? capo.capogruppo,
+      // Il titolo di admin lo manda solo chi gestisce il sito (agli altri il server non lo fa cambiare).
+      ...(this.gestore ? { admin: cambi.admin ?? !!capo.admin } : {}),
       telefono: capo.telefono,
       email: capo.email,
     }).subscribe({

@@ -342,6 +342,22 @@
   cursor: pointer;
 
   &:hover { background: rgba($viola-l, .12); }
+
+  // Titolo già dato: pieno (il pulsante lo toglie).
+  &--acceso {
+    border-style: solid;
+    background: rgba($viola-l, .14);
+  }
+}
+
+// Admin e capogruppo: due pulsanti allo stesso livello, in fondo a destra.
+.titoli {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+
+  .ruolo { margin-left: 0; }
 }
 
 .icona {

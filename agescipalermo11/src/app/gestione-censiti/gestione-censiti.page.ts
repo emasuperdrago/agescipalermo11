@@ -129,9 +129,11 @@ export class GestioneCensitiPage implements OnInit {
     return b ? nomeBranca(b) : '—';
   }
 
-  /** Un admin che non è capogruppo (lo vede così solo chi gestisce il sito) si chiama admin. */
+  /** Capogruppo o admin sono titoli (admin lo vede solo chi gestisce il sito); se no il ruolo. */
   etichettaRuolo(u: UtenteElenco): string {
-    return u.ruolo === 'admin' && !u.capogruppo ? 'Admin' : ETICHETTE_RUOLO[u.ruolo];
+    if (u.capogruppo) return 'Capogruppo';
+    if (u.admin) return 'Admin';
+    return ETICHETTE_RUOLO[u.ruolo === 'admin' ? 'capo' : u.ruolo];
   }
 
   async scegliFile(event: Event) {

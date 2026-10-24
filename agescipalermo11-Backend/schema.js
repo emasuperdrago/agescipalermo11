@@ -44,6 +44,9 @@ const TABELLE = [
     // Chi gestisce il sito: l'unico che vede chi è admin e lo cambia; il suo account non lo
     // tocca nessun altro. Si mette dal database (non sta nel codice, che è pubblico).
     `ALTER TABLE utenti ADD COLUMN IF NOT EXISTS gestore_sito SMALLINT NOT NULL DEFAULT 0`,
+    // Il titolo di admin (lo vede solo chi gestisce il sito), indipendente da capogruppo: chi ha
+    // almeno uno dei due ha i permessi del capogruppo (ruolo = 'admin' nel database).
+    `ALTER TABLE utenti ADD COLUMN IF NOT EXISTS titolo_admin SMALLINT NOT NULL DEFAULT 0`,
 
     `CREATE TABLE IF NOT EXISTS anno_scout (
         id SERIAL PRIMARY KEY,

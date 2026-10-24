@@ -48,6 +48,7 @@ export class ModificaCapoComponent implements OnInit {
       nome: d.nome.trim(), cognome: d.cognome.trim(), data_nascita: d.data_nascita, branca: d.branca,
       // Ruolo e capogruppo non si toccano da qui: restano come sono.
       ruolo: this.capo.ruolo, capogruppo: this.capo.capogruppo,
+      ...(this.capo.admin !== undefined ? { admin: this.capo.admin } : {}),
       telefono: d.telefono.trim() || null, email: d.email.trim() || null,
     }).subscribe({
       next: () => {

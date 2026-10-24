@@ -443,8 +443,9 @@ function eGestore(req) {
 }
 
 /**
- * Il ruolo di un capo come lo vede chi chiede. Gli admin che non sono capogruppo, per tutti
- * tranne chi gestisce il sito, sono capi come gli altri: "admin" lo vede solo lui.
+ * Il ruolo di un capo come lo vede chi chiede. I permessi del capogruppo (ruolo 'admin' nel
+ * database) li dà il titolo di capogruppo o quello di admin. Chi non gestisce il sito non sa
+ * chi è admin: per lui un admin che non è capogruppo è un capo come gli altri.
  */
 function ruoloMostrato(u, gestore) {
     if (u.ruolo !== 'admin' || gestore) return u.ruolo;
@@ -1186,7 +1187,7 @@ app.get('/api/utenti', verificaRuolo('capo', 'admin'), async (req, res) => {
                 : (capogruppo ? '' : 'WHERE branca = ?');
         const valori = dove.includes('?') ? [branca] : [];
 
-        const sql = `SELECT id, codice_censimento, nome, cognome, eta, data_nascita, ruolo, capogruppo, branca,
+        const sql = `SELECT id, codice_censimento, nome, cognome, eta, data_nascita, ruolo, capogruppo, titolo_admin, branca,
                             livello_foca, (password IS NOT NULL)::int AS attivato
                      FROM utenti ${dove}
                      ORDER BY lower(cognome), lower(nome)`;
@@ -1195,7 +1196,8 @@ app.get('/api/utenti', verificaRuolo('capo', 'admin'), async (req, res) => {
             // L'età si ricalcola qui a ogni richiesta: al compleanno cambia da sola.
             utenti: righe.map(u => ({
                 ...u, eta: etaDiOggi(u), attivato: u.attivato === 1,
-                ruolo: ruoloMostrato(u, eGestore(req)), capogruppo: u.ruolo === 'admin' && u.capogruppo === 1,
+                ruolo: ruoloMostrato(u, eGestore(req)), capogruppo: u.capogruppo === 1,
+                admin: eGestore(req) ? u.titolo_admin === 1 : undefined,
                 // Il livello Fo.Ca. è dei capi: per i ragazzi non c'è.
                 livello_foca: u.ruolo === 'ragazzo' ? null : (u.livello_foca || null),
             })),
@@ -4729,7 +4731,7 @@ app.get('/api/capi', async (req, res) => {
         const capogruppo = utenteDaToken(req)?.ruolo === 'admin';
         const gestore = eGestore(req);
         const capi = await dbAll(`SELECT id, codice_censimento, nome, cognome, eta, data_nascita, branca, ruolo,
-                                         capogruppo, gestore_sito, telefono, email, livello_foca,
+                                         capogruppo, titolo_admin, gestore_sito, telefono, email, livello_foca,
                                          (password IS NOT NULL)::int AS attivato
                                   FROM utenti WHERE ruolo IN ('capo', 'admin')
                                   ORDER BY lower(cognome), lower(nome)`);
@@ -4739,7 +4741,9 @@ app.get('/api/capi', async (req, res) => {
             gestore,
             capi: capi.map(c => ({
                 id: c.id, nome: c.nome, cognome: c.cognome, branca: c.branca, ruolo: ruoloMostrato(c, gestore),
-                capogruppo: c.ruolo === 'admin' && c.capogruppo === 1,
+                capogruppo: c.capogruppo === 1,
+                // Il titolo di admin lo vede solo chi gestisce il sito.
+                admin: gestore ? c.titolo_admin === 1 : undefined,
                 // Il suo account non lo cambia nessun altro: agli altri i comandi non compaiono.
                 protetto: capogruppo && !gestore && c.gestore_sito === 1,
                 // Contatti, codice censimento, età e "non è ancora entrato": solo al capogruppo.
@@ -4807,23 +4811,14 @@ app.put('/api/capi/:id', verificaRuolo('admin'), async (req, res) => {
             return res.status(400).json({ error: "La data di nascita va scritta come AAAA-MM-GG." });
         // branca vuota = a disposizione del gruppo.
         const branca = BRANCHE.includes(body.branca) ? body.branca : null;
-        // Chi gestisce il sito cambia admin e capogruppo separatamente. Per gli altri capogruppo
-        // esiste solo "capogruppo": metterlo dà anche i permessi, toglierlo li toglie. Se il valore
-        // non cambia, il ruolo resta com'è (un admin che per loro è un capo qualsiasi resta admin).
-        let ruolo = capo.ruolo;
-        let capogruppo = capo.ruolo === 'admin' && capo.capogruppo === 1;
-        if (gestore) {
-            if (body.ruolo === 'admin' || body.ruolo === 'capo') ruolo = body.ruolo;
-            capogruppo = ruolo === 'admin' && (typeof body.capogruppo === 'boolean' ? body.capogruppo : capogruppo);
-        } else if (typeof body.capogruppo === 'boolean' && body.capogruppo !== capogruppo) {
-            capogruppo = body.capogruppo;
-            ruolo = capogruppo ? 'admin' : 'capo';
-        }
+        // Admin e capogruppo sono due titoli separati; ognuno dà i permessi del capogruppo.
+        // Capogruppo lo mettono e lo tolgono i capigruppo; admin solo chi gestisce il sito.
+        const capogruppo = typeof body.capogruppo === 'boolean' ? body.capogruppo : capo.capogruppo === 1;
+        const admin = gestore && typeof body.admin === 'boolean' ? body.admin : capo.titolo_admin === 1;
+        const ruolo = admin || capogruppo ? 'admin' : 'capo';
         // Nessuno si toglie da solo i permessi: il gruppo potrebbe restare senza nessuno.
         if (capo.id === req.user.id && ruolo !== 'admin')
-            return res.status(400).json({ error: gestore
-                ? "Non puoi rimuovere a te stesso il ruolo di admin."
-                : "Non puoi toglierti da solo da capogruppo." });
+            return res.status(400).json({ error: "Non puoi toglierti da solo i permessi del capogruppo." });
 
         // Se l'email cambia da qui, vale questa: il file del censimento non la tocca più.
         const emailScritta = testo(body.email, 120).toLowerCase();
@@ -4837,11 +4832,11 @@ app.put('/api/capi/:id', verificaRuolo('admin'), async (req, res) => {
         if (telefono && !/^[+\d][\d\s./-]{4,19}$/.test(telefono))
             return res.status(400).json({ error: "Il telefono può avere solo cifre, spazi e il + davanti." });
         const salvata = emailDaSalvare(email);
-        await dbRun(`UPDATE utenti SET nome = ?, cognome = ?, data_nascita = ?, branca = ?, ruolo = ?, capogruppo = ?,
+        await dbRun(`UPDATE utenti SET nome = ?, cognome = ?, data_nascita = ?, branca = ?, ruolo = ?, capogruppo = ?, titolo_admin = ?,
                      telefono = ?, email = ?, email_impronta = ?,
                      email_a_mano = CASE WHEN ? = 1 THEN 1 ELSE email_a_mano END
                      WHERE id = ?`,
-            [nome, cognome, cripta(dataNascita || capo.data_nascita || null), branca, ruolo, capogruppo ? 1 : 0,
+            [nome, cognome, cripta(dataNascita || capo.data_nascita || null), branca, ruolo, capogruppo ? 1 : 0, admin ? 1 : 0,
              cripta(telefono || null), salvata.email, salvata.impronta, emailCambiata ? 1 : 0, capo.id]);
         const aggiornato = await dbGet(`SELECT * FROM utenti WHERE id = ?`, [capo.id]);
         res.json({ capo: { ...utentePubblico(aggiornato), ruolo: ruoloMostrato(aggiornato, gestore) } });

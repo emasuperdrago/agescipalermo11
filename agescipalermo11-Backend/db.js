@@ -157,6 +157,15 @@ async function preparaDavvero() {
   await popolaMarco();
   await popolaDatiEsempio();
   await separaCapogruppo();
+  await separaAdmin();
+}
+
+// Admin e capogruppo diventano due titoli separati: chi finora aveva i permessi (ruolo 'admin')
+// tiene il titolo di admin; capogruppo resta com'era. Una volta sola.
+async function separaAdmin() {
+  if (await impostazione('admin_separato')) return;
+  await interroga(`UPDATE utenti SET titolo_admin = 1 WHERE ruolo = 'admin'`);
+  await segnaImpostazione('admin_separato');
 }
 
 // Prima admin e capogruppo erano la stessa cosa: chi era admin resta segnato come capogruppo.

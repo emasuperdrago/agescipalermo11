@@ -96,7 +96,7 @@
                     <strong>
                       {{ c.cognome }} {{ c.nome }}
                       @if (c.capogruppo) { <span class="segno-capogruppo">capogruppo</span> }
-                      @else if (gestore && c.ruolo === 'admin') { <span class="segno-capogruppo segno-capogruppo--admin">admin</span> }
+                      @if (gestore && c.admin) { <span class="segno-capogruppo segno-capogruppo--admin">admin</span> }
                       @if (c.id === ioSono) { <span class="segno-io">tu</span> }
                     </strong>
                     @if (puoGestire) {
@@ -158,16 +158,17 @@
                           [attr.aria-pressed]="!c.branca" (click)="spostaIn(c, null)">
                     A disposizione
                   </button>
-                  @if (gestore) {
-                    <button type="button" class="ruolo" (click)="cambiaRuolo(c)">
-                      {{ c.ruolo === 'admin' ? 'Rimuovi admin' : 'Fai admin' }}
+                  <!-- Due titoli separati, uno accanto all'altro: admin lo vede solo chi gestisce il sito. -->
+                  <div class="titoli">
+                    @if (gestore) {
+                      <button type="button" class="ruolo" [class.ruolo--acceso]="c.admin" (click)="cambiaAdmin(c)">
+                        {{ c.admin ? 'Togli admin' : 'Fai admin' }}
+                      </button>
+                    }
+                    <button type="button" class="ruolo" [class.ruolo--acceso]="c.capogruppo" (click)="cambiaCapogruppo(c)">
+                      {{ c.capogruppo ? 'Togli capogruppo' : 'Fai capogruppo' }}
                     </button>
-                  }
-                  @if (!gestore || c.ruolo === 'admin') {
-                    <button type="button" class="ruolo" (click)="cambiaCapogruppo(c)">
-                      {{ c.capogruppo ? 'Togli da capogruppo' : 'Metti capogruppo' }}
-                    </button>
-                  }
+                  </div>
                 </div>
                 }
               </li>
