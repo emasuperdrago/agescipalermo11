@@ -28,6 +28,14 @@ const {
 
 const app = express();
 
+// Ogni richiesta ha il suo contesto per il database: una transazione (BEGIN…COMMIT) si tiene il
+// suo collegamento, le altre richieste intanto usano gli altri (vedi db.js). A fine richiesta,
+// se qualcosa è rimasto aperto per un errore, si chiude.
+app.use((req, res, next) => db.conContesto(() => {
+    res.on('close', () => db.lasciaCollegamento());
+    next();
+}));
+
 // Lavori da fare ogni giorno (pulizie). Su un server normale li fa partire il backend stesso;
 // su Vercel il backend si accende solo quando arriva una richiesta, quindi li chiama ogni notte
 // il Cron di Vercel (vedi vercel.json e /api/cron/giornaliero).

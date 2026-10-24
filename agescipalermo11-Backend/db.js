@@ -9,6 +9,7 @@
 //  - si usa un solo collegamento alla volta: le query vanno in fila e BEGIN ... COMMIT
 //    valgono per tutto quello che c'è in mezzo.
 const { Pool, types } = require('pg');
+const { AsyncLocalStorage } = require('async_hooks');
 const bcrypt = require('bcrypt');
 const path = require('path');
 const fs = require('fs');
@@ -32,9 +33,11 @@ if (mancanti.length) {
 
 const pool = new Pool({
   ...DATABASE,
-  // Un collegamento solo: le query aspettano in fila, come con SQLite.
+  // Qualche collegamento in parallelo: la home chiede 5-6 cose insieme, e con uno solo (quando il
+  // database si sta riaccendendo) le ultime aspettavano troppo. Le transazioni (BEGIN…COMMIT)
+  // tengono un collegamento tutto per sé, vedi `contesto` qui sotto.
   // (Se il database sta su un altro server, il collegamento va cifrato: PG_SSL=1 / DB_SSL=1.)
-  max: 1,
+  max: 5,
   // Su Vercel il backend viene "congelato" tra una visita e l'altra, mentre Neon chiude i suoi
   // collegamenti quando si spegne: un collegamento tenuto aperto può risvegliarsi già morto e
   // far aspettare la richiesta all'infinito. Lì quindi i collegamenti fermi si chiudono subito,
@@ -50,6 +53,26 @@ pool.on('error', (err) => console.error('Database: collegamento interrotto, si r
 // Su Vercel: prima che la funzione venga "congelata", Vercel aspetta che i collegamenti fermi
 // si chiudano (idleTimeoutMillis qui sopra). Così al risveglio non se ne trova mai uno morto.
 if (process.env.VERCEL) require('@vercel/functions').attachDatabasePool(pool);
+
+/**
+ * Ogni richiesta (e la preparazione all'avvio) ha il suo contesto. Quando fa BEGIN, il contesto
+ * si tiene un collegamento finché non arrivano COMMIT o ROLLBACK: tutte le query della
+ * transazione vanno lì, mentre le altre richieste usano gli altri collegamenti. Il resto del
+ * backend non se ne accorge: scrive dbRun('BEGIN') e dbRun('COMMIT') come sempre.
+ */
+const contesto = new AsyncLocalStorage();
+
+/** Il collegamento tenuto dal contesto torna nel pool (buttato, se si era rotto). */
+function lasciaCollegamento(qui, rotto = false) {
+  if (!qui?.client) return;
+  qui.client.release(rotto);
+  qui.client = null;
+}
+
+/** Fa girare `fn` con un contesto suo: per le richieste HTTP (vedi server.js) e l'avvio. */
+function conContesto(fn) {
+  return contesto.run({ client: null, fisso: false }, fn);
+}
 
 /**
  * Da "?" a $1, $2…, saltando i testi tra apici ('...'), i nomi tra virgolette ("...")
@@ -99,8 +122,8 @@ async function interroga(sql, parametri = []) {
     return await sulCollegamento(testo, valori);
   } catch (err) {
     // Una lettura si può rifare senza rischi con un collegamento nuovo; una scrittura no (potrebbe
-    // essere già arrivata), quindi l'errore va a chi l'ha chiesta.
-    if (!collegamentoCaduto(err) || !/^\s*SELECT\b/i.test(testo)) throw err;
+    // essere già arrivata), quindi l'errore va a chi l'ha chiesta. Dentro una transazione mai.
+    if (!collegamentoCaduto(err) || !/^\s*SELECT\b/i.test(testo) || contesto.getStore()?.client) throw err;
     console.error('Database: collegamento caduto, riprovo la lettura:', err.code || err.message);
     return sulCollegamento(testo, valori);
   }
@@ -112,6 +135,21 @@ async function interroga(sql, parametri = []) {
  * collegamento bloccato resterebbe lì e anche il nuovo tentativo ci finirebbe sopra.
  */
 async function sulCollegamento(testo, valori) {
+  const qui = contesto.getStore();
+  const comando = testo.trim().split(/\s+/, 1)[0].toUpperCase();
+  // Dentro una transazione (o la preparazione): sempre sul collegamento tenuto dal contesto.
+  if (qui && !qui.client && comando === 'BEGIN') qui.client = await pool.connect();
+  if (qui?.client) {
+    try {
+      const esito = await qui.client.query(testo, valori);
+      if ((comando === 'COMMIT' || comando === 'ROLLBACK') && !qui.fisso) lasciaCollegamento(qui);
+      return esito;
+    } catch (err) {
+      if (collegamentoCaduto(err)) lasciaCollegamento(qui, true);
+      else if (comando === 'COMMIT' || comando === 'ROLLBACK') { if (!qui.fisso) lasciaCollegamento(qui); }
+      throw err;
+    }
+  }
   const client = await pool.connect();
   let rotto = false;
   try {
@@ -135,12 +173,26 @@ let pronto;
 const LUCCHETTO_PREPARAZIONE = 1101983;
 
 async function prepara() {
-  await interroga('SELECT pg_advisory_lock($1)', [LUCCHETTO_PREPARAZIONE]);
-  try {
-    await preparaDavvero();
-  } finally {
-    await interroga('SELECT pg_advisory_unlock($1)', [LUCCHETTO_PREPARAZIONE]).catch(() => {});
-  }
+  // Tutta la preparazione su un collegamento solo: il "lucchetto" vale per quel collegamento.
+  return conContesto(async () => {
+    const qui = contesto.getStore();
+    qui.client = await pool.connect();
+    qui.fisso = true;
+    let rotto = false;
+    try {
+      await interroga('SELECT pg_advisory_lock($1)', [LUCCHETTO_PREPARAZIONE]);
+      try {
+        await preparaDavvero();
+      } finally {
+        await interroga('SELECT pg_advisory_unlock($1)', [LUCCHETTO_PREPARAZIONE]).catch(() => {});
+      }
+    } catch (err) {
+      rotto = collegamentoCaduto(err);
+      throw err;
+    } finally {
+      if (qui.client) lasciaCollegamento(qui, rotto);
+    }
+  });
 }
 
 async function preparaDavvero() {
@@ -439,4 +491,11 @@ async function popolaDatiEsempio() {
 }
 
 module.exports = db;
+module.exports.conContesto = conContesto;
+module.exports.lasciaCollegamento = () => {
+  // A fine richiesta: se una transazione è rimasta aperta (errore senza ROLLBACK), si chiude qui.
+  const qui = contesto.getStore();
+  if (!qui?.client) return;
+  qui.client.query('ROLLBACK').catch(() => {}).finally(() => lasciaCollegamento(qui));
+};
 module.exports.segnaposti = segnaposti;
