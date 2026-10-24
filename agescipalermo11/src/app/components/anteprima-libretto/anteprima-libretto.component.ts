@@ -63,6 +63,8 @@ export class AnteprimaLibrettoComponent implements OnInit, OnDestroy {
   parti: Record<ParteMessa, (number | null)[]> = this.partiVuote();
   accordi = true;
   grande = false;
+  /** Due colonne per pagina: il libretto prende circa la metà dei fogli. */
+  dueColonne = true;
   /** Le opzioni toccate a mano non si cambiano più da sole accendendo la messa. */
   private opzioniToccate = false;
 
@@ -94,6 +96,7 @@ export class AnteprimaLibrettoComponent implements OnInit, OnDestroy {
       this.messa = da.messa;
       this.accordi = da.accordi;
       this.grande = da.grande;
+      this.dueColonne = da.dueColonne ?? true;
       this.opzioniToccate = true;
       for (const p of PARTI_MESSA) this.parti[p.valore] = [...(da.parti[p.valore] ?? [])];
     }
@@ -199,7 +202,7 @@ export class AnteprimaLibrettoComponent implements OnInit, OnDestroy {
       parti[p.valore] = this.parti[p.valore].filter((id): id is number => id !== null);
     return {
       ids: this.scelti.map(c => c.id), evento: this.evento.trim(), data: this.data ?? '', luogo: this.luogo.trim(),
-      messa: this.messa, parti, accordi: this.accordi, grande: this.grande,
+      messa: this.messa, parti, accordi: this.accordi, grande: this.grande, dueColonne: this.dueColonne,
     };
   }
 

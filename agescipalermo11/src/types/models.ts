@@ -888,6 +888,8 @@ export interface DatiLibretto {
   parti: Partial<Record<ParteMessa, number[]>>;
   accordi: boolean;
   grande: boolean;
+  /** Il libretto compatto, a due colonne (le bozze salvate prima non ce l'hanno: due colonne). */
+  dueColonne?: boolean;
 }
 
 /** Una bozza salvata: la vedono e la cambiano i capi. */
