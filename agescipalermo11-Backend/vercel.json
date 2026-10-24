@@ -9,7 +9,7 @@
   "functions": {
     "api/index.js": {
       "maxDuration": 60,
-      "includeFiles": "{dati/**,node_modules/pdfkit/js/data/**}"
+      "includeFiles": "{dati/**,node_modules/pdfkit/js/data/**,node_modules/pdfkit/js/standard-fonts/**}"
     }
   },
   "rewrites": [
