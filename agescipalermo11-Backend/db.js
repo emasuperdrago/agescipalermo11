@@ -62,9 +62,27 @@ if (process.env.VERCEL) require('@vercel/functions').attachDatabasePool(pool);
  */
 const contesto = new AsyncLocalStorage();
 
+/**
+ * Un collegamento dal pool, ma mai uno "vecchio". Su un server acceso i collegamenti fermi si
+ * chiudono da soli dopo 2 secondi (idleTimeoutMillis): se uno è fermo da più tempo, il backend
+ * è stato congelato nel frattempo (Vercel) e il collegamento, anche se sembra buono, può essere
+ * morto. Si butta e se ne prende un altro, prima di mandargli qualsiasi query.
+ */
+const FERMO_TROPPO_MS = 3000;
+async function collegamento() {
+  for (let tentativo = 0; tentativo < 8; tentativo++) {
+    const client = await pool.connect();
+    const fermo = client.ultimoUso ? Date.now() - client.ultimoUso : 0;
+    if (!process.env.VERCEL || fermo <= FERMO_TROPPO_MS) return client;
+    client.release(true);
+  }
+  return pool.connect();
+}
+
 /** Il collegamento tenuto dal contesto torna nel pool (buttato, se si era rotto). */
 function lasciaCollegamento(qui, rotto = false) {
   if (!qui?.client) return;
+  qui.client.ultimoUso = Date.now();
   qui.client.release(rotto);
   qui.client = null;
 }
@@ -138,7 +156,7 @@ async function sulCollegamento(testo, valori) {
   const qui = contesto.getStore();
   const comando = testo.trim().split(/\s+/, 1)[0].toUpperCase();
   // Dentro una transazione (o la preparazione): sempre sul collegamento tenuto dal contesto.
-  if (qui && !qui.client && comando === 'BEGIN') qui.client = await pool.connect();
+  if (qui && !qui.client && comando === 'BEGIN') qui.client = await collegamento();
   if (qui?.client) {
     try {
       const esito = await qui.client.query(testo, valori);
@@ -150,7 +168,7 @@ async function sulCollegamento(testo, valori) {
       throw err;
     }
   }
-  const client = await pool.connect();
+  const client = await collegamento();
   let rotto = false;
   try {
     return await client.query(testo, valori);
@@ -158,6 +176,7 @@ async function sulCollegamento(testo, valori) {
     rotto = collegamentoCaduto(err);
     throw err;
   } finally {
+    client.ultimoUso = Date.now();
     client.release(rotto);
   }
 }
@@ -176,7 +195,7 @@ async function prepara() {
   // Tutta la preparazione su un collegamento solo: il "lucchetto" vale per quel collegamento.
   return conContesto(async () => {
     const qui = contesto.getStore();
-    qui.client = await pool.connect();
+    qui.client = await collegamento();
     qui.fisso = true;
     let rotto = false;
     try {
