@@ -24,6 +24,7 @@
   "type": "commonjs",
   "dependencies": {
     "@vercel/blob": "2.8.1",
+    "@vercel/functions": "3.9.11",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",

@@ -71,7 +71,13 @@ const aspetta = (ms) => new Promise(fatto => setTimeout(fatto, ms));
  * Se cade la rete riprova dopo le attese indicate: brevi per chi sta aspettando la risposta
  * sul sito (conferme, password), più lunghe per gli avvisi che partono in sottofondo.
  */
+// Solo indirizzi "puliti": senza virgolette, parentesi, ";" o virgole, che il lettore degli
+// indirizzi di nodemailer potrebbe trasformare in destinatari in più.
+const INDIRIZZO_PULITO = /^[a-z0-9._%+-]+@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/i;
+
 async function inviaEmail({ a, oggetto, testo, html }, attese = [2000]) {
+    if (typeof a !== 'string' || !INDIRIZZO_PULITO.test(a.trim()))
+        throw new Error('Indirizzo email non valido: non la mando.');
     if (!trasporto) throw new Error('POSTA_NON_IMPOSTATA');
     for (let tentativo = 0; ; tentativo++) {
         try {

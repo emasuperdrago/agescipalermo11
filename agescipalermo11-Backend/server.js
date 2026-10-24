@@ -137,6 +137,9 @@ app.use((req, res, next) => caricaUtente(req, res, next));
 // in Blob (tmp/<id utente>/<codice>, vedi /api/caricamenti) e poi manda la richiesta vera vuota,
 // con quel nome in "X-Corpo-Caricato". Qui il corpo si riprende da Blob, coi limiti di sempre,
 // e la rotta lo trova in req.body come se fosse arrivato direttamente.
+// Un'email com'è di solito: lettere, cifre e . _ % + - prima della chiocciola, un dominio vero
+// dopo. Niente virgolette, parentesi o ";" (con quelli si potrebbero far partire email ad altri).
+const EMAIL_VALIDA = /^[a-z0-9._%+-]+@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/i;
 const MB = 1024 * 1024;
 /** Gli stessi limiti dei lettori qui sotto e delle rotte con i file (express.raw). */
 function limiteCorpo(req) {
@@ -179,12 +182,12 @@ app.use(async (req, res, next) => {
     next();
 });
 
-app.use('/api/post', express.json({ limit: '30mb' }));
-app.use(ROTTE_CON_FOTO, express.json({ limit: '10mb' }));
-app.use('/api/utenti/importa', express.json({ limit: '2mb' }));
-app.use(express.json({ limit: '100kb' }));
+app.use('/api/post', express.json({ limit: '30mb', inflate: false }));
+app.use(ROTTE_CON_FOTO, express.json({ limit: '10mb', inflate: false }));
+app.use('/api/utenti/importa', express.json({ limit: '2mb', inflate: false }));
+app.use(express.json({ limit: '100kb', inflate: false }));
 // Nessuna pagina manda moduli classici: basta poco, e senza l'analisi "estesa" (che usa qs).
-app.use(express.urlencoded({ limit: '20kb', extended: false }));
+app.use(express.urlencoded({ limit: '20kb', extended: false, inflate: false }));
 
 // Il sito chiede se deve usare i caricamenti grandi (solo su Vercel) e, se sì, un permesso
 // per mettere un file in tmp/<il suo id>/ su Blob: al massimo 60 MB, valido un quarto d'ora.
@@ -401,7 +404,10 @@ async function caricaUtente(req, res, next) {
             gestore: utente.gestore_sito === 1,
         };
     } catch (err) {
+        // Il database non ha risposto: non vuol dire che l'accesso non vale. Meglio dire di
+        // riprovare (il sito lo fa da solo per le letture) che trattare la persona come uscita.
         console.error('Controllo della sessione:', err.message);
+        return res.status(503).json({ error: "Il database non risponde: riprova tra un attimo." });
     }
     next();
 }
@@ -1195,7 +1201,7 @@ function leggiLivelloFoca(valore) {
 
 function leggiEmailImport(valore) {
     const t = String(valore ?? '').trim().toLowerCase();
-    return t.length <= 120 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t) ? t : null;
+    return t.length <= 120 && EMAIL_VALIDA.test(t) ? t : null;
 }
 
 // Import da Excel: inserisce i nuovi codici e aggiorna nome, cognome, età (e branca se presente)
@@ -1883,7 +1889,7 @@ app.delete('/api/post/:id', verificaUtenteCensito, async (req, res) => {
 // Un video corto alla volta, inviato così com'è (niente base64), dopo aver salvato il post.
 // Il nome originale arriva nell'intestazione X-Nome-File, codificato con encodeURIComponent.
 app.post('/api/post/:id/video', verificaUtenteCensito,
-    express.raw({ type: () => true, limit: MAX_BYTE_VIDEO_POST }),
+    express.raw({ type: () => true, limit: MAX_BYTE_VIDEO_POST, inflate: false }),
     async (req, res) => {
         try {
             const post = await postModificabile(req, res);
@@ -2182,7 +2188,7 @@ function validaPosto(body) {
             return { errore: "Uno dei contatti ha un campo troppo lungo." };
         if (contatto.telefono && !/^\+?[\d\s./-]{3,}$/.test(contatto.telefono))
             return { errore: `Il numero "${contatto.telefono}" non sembra un telefono.` };
-        if (contatto.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contatto.email))
+        if (contatto.email && !EMAIL_VALIDA.test(contatto.email))
             return { errore: `L'email "${contatto.email}" non è valida.` };
         contatti.push(contatto);
     }
@@ -2306,7 +2312,7 @@ app.delete('/api/posti/:id', verificaRuolo('capo', 'admin'), async (req, res) =>
 // Un allegato alla volta, inviato così com'è (niente base64): il nome originale arriva
 // nell'intestazione X-Nome-File, codificato con encodeURIComponent.
 app.post('/api/posti/:id/allegati', verificaRuolo('capo', 'admin'),
-    express.raw({ type: () => true, limit: MAX_BYTE_ALLEGATO }),
+    express.raw({ type: () => true, limit: MAX_BYTE_ALLEGATO, inflate: false }),
     async (req, res) => {
         let nome;
         try { nome = decodeURIComponent(String(req.headers['x-nome-file'] ?? '')); } catch { nome = ''; }
@@ -3365,7 +3371,7 @@ function validaRichiestaIscrizione(body) {
     const email = testo(body.email, 120).toLowerCase();
     if (telefono && !/^[0-9+\s().-]{6,20}$/.test(telefono))
         return { errore: "Il numero di telefono non sembra giusto." };
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email))
+    if (email && !EMAIL_VALIDA.test(email))
         return { errore: "L'indirizzo email non sembra giusto." };
     if (!telefono && !email) return { errore: "Lascia almeno un contatto: telefono o email." };
 
@@ -4148,7 +4154,7 @@ app.put('/api/ragazzi/:id/scheda', verificaRuolo('capo', 'admin'), async (req, r
             valori[`genitore${n}_email`] = email;
             if (telefono && !/^[0-9+\s().-]{6,20}$/.test(telefono))
                 return res.status(400).json({ error: `Il telefono del genitore ${n} non sembra giusto.` });
-            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email))
+            if (email && !EMAIL_VALIDA.test(email))
                 return res.status(400).json({ error: `L'email del genitore ${n} non sembra giusta.` });
         }
         await salvaScheda(ragazzo.id, valori, { autore: req.user.id });
@@ -4160,7 +4166,7 @@ app.put('/api/ragazzi/:id/scheda', verificaRuolo('capo', 'admin'), async (req, r
 
 // Un PDF alla volta, inviato così com'è; il nome originale arriva in X-Nome-File.
 app.post('/api/ragazzi/:id/scheda/allegati', verificaRuolo('capo', 'admin'),
-    express.raw({ type: () => true, limit: MAX_BYTE_ALLEGATO }),
+    express.raw({ type: () => true, limit: MAX_BYTE_ALLEGATO, inflate: false }),
     async (req, res) => {
         let nome;
         try { nome = decodeURIComponent(String(req.headers['x-nome-file'] ?? '')); } catch { nome = ''; }
@@ -5560,7 +5566,7 @@ app.get('/api/carta-clan', async (req, res) => {
 // Il PDF arriva così com'è (niente base64), col nome nell'intestazione X-Nome-File.
 // Quella che era in vigore scende nell'archivio e al suo posto va la nuova.
 app.post('/api/carta-clan', verificaRuolo('capo', 'admin'),
-    express.raw({ type: () => true, limit: MAX_BYTE_CARTA }),
+    express.raw({ type: () => true, limit: MAX_BYTE_CARTA, inflate: false }),
     async (req, res) => {
         try {
             if (!(await puoGestireCarta(req)))
@@ -5680,7 +5686,7 @@ app.get('/api/peg', async (req, res) => {
 
 // Il PDF arriva così com'è, col nome in X-Nome-File; quello in vigore scende nell'archivio.
 app.post('/api/peg', verificaRuolo('capo', 'admin'),
-    express.raw({ type: () => true, limit: MAX_BYTE_CARTA }),
+    express.raw({ type: () => true, limit: MAX_BYTE_CARTA, inflate: false }),
     async (req, res) => {
         try {
             if (!(await puoGestirePeg(req))) return res.status(403).json({ error: "Il PEG lo cambiano i capigruppo." });
@@ -5967,6 +5973,8 @@ app.use((err, req, res, next) => {
     }
     // JSON scritto male: è un errore di chi manda, non del server.
     if (err.type === 'entity.parse.failed') return res.status(400).json({ error: "Richiesta non valida." });
+    // Corpo compresso (gzip…): il sito non lo manda mai, e non si accetta.
+    if (err.type === 'encoding.unsupported') return res.status(415).json({ error: "Richiesta non accettata." });
     erroreInterno(res, err);
 });
 

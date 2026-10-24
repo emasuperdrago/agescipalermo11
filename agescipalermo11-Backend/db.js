@@ -41,12 +41,15 @@ const pool = new Pool({
   // e un'attesa troppo lunga diventa un errore (che per le letture si riprova, vedi interroga).
   ...(process.env.VERCEL ? {
     idleTimeoutMillis: 2000,
-    connectionTimeoutMillis: 10000,
-    query_timeout: 15000,
+    connectionTimeoutMillis: 8000,
+    query_timeout: 8000,
     keepAlive: true,
   } : {}),
 });
 pool.on('error', (err) => console.error('Database: collegamento interrotto, si riprova alla prossima query:', err.code || err.message));
+// Su Vercel: prima che la funzione venga "congelata", Vercel aspetta che i collegamenti fermi
+// si chiudano (idleTimeoutMillis qui sopra). Così al risveglio non se ne trova mai uno morto.
+if (process.env.VERCEL) require('@vercel/functions').attachDatabasePool(pool);
 
 /**
  * Da "?" a $1, $2…, saltando i testi tra apici ('...'), i nomi tra virgolette ("...")
@@ -93,13 +96,31 @@ async function interroga(sql, parametri = []) {
   if (/^\s*INSERT\b/i.test(testo) && !/\bRETURNING\b/i.test(testo)) testo += ' RETURNING *';
   const valori = parametriPuliti(parametri);
   try {
-    return await pool.query(testo, valori);
+    return await sulCollegamento(testo, valori);
   } catch (err) {
     // Una lettura si può rifare senza rischi con un collegamento nuovo; una scrittura no (potrebbe
     // essere già arrivata), quindi l'errore va a chi l'ha chiesta.
     if (!collegamentoCaduto(err) || !/^\s*SELECT\b/i.test(testo)) throw err;
     console.error('Database: collegamento caduto, riprovo la lettura:', err.code || err.message);
-    return pool.query(testo, valori);
+    return sulCollegamento(testo, valori);
+  }
+}
+
+/**
+ * Una query sul collegamento del pool. Se il collegamento si è rotto (o non risponde più),
+ * non torna nel pool: si butta, e la prossima query ne apre uno nuovo. Senza questo, il
+ * collegamento bloccato resterebbe lì e anche il nuovo tentativo ci finirebbe sopra.
+ */
+async function sulCollegamento(testo, valori) {
+  const client = await pool.connect();
+  let rotto = false;
+  try {
+    return await client.query(testo, valori);
+  } catch (err) {
+    rotto = collegamentoCaduto(err);
+    throw err;
+  } finally {
+    client.release(rotto);
   }
 }
 
