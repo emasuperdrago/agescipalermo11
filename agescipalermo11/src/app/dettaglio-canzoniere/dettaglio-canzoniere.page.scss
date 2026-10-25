@@ -348,3 +348,110 @@
 @media (max-width: 767px) {
   .testo--parole .riga { white-space: pre-wrap; }
 }
+
+// ---------- Telefono: copertina, pulsanti e tonalità più piccoli (come le altre pagine) ----------
+// Il foglio ha meno margine ai lati: c'è più posto per il testo, che così viene più grande.
+@media (max-width: 599px) {
+  .copertina {
+    padding: 18px 16px 58px;
+
+    h1 {
+      margin-top: 8px;
+      font-size: 1.35rem;
+    }
+
+    &__azioni {
+      gap: 6px;
+      margin-top: 12px;
+    }
+  }
+
+  .badge {
+    padding: 3px 10px;
+    font-size: .64rem;
+  }
+
+  .pulsante {
+    gap: 6px;
+    min-height: 36px;
+    padding: 0 13px;
+    font-size: .76rem;
+
+    ion-icon { font-size: .95rem; }
+  }
+
+  .foglio {
+    margin-top: -40px;
+    padding: 0 8px calc(24px + env(safe-area-inset-bottom));
+  }
+
+  .tonalita {
+    gap: 9px;
+    margin-bottom: 8px;
+    padding: 10px;
+    border-radius: 16px;
+
+    &__riga {
+      gap: 10px;
+
+      &--opzioni { gap: 6px; }
+    }
+
+    &__nome {
+      min-width: 120px;
+
+      strong { font-size: 1.05rem; }
+      small { font-size: .66rem; }
+    }
+
+    &__nota { font-size: .7rem; }
+  }
+
+  .tondo {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+  }
+
+  .chip {
+    gap: 5px;
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: .7rem;
+  }
+
+  .alterazioni { gap: 5px; }
+
+  .capotasto {
+    font-size: .7rem;
+
+    select {
+      min-height: 30px;
+      padding: 0 8px;
+      font-size: .7rem;
+    }
+  }
+
+  .salva-gruppo {
+    min-height: 34px;
+    padding: 0 14px;
+    font-size: .74rem;
+  }
+
+  .testo {
+    padding: 14px 10px;
+    border-radius: 16px;
+  }
+
+  .stato {
+    gap: 12px;
+    padding: 48px 16px;
+
+    &__titolo { font-size: .95rem; }
+  }
+
+  .scheletro {
+    &__copertina { height: 140px; }
+    &__riga { margin: 20px 10px 0; }
+  }
+}

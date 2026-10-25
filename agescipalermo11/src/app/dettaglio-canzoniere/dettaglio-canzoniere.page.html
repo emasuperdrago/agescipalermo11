@@ -25,10 +25,12 @@
           <span class="badge">{{ nomeSezione(canto.sezione) }}</span>
           <h1>{{ canto.titolo }}</h1>
           <div class="copertina__azioni">
-            <button type="button" class="pulsante pulsante--chiaro" (click)="accordiVisibili = !accordiVisibili"
-                    [attr.aria-pressed]="!accordiVisibili">
-              {{ accordiVisibili ? 'Nascondi accordi' : 'Mostra accordi' }}
-            </button>
+            @if (conAccordi) {
+              <button type="button" class="pulsante pulsante--chiaro" (click)="accordiVisibili = !accordiVisibili"
+                      [attr.aria-pressed]="!accordiVisibili">
+                {{ accordiVisibili ? 'Nascondi accordi' : 'Mostra accordi' }}
+              </button>
+            }
             <button type="button" class="pulsante pulsante--vetro" (click)="scaricaPdf()">
               <ion-icon [icon]="icone.pdf" aria-hidden="true"></ion-icon>
               PDF
