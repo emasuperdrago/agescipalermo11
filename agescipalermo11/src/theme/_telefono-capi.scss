@@ -1,0 +1,70 @@
+@use 'variables' as *;
+
+// Le pagine della zona capi, da telefono: testi e spazi un po' più piccoli, così nella schermata
+// ci sta di più (come il canzoniere e i post della home). Su computer e tablet non cambia niente.
+// Le parti uguali in tutte le pagine stanno qui; ogni pagina aggiunge le sue sotto.
+@mixin zona-capi-telefono {
+  @media (max-width: 599px) {
+    .copertina {
+      padding: 14px 16px 52px;
+
+      h1 { font-size: 1.3rem; }
+      p { font-size: .76rem; }
+    }
+
+    .corpo {
+      gap: 12px;
+      padding: 0 10px 24px;
+    }
+
+    .scheda {
+      padding: 13px 13px 15px;
+      border-radius: 18px;
+
+      h2 {
+        gap: 6px;
+        margin-bottom: 10px;
+        font-size: .98rem;
+
+        ion-icon { font-size: 1.1rem; }
+      }
+    }
+
+    .conta {
+      min-width: 20px;
+      padding: 1px 7px;
+      font-size: .7rem;
+    }
+
+    .nota { font-size: .72rem; }
+
+    .avviso,
+    .avviso--errore,
+    .messaggio { font-size: .78rem; }
+
+    .vuoto { padding: 18px 12px; }
+    .vuoto__titolo { font-size: .9rem; }
+    .vuoto__testo { font-size: .76rem; }
+
+    .cerca input {
+      min-height: 40px;
+      font-size: .84rem;
+    }
+
+    .pulsante {
+      min-height: 40px;
+      padding: 8px 14px;
+      font-size: .82rem;
+    }
+
+    // Le tabelle (ragazzi, censiti): più fitte, così stanno quasi tutte nello schermo.
+    .tabella {
+      table { font-size: .76rem; }
+
+      th,
+      td { padding: 7px 9px; }
+
+      thead th { font-size: .62rem; }
+    }
+  }
+}

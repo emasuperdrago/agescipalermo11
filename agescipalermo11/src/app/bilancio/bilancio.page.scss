@@ -1,5 +1,6 @@
 @use '../../theme/variables' as *;
 @use '../../theme/testata' as *;
+@use '../../theme/telefono-capi' as *;
 
 @include testata-pagina;
 
@@ -567,3 +568,50 @@
 
 // La data in tre tendine: le serve un po' più spazio degli altri campi della riga.
 .campo--data { min-width: 260px; }
+
+// ---------- Telefono ----------
+@include zona-capi-telefono;
+
+@media (max-width: 599px) {
+  // Saldo su tutta la riga, entrate e uscite affiancate sotto.
+  .riepilogo {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+
+    &__saldo {
+      grid-column: 1 / -1;
+      padding: 13px 15px;
+      border-radius: 16px;
+
+      span { font-size: .7rem; }
+      strong { font-size: 1.45rem; }
+    }
+
+    &__voce {
+      padding: 11px 13px;
+      border-radius: 16px;
+
+      ion-icon { font-size: 1.05rem; }
+      span { font-size: .7rem; }
+      strong { font-size: .98rem; }
+    }
+  }
+
+  .tipo {
+    min-height: 40px;
+    font-size: .84rem;
+  }
+
+  .etichetta { font-size: .74rem; }
+
+  .movimento {
+    padding: 9px 11px;
+
+    &__testo {
+      strong { font-size: .84rem; }
+      small { font-size: .7rem; }
+    }
+
+    &__importo { font-size: .86rem; }
+  }
+}

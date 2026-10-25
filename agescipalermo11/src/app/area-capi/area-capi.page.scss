@@ -1,5 +1,6 @@
 @use '../../theme/variables' as *;
 @use '../../theme/testata' as *;
+@use '../../theme/telefono-capi' as *;
 
 @include testata-pagina;
 
@@ -665,5 +666,90 @@
     color: $slate-600;
 
     strong { color: $dark; }
+  }
+}
+
+// ---------- Telefono ----------
+@include zona-capi-telefono;
+
+@media (max-width: 599px) {
+  .scorciatoie { gap: 6px; }
+
+  .scorciatoia {
+    gap: 10px;
+    padding: 9px 11px;
+
+    &__icona {
+      width: 32px;
+      height: 32px;
+
+      ion-icon { font-size: 1rem; }
+    }
+
+    &__testo {
+      strong { font-size: .86rem; }
+      small { font-size: .72rem; }
+    }
+
+    &__freccia { font-size: .95rem; }
+  }
+
+  .sottotitolo { font-size: .78rem; }
+  .branca, .anno { padding: 2px 8px; font-size: .68rem; }
+
+  .apri-anno {
+    min-height: 44px;
+    font-size: .9rem;
+
+    ion-icon { font-size: 1.1rem; }
+  }
+
+  .strumento {
+    min-height: 32px;
+    padding: 5px 11px;
+    font-size: .76rem;
+
+    ion-icon { font-size: .95rem; }
+  }
+
+  .azione {
+    min-height: 34px;
+    padding: 6px 12px;
+    font-size: .78rem;
+  }
+
+  .richiesta {
+    padding: 11px;
+
+    &__chi {
+      strong { font-size: .9rem; }
+      small { font-size: .72rem; }
+    }
+
+    &__icona {
+      width: 32px;
+      height: 32px;
+    }
+
+    &__catechismo, &__note { font-size: .8rem; }
+    &__capo { font-size: .72rem; }
+  }
+
+  .segno { padding: 2px 8px; font-size: .66rem; }
+  .contatto { padding: 6px 10px; font-size: .78rem; }
+
+  .avviso-riga {
+    padding: 9px 11px;
+
+    &__testo {
+      strong { font-size: .86rem; }
+      small { font-size: .72rem; }
+    }
+  }
+
+  .compleanni {
+    padding: 10px 12px;
+
+    &__torta { font-size: 1.4rem; }
   }
 }

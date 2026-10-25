@@ -1,5 +1,6 @@
 @use '../../theme/variables' as *;
 @use '../../theme/testata' as *;
+@use '../../theme/telefono-capi' as *;
 
 @include testata-pagina;
 
@@ -421,3 +422,19 @@
   }
 }
 
+// ---------- Telefono ----------
+@include zona-capi-telefono;
+
+@media (max-width: 599px) {
+  .descrizione { font-size: .78rem; }
+  .ruolo-carico, .branca { font-size: .72rem; }
+
+  .file {
+    padding: 11px;
+
+    &__testo { font-size: .82rem; }
+  }
+
+  .anteprima__titolo { font-size: .86rem; }
+  .stato { font-size: .66rem; }
+}

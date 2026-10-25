@@ -1,5 +1,6 @@
 @use '../../theme/variables' as *;
 @use '../../theme/testata' as *;
+@use '../../theme/telefono-capi' as *;
 
 @include testata-pagina;
 
@@ -246,4 +247,17 @@
 
 @media (prefers-reduced-motion: reduce) {
   .scheletro > div { animation: none; }
+}
+
+// ---------- Telefono ----------
+@include zona-capi-telefono;
+
+@media (max-width: 559px) {
+  // Due foto per riga, come i post della home.
+  .galleria {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .aggiungi { font-size: .84rem; }
 }

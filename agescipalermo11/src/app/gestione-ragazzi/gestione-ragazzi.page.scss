@@ -1,5 +1,6 @@
 @use '../../theme/variables' as *;
 @use '../../theme/testata' as *;
+@use '../../theme/telefono-capi' as *;
 
 @include testata-pagina;
 
@@ -506,4 +507,28 @@
   font-size: .82rem;
   font-weight: 600;
   color: $red;
+}
+
+// ---------- Telefono ----------
+@include zona-capi-telefono;
+
+@media (max-width: 599px) {
+  .attivita {
+    &__nome { font-size: .84rem; }
+    &__importo { font-size: .8rem; }
+    &__raccolto { font-size: .72rem; }
+  }
+
+  .pasticca {
+    min-height: 30px;
+    padding: 5px 10px;
+    font-size: .74rem;
+  }
+
+  .aggiungi, .nuovo, .scarica { font-size: .8rem; }
+
+  .icona {
+    width: 30px;
+    height: 30px;
+  }
 }
