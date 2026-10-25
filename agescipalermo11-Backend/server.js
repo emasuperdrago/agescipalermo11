@@ -2744,7 +2744,9 @@ function soloParole(testo) {
  *  - tonalita: per un canto solo, quella scelta da chi scarica ({ passo, capotasto, alterazioni });
  *    altrimenti ogni canto esce nella tonalità del gruppo;
  *  - colonne: 2 per il libretto compatto (due colonne per pagina), 1 come prima.
- * Un canto non si spezza mai fra due pagine (o fra due colonne), se ci entra intero.
+ * A una colonna un canto non si spezza fra due pagine, se ci entra intero. A due colonne i testi
+ * scorrono come in un giornale: finita la colonna sinistra si continua nella destra, poi nella
+ * pagina dopo (gli accordi restano attaccati al loro verso, il titolo non resta solo in fondo).
  */
 function creaPdfCanti(voci, res, { conAccordi = true, grande = false, copertina = null, tonalita = null, colonne = 1 } = {}) {
     const doc = new PDFDocument({
@@ -2866,26 +2868,15 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, copertina 
     const SPAZIO_COLONNE = 18;
     const due = colonne === 2;
     const larghezzaColonna = due ? (larghezza - SPAZIO_COLONNE) / 2 : larghezza;
-    // Dove si scrive adesso. Con due colonne la pagina si riempie a "fasce": una fascia ha le due
-    // colonne (prima la sinistra, poi la destra) e comincia in cima o sotto un canto a tutta
-    // larghezza. `cimaFascia` è dove comincia, `fineSinistra` dove è finita la colonna sinistra.
-    const stato = { colonna: 0, cimaFascia: doc.y, fineSinistra: doc.y };
+    // Con due colonne i testi scorrono a "fasce": una fascia ha le due colonne e comincia in cima
+    // alla pagina o sotto un canto a tutta larghezza. `cimaFascia` è dove comincia.
+    const stato = { cimaFascia: doc.y };
     const xColonna = (colonna) => MARGINE + colonna * (larghezzaColonna + SPAZIO_COLONNE);
 
-    /** Pagina nuova: si ricomincia dalla colonna sinistra, in cima. */
+    /** Pagina nuova: le colonne ricominciano in cima. */
     const paginaNuova = () => {
         doc.addPage();
-        stato.colonna = 0;
         stato.cimaFascia = doc.y;
-        stato.fineSinistra = doc.y;
-    };
-    /** Colonna dopo: dalla sinistra alla destra (in cima alla fascia), dalla destra a una pagina nuova. */
-    const colonnaDopo = () => {
-        if (due && stato.colonna === 0) {
-            stato.fineSinistra = doc.y;
-            stato.colonna = 1;
-            doc.y = stato.cimaFascia;
-        } else paginaNuova();
     };
 
     // Con gli accordi nessuna riga può andare a capo (gli accordi finirebbero sopra le parole
@@ -2926,8 +2917,8 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, copertina 
         return { righe, altezza: misura(righe), entra: entraInLarghezza(righe) };
     };
 
-    /** Scrive il canto da qui in giù, in una colonna (o a tutta larghezza): `aCapo` quando finisce lo spazio. */
-    const scriviCanto = (c, titoletto, tono, righe, larghezza, x, aCapo) => {
+    /** Scrive la testa del canto (titoletto, sezione, titolo, tonalità) da qui in giù. */
+    const scriviTesta = (c, titoletto, tono, larghezza, x) => {
         const colore = COLORI_SEZIONE[c.sezione] ?? VIOLA;
         if (titoletto) {
             doc.font('Helvetica-Bold').fontSize(11).fillColor(VIOLA_CHIARO)
@@ -2939,72 +2930,119 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, copertina 
         doc.font('Helvetica-Bold').fontSize(grande ? 16 : 14).fillColor('#0F172A').text(c.titolo, x(), doc.y + 1, { width: larghezza });
         if (tono) doc.font('Helvetica').fontSize(8.5).fillColor(GRIGIO).text(tono, x(), doc.y + 1, { width: larghezza });
         doc.moveDown(0.4);
-
-        for (const r of righe) {
-            if (doc.y + r.altezza > fondo()) aCapo();
-            const opzioni = r.troppoLunga
-                ? { width: larghezza, lineGap: r.interlinea - r.dimensione }
-                : { lineBreak: false, width: larghezza * 2 };
-            // Gli accordi sono già tutti in neretto; i versi seguono gli **asterischi**.
-            const pezzi = r.accordi ? [{ grassetto: true, testo: r.pulita || ' ' }] : pezziRiga(r.senzaSegno || ' ');
-            const partenza = doc.y;
-            doc.fontSize(r.dimensione).fillColor(r.accordi ? colore : '#0F172A');
-            pezzi.forEach((pezzo, indice) => {
-                doc.font(carattere(pezzo.grassetto));
-                const continua = indice < pezzi.length - 1;
-                if (indice === 0) doc.text(pezzo.testo, x(), partenza, { ...opzioni, continued: continua });
-                else doc.text(pezzo.testo, { ...opzioni, continued: continua });
-            });
-            doc.y = partenza + r.altezza;
-        }
     };
 
-    // ---------- Due colonne: i canti di una "fascia" si mettono da parte e si scrivono insieme ----------
-    // Così si possono dividere bene fra le due colonne (sempre in ordine: prima tutta la sinistra,
-    // poi la destra), senza lasciare la destra vuota prima di un canto a tutta larghezza.
-    const SPAZIO_CANTI = 22;
-    let fascia = [];
-    /** Altezza di una colonna con questi canti, uno sotto l'altro. */
-    const altezzaColonnaDi = (canti) => canti.reduce((somma, v, n) => somma + v.altezza + (n ? SPAZIO_CANTI : 0), 0);
-    /** Da quale canto comincia la colonna destra riempiendo prima tutta la sinistra; null = non ci stanno. */
-    const divisioneInFila = (canti) => {
-        const spazio = fondo() - stato.cimaFascia;
-        let k = 0;
-        while (k < canti.length && altezzaColonnaDi(canti.slice(0, k + 1)) <= spazio) k++;
-        return altezzaColonnaDi(canti.slice(k)) <= spazio ? k : null;
-    };
-    /** La divisione più pari fra le due colonne (la sinistra mai più corta della destra). */
-    const divisionePari = (canti) => {
-        const spazio = fondo() - stato.cimaFascia;
-        let migliore = divisioneInFila(canti) ?? canti.length;
-        let altezzaMigliore = Infinity;
-        for (let k = canti.length; k >= 1; k--) {
-            const sinistra = altezzaColonnaDi(canti.slice(0, k));
-            const destra = altezzaColonnaDi(canti.slice(k));
-            if (sinistra > spazio || destra > spazio || destra > sinistra) continue;
-            if (sinistra < altezzaMigliore) { altezzaMigliore = sinistra; migliore = k; }
-        }
-        return migliore;
-    };
-    /** Scrive la fascia (sinistra fino a `k`, poi destra) e porta il segno sotto alla più lunga. */
-    const scriviFascia = (k) => {
-        let fine = stato.cimaFascia;
-        [fascia.slice(0, k), fascia.slice(k)].forEach((canti, colonna) => {
-            doc.y = stato.cimaFascia;
-            canti.forEach((v, n) => {
-                if (n) doc.y += SPAZIO_CANTI;
-                scriviCanto(v.c, v.titoletto, v.tono, v.righe, larghezzaColonna, () => xColonna(colonna), paginaNuova);
-            });
-            fine = Math.max(fine, doc.y);
+    /** Scrive una riga del canto da qui in giù (gli accordi nel colore della sezione). */
+    const scriviRiga = (c, r, larghezza, x) => {
+        const colore = COLORI_SEZIONE[c.sezione] ?? VIOLA;
+        const opzioni = r.troppoLunga
+            ? { width: larghezza, lineGap: r.interlinea - r.dimensione }
+            : { lineBreak: false, width: larghezza * 2 };
+        // Gli accordi sono già tutti in neretto; i versi seguono gli **asterischi**.
+        const pezzi = r.accordi ? [{ grassetto: true, testo: r.pulita || ' ' }] : pezziRiga(r.senzaSegno || ' ');
+        const partenza = doc.y;
+        doc.fontSize(r.dimensione).fillColor(r.accordi ? colore : '#0F172A');
+        pezzi.forEach((pezzo, indice) => {
+            doc.font(carattere(pezzo.grassetto));
+            const continua = indice < pezzi.length - 1;
+            if (indice === 0) doc.text(pezzo.testo, x(), partenza, { ...opzioni, continued: continua });
+            else doc.text(pezzo.testo, { ...opzioni, continued: continua });
         });
-        fascia = [];
-        doc.y = fine;
+        doc.y = partenza + r.altezza;
     };
-    /** Chiude la fascia aperta (divisa pari); dopo, si continua sotto. */
-    const chiudiFascia = () => {
-        if (!fascia.length) return;
-        scriviFascia(divisionePari(fascia));
-        stato.cimaFascia = doc.y + SPAZIO_CANTI;
+
+    /** Scrive il canto da qui in giù, a tutta larghezza: pagina nuova quando finisce lo spazio. */
+    const scriviCanto = (c, titoletto, tono, righe, larghezza, x) => {
+        scriviTesta(c, titoletto, tono, larghezza, x);
+        for (const r of righe) {
+            if (doc.y + r.altezza > fondo()) paginaNuova();
+            scriviRiga(c, r, larghezza, x);
+        }
+    };
+
+    // ---------- Due colonne: i testi scorrono da una colonna all'altra ----------
+    // Ogni canto diventa una fila di "pezzi" che non si spezzano: la testa insieme alla prima riga
+    // (il titolo non resta mai solo in fondo a una colonna), una riga di accordi insieme al suo
+    // verso, ogni altra riga da sola. I pezzi riempiono la colonna sinistra, poi la destra, poi la
+    // pagina dopo; nell'ultima pagina (o prima di un canto a tutta larghezza) le colonne si pareggiano.
+    const SPAZIO_CANTI = 22;
+    let pezziInFila = [];
+
+    /** I pezzi di un canto, con l'altezza di ognuno. */
+    const pezziDi = (c, titoletto, tono, righe) => {
+        const pezzi = [];
+        for (let i = 0; i < righe.length; i++) {
+            const gruppo = [righe[i]];
+            if (righe[i].accordi && righe[i + 1] && !righe[i + 1].accordi) gruppo.push(righe[++i]);
+            pezzi.push({ c, righe: gruppo, altezza: gruppo.reduce((somma, r) => somma + r.altezza, 0),
+                vuoto: gruppo.length === 1 && !gruppo[0].pulita.trim() });
+        }
+        const testa = altezzaIntestazione(c, titoletto, tono, larghezzaColonna);
+        const primo = pezzi.shift() ?? { righe: [], altezza: 0 };
+        pezzi.unshift({ c, titoletto, tono, testa, righe: primo.righe, altezza: testa + primo.altezza, vuoto: false });
+        return pezzi;
+    };
+
+    /** Quanto occupa un pezzo: una riga vuota in cima a una colonna non serve; un canto nuovo si stacca. */
+    const altezzaPezzo = (pezzo, inCima) =>
+        (pezzo.vuoto && inCima) ? 0 : pezzo.altezza + (pezzo.testa !== undefined && !inCima ? SPAZIO_CANTI : 0);
+
+    /**
+     * Mette i pezzi (da `i`) in una colonna da `y0` fino a `limite`; dice fin dove è arrivato.
+     * Con `forza`, un pezzo più alto di una colonna intera si mette lo stesso (senza, si ferma).
+     * Con `x` li scrive davvero, altrimenti misura soltanto.
+     */
+    const riempiColonna = (i, y0, limite, { forza = false, x = null } = {}) => {
+        let y = y0;
+        while (i < pezziInFila.length) {
+            const pezzo = pezziInFila[i];
+            const inCima = y === y0;
+            const altezza = altezzaPezzo(pezzo, inCima);
+            if (y + altezza > limite + 0.01 && !(forza && inCima)) break;
+            if (x && altezza > 0) {
+                doc.y = y + (altezza - pezzo.altezza);
+                if (pezzo.testa !== undefined) {
+                    const inizio = doc.y;
+                    scriviTesta(pezzo.c, pezzo.titoletto, pezzo.tono, larghezzaColonna, x);
+                    doc.y = inizio + pezzo.testa;
+                }
+                for (const r of pezzo.righe) scriviRiga(pezzo.c, r, larghezzaColonna, x);
+            }
+            y += altezza;
+            i++;
+        }
+        return { i, y };
+    };
+
+    /** Scrive i pezzi in fila nelle due colonne, pagina dopo pagina; dopo, si continua sotto. */
+    const scriviInFila = () => {
+        let i = 0;
+        while (i < pezziInFila.length) {
+            const cima = stato.cimaFascia;
+            const fine = fondo();
+            // Le due colonne arrivano fin dove serve: tutto quello che resta, se ci sta, diviso pari.
+            const finisceCon = (limite) => riempiColonna(riempiColonna(i, cima, limite).i, cima, limite).i >= pezziInFila.length;
+            let limite = fine;
+            if (finisceCon(fine)) {
+                let basso = cima;
+                for (let giri = 0; giri < 16 && limite - basso > 1; giri++) {
+                    const mezzo = (basso + limite) / 2;
+                    if (finisceCon(mezzo)) limite = mezzo; else basso = mezzo;
+                }
+            }
+            const pieno = limite === fine;
+            // In cima a una pagina vuota anche un pezzo troppo alto si mette (altrimenti non finirebbe mai).
+            const forza = pieno && cima <= MARGINE + ALTEZZA_TESTATA + 1;
+            const sinistra = riempiColonna(i, cima, limite, { forza, x: () => xColonna(0) });
+            const destra = riempiColonna(sinistra.i, cima, limite, { forza, x: () => xColonna(1) });
+            i = destra.i;
+            if (i < pezziInFila.length) paginaNuova();
+            else {
+                doc.y = Math.max(sinistra.y, destra.y);
+                stato.cimaFascia = Math.min(doc.y + SPAZIO_CANTI, fine);
+            }
+        }
+        pezziInFila = [];
     };
 
     let primo = true;
@@ -3015,31 +3053,15 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, copertina 
 
         if (due) {
             const inColonna = preparaCanto(c, titoletto, tono, larghezzaColonna, altezzaPagina);
-            if (inColonna.entra && inColonna.altezza <= altezzaPagina) {
-                const voce = { c, titoletto, tono, righe: inColonna.righe, altezza: inColonna.altezza };
-                if (stato.cimaFascia < fondo() && divisioneInFila([...fascia, voce]) !== null) {
-                    fascia.push(voce);
-                    continue;
-                }
-                // La pagina è piena: la fascia si scrive com'è (in fila) e si va avanti su una nuova.
-                if (fascia.length) scriviFascia(divisioneInFila(fascia) ?? fascia.length);
-                paginaNuova();
-                fascia = [voce];
-                continue;
-            }
-            // Un canto a tutta larghezza (righe troppo lunghe per mezza pagina) o più alto di una
-            // colonna intera: prima si chiude la fascia, poi lui sotto.
-            chiudiFascia();
-            if (fascia.length === 0 && doc.y > cima + 1) doc.y = Math.min(stato.cimaFascia - SPAZIO_CANTI, fondo());
             if (inColonna.entra) {
-                // Più alto di una colonna: comincia in cima a una colonna e continua nella dopo.
-                if (doc.y > cima + 1) paginaNuova();
-                scriviCanto(c, titoletto, tono, inColonna.righe, larghezzaColonna, () => xColonna(stato.colonna), colonnaDopo);
-                // Se è finito nella colonna destra, la sinistra è piena: si riparte da una pagina nuova.
-                if (stato.colonna === 1) paginaNuova();
-                else stato.cimaFascia = Math.min(doc.y + SPAZIO_CANTI, fondo());
+                pezziInFila.push(...pezziDi(c, titoletto, tono, inColonna.righe));
                 continue;
             }
+            // Righe troppo lunghe per mezza pagina: prima si scrive quello che è in fila, poi lui
+            // a tutta larghezza, sotto.
+            const cerano = pezziInFila.length > 0;
+            scriviInFila();
+            if (cerano || doc.y > cima + 1) doc.y = Math.min(stato.cimaFascia - SPAZIO_CANTI, fondo());
         }
 
         const intera = preparaCanto(c, titoletto, tono, larghezza, altezzaPagina);
@@ -3048,11 +3070,11 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, copertina 
         // comincia comunque su una pagina nuova, e lì va avanti dove serve.
         if (!inCima && doc.y + spazio + intera.altezza > fondo()) paginaNuova();
         else if (!inCima) doc.y += spazio;
-        scriviCanto(c, titoletto, tono, intera.righe, larghezza, () => MARGINE, paginaNuova);
+        scriviCanto(c, titoletto, tono, intera.righe, larghezza, () => MARGINE);
         // Le colonne ripartono sotto, staccate come fra due canti.
         if (due) stato.cimaFascia = Math.min(doc.y + SPAZIO_CANTI, fondo());
     }
-    if (due) chiudiFascia();
+    if (due) scriviInFila();
 
     doc.end();
 }
