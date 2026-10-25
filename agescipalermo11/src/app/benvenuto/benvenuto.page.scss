@@ -175,3 +175,76 @@ $rosso-clan: #C8372D;
   .scheda { padding: 48px 40px 36px; }
   .titolo { font-size: 2.6rem; }
 }
+
+// Da telefono: scheda più compatta (come il login), così tutto sta in una schermata, anche il
+// riquadro di chi è già connesso. La foto resta grande: qui c'è posto.
+@media (max-width: 599px) {
+  .stage { padding: 34vh 12px 24px; }
+
+  .scheda {
+    padding: 22px 18px 18px;
+    border-radius: 22px;
+  }
+
+  .logo {
+    width: 124px;
+    margin-bottom: 10px;
+  }
+
+  .sovratitolo {
+    font-size: .66rem;
+    letter-spacing: 1.6px;
+  }
+
+  .sottotitolo {
+    margin: 8px 0 14px;
+    font-size: .82rem;
+    line-height: 1.45;
+  }
+
+  .branche {
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .branca {
+    padding: 4px 12px;
+    font-size: .68rem;
+  }
+
+  .sessione {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+
+    p {
+      margin-bottom: 6px;
+      font-size: .76rem;
+    }
+
+    &__azioni {
+      gap: 16px;
+
+      a,
+      button { font-size: .78rem; }
+    }
+  }
+
+  .azioni { gap: 10px; }
+
+  .pulsante {
+    min-height: 46px;
+    border-radius: 14px;
+    font-size: .92rem;
+  }
+
+  .errore {
+    margin-top: 10px;
+    font-size: .76rem;
+  }
+
+  .nota {
+    margin-top: 14px;
+    font-size: .72rem;
+  }
+}
