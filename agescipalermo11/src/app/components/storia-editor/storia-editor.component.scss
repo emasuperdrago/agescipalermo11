@@ -164,3 +164,57 @@
 
   &:disabled { opacity: .7; cursor: default; }
 }
+
+// Da telefono: testi e spazi più piccoli, come gli altri moduli.
+@media (max-width: 599px) {
+  .modulo {
+    gap: 14px;
+    padding: 14px 12px calc(22px + env(safe-area-inset-bottom));
+  }
+
+  .obbligatori { font-size: .74rem; }
+
+  .campo {
+    gap: 6px;
+
+    input,
+    textarea {
+      min-height: 42px;
+      padding: 9px 12px;
+      border-radius: 11px;
+      font-size: .86rem;
+    }
+  }
+
+  .etichetta { font-size: .74rem; }
+  .suggerimento { font-size: .7rem; }
+
+  .icone {
+    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+    gap: 6px;
+  }
+
+  .icona {
+    height: 40px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+  }
+
+  .spunta {
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+
+    input { width: 18px; height: 18px; }
+    strong { font-size: .8rem; }
+    small { font-size: .7rem; }
+  }
+
+  .errore { font-size: .78rem; }
+
+  .salva {
+    min-height: 46px;
+    border-radius: 14px;
+    font-size: .9rem;
+  }
+}

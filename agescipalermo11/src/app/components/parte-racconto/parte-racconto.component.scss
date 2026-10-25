@@ -161,3 +161,64 @@ $colori-branca: (
     }
   }
 }
+
+// Da telefono: come le altre schede della storia (vedi storia.page.scss).
+@media (max-width: 599px) {
+  .scheda {
+    padding: 14px 13px 15px;
+    border-radius: 18px;
+
+    h2 {
+      gap: 6px;
+      margin-bottom: 10px;
+      font-size: .98rem;
+
+      ion-icon { font-size: 1.1rem; }
+    }
+  }
+
+  .testo {
+    font-size: .82rem;
+    line-height: 1.6;
+  }
+
+  .branche {
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .branca {
+    padding: 9px 4px;
+    border-radius: 13px;
+
+    strong { font-size: .92rem; }
+    span { font-size: .68rem; }
+  }
+
+  .evidenza {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-left-width: 3px;
+    border-radius: 0 13px 13px 0;
+    font-size: .82rem;
+    line-height: 1.6;
+  }
+
+  .etichette {
+    gap: 5px;
+    margin-top: 10px;
+
+    li {
+      padding: 4px 10px;
+      font-size: .7rem;
+    }
+  }
+
+  .comandi__tasto {
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: .7rem;
+
+    ion-icon { font-size: .85rem; }
+  }
+}
