@@ -447,3 +447,81 @@
 
   &:disabled { opacity: .7; cursor: default; }
 }
+
+// Da telefono: testi e spazi più piccoli, così il modulo sta in meno schermate.
+@media (max-width: 599px) {
+  .modulo {
+    gap: 14px;
+    padding: 14px 12px calc(22px + env(safe-area-inset-bottom));
+  }
+
+  .obbligatori { font-size: .74rem; }
+
+  .campo {
+    gap: 6px;
+
+    input,
+    textarea {
+      min-height: 42px;
+      padding: 9px 12px;
+      border-radius: 11px;
+      font-size: .86rem;
+    }
+  }
+
+  .etichetta { font-size: .74rem; }
+  .sottoetichetta { font-size: .7rem; }
+  .suggerimento { font-size: .7rem; }
+
+  .scelte { gap: 6px; }
+
+  .scelta-branca {
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: .78rem;
+  }
+
+  .risultati button {
+    padding: 8px 10px;
+    font-size: .78rem;
+  }
+
+  .mappa-scelta__mappa { height: 240px; }
+
+  .mappa-scelta__gps {
+    padding: 6px 11px;
+    font-size: .72rem;
+  }
+
+  .aggiungi {
+    padding: 7px 12px;
+    font-size: .76rem;
+  }
+
+  .allegato {
+    gap: 10px;
+
+    &__anteprima,
+    &__icona { width: 44px; height: 44px; }
+
+    &__testo {
+      strong { font-size: .78rem; }
+      small { font-size: .68rem; }
+    }
+  }
+
+  .carica {
+    min-height: 48px;
+    font-size: .82rem;
+
+    ion-icon { font-size: 1.15rem; }
+  }
+
+  .errore { font-size: .78rem; }
+
+  .salva {
+    min-height: 46px;
+    border-radius: 14px;
+    font-size: .9rem;
+  }
+}

@@ -563,3 +563,145 @@
   .scheletro > div { animation: none; }
   .galleria__foto img { transition: none; }
 }
+
+// ---------- Da telefono: testi e spazi più piccoli (come mappa e calendario) ----------
+
+@media (max-width: 599px) {
+  .copertina {
+    padding: 20px 16px 64px;
+
+    h1 {
+      margin: 10px 0 4px;
+      font-size: 1.35rem;
+    }
+
+    &__indirizzo {
+      gap: 5px;
+      font-size: .8rem;
+
+      ion-icon { margin-top: 2px; }
+    }
+
+    &__azioni {
+      gap: 6px;
+      margin-top: 14px;
+    }
+  }
+
+  .badge {
+    gap: 6px;
+    padding: 3px 10px;
+    font-size: .64rem;
+
+    &__bandierina { width: 12px; height: 9px; }
+  }
+
+  .pulsante {
+    gap: 6px;
+    min-height: 38px;
+    padding: 0 14px;
+    font-size: .8rem;
+
+    ion-icon { font-size: 1rem; }
+  }
+
+  .corpo {
+    gap: 12px;
+    margin-top: -46px;
+    padding: 0 10px calc(24px + env(safe-area-inset-bottom));
+  }
+
+  .colonna-principale,
+  .colonna-laterale { gap: 12px; }
+
+  .scheda {
+    padding: 13px 13px 15px;
+    border-radius: 18px;
+
+    h2 {
+      gap: 6px;
+      margin-bottom: 10px;
+      font-size: .95rem;
+
+      small { font-size: .68rem; }
+    }
+  }
+
+  .descrizione {
+    font-size: .82rem;
+    line-height: 1.6;
+  }
+
+  .campi {
+    gap: 5px;
+
+    li {
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: .8rem;
+    }
+  }
+
+  .nessuno { font-size: .8rem; }
+
+  .galleria { gap: 6px; }
+
+  .galleria__foto { border-radius: 12px; }
+
+  .file {
+    gap: 6px;
+
+    &__voce {
+      gap: 10px;
+      padding: 8px;
+      border-radius: 12px;
+    }
+
+    &__tipo {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      font-size: .62rem;
+    }
+
+    &__testo {
+      strong { font-size: .8rem; }
+      small { font-size: .68rem; }
+    }
+
+    &__scarica {
+      padding: 7px 10px;
+      font-size: .72rem;
+
+      ion-icon { font-size: 1rem; }
+    }
+  }
+
+  .mini-mappa {
+    height: 190px;
+    border-radius: 12px;
+  }
+
+  .coordinate {
+    margin: 6px 0 10px;
+    font-size: .68rem;
+  }
+
+  .contatti { gap: 8px; }
+
+  .contatto {
+    gap: 5px;
+    padding: 10px;
+    border-radius: 12px;
+
+    &__nome { font-size: .82rem; }
+
+    &__link {
+      gap: 6px;
+      min-height: 32px;
+      padding: 0 10px;
+      font-size: .78rem;
+    }
+  }
+}

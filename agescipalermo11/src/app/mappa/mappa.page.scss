@@ -393,3 +393,114 @@
   .scheletro > div { animation: none; }
   .posto { transition: none; }
 }
+
+// ---------- Da telefono: testi e spazi più piccoli (come calendario e zona capi) ----------
+
+@media (max-width: 599px) {
+  .riquadro-mappa {
+    height: 52vh;
+    min-height: 290px;
+  }
+
+  .filtri {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    gap: 5px;
+  }
+
+  .filtro {
+    gap: 5px;
+    min-height: 32px;
+    padding: 4px 6px 4px 11px;
+    font-size: .72rem;
+
+    &__bandierina { width: 12px; height: 9px; }
+
+    &__numero {
+      min-width: 18px;
+      padding: 0 6px;
+      font-size: .64rem;
+    }
+
+    &--tutte { padding-left: 12px; }
+  }
+
+  .nuovo-posto {
+    right: 10px;
+    bottom: 18px;
+    gap: 6px;
+    min-height: 40px;
+    padding: 0 15px 0 12px;
+    font-size: .8rem;
+
+    ion-icon { font-size: 1.1rem; }
+  }
+
+  .elenco {
+    padding: 14px 10px 24px;
+
+    &__intestazione {
+      margin-bottom: 10px;
+
+      h1 { font-size: 1.15rem; }
+      p { font-size: .76rem; }
+    }
+
+    &__conteggio { font-size: .66rem; }
+  }
+
+  .cerca {
+    gap: 6px;
+    margin-bottom: 12px;
+    padding: 0 5px 0 12px;
+    border-radius: 12px;
+
+    > ion-icon { font-size: 1rem; }
+
+    input {
+      min-height: 40px;
+      font-size: .84rem;
+    }
+
+    &__cancella { width: 30px; height: 30px; }
+  }
+
+  .posti { gap: 6px; }
+
+  .posto {
+    gap: 10px;
+    padding: 9px 10px 9px 11px;
+    border-left-width: 4px;
+    border-radius: 12px;
+
+    &__bandierina { width: 15px; height: 12px; }
+
+    &__testo {
+      strong { font-size: .84rem; }
+      small { font-size: .7rem; }
+    }
+
+    &__sede {
+      margin-left: 4px;
+      padding: 1px 6px;
+      font-size: .56rem;
+    }
+
+    &__allegati {
+      gap: 10px;
+      font-size: .64rem;
+    }
+
+    &__freccia { font-size: .95rem; }
+  }
+
+  .vuoto {
+    padding: 18px 12px;
+    font-size: .8rem;
+
+    &__azione { font-size: .76rem; }
+  }
+
+  .scheletro > div { height: 54px; }
+}

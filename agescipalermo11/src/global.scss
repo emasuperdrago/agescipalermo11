@@ -698,6 +698,25 @@ ion-tab-button ion-label {
   &:focus-visible { outline: 3px solid rgba(159, 123, 219, .5); }
 }
 
+// Da telefono: "Riposiziona" e lo zoom della mappa più piccoli.
+@media (max-width: 599px) {
+  .controllo-sede {
+    gap: 5px;
+    min-height: 34px;
+    padding: 0 11px 0 9px;
+    font-size: .72rem;
+
+    ion-icon { font-size: 1rem; }
+  }
+
+  .leaflet-touch .leaflet-bar a {
+    width: 28px;
+    height: 28px;
+    font-size: 18px;
+    line-height: 28px;
+  }
+}
+
 .leaflet-tooltip.nome-posto {
   padding: 4px 10px;
   border: none;

@@ -61,4 +61,22 @@
       }
     }
   }
+
+  // Da telefono la barra è più bassa e il marchio più piccolo.
+  @media (max-width: 599px) {
+    .testata-pagina ion-toolbar { --min-height: 56px; }
+
+    .indietro { font-size: .88rem; }
+
+    .marchio {
+      gap: 8px;
+
+      img { width: 32px; height: 32px; }
+
+      &__testo {
+        strong { font-size: .82rem; }
+        small { font-size: .55rem; }
+      }
+    }
+  }
 }

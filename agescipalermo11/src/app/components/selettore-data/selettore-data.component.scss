@@ -70,13 +70,14 @@
 // Da telefono: tendine più basse, come gli altri campi dei moduli.
 @media (max-width: 599px) {
   .selettore-data {
+    grid-template-columns: 1fr 1.25fr 1fr;
     gap: 6px;
 
     select, .campo-giorno {
       min-height: 42px;
-      padding: 9px 28px 9px 10px;
+      padding: 9px 22px 9px 9px;
       border-radius: 11px;
-      background-position: right 8px center;
+      background-position: right 6px center;
       background-size: 14px;
       font-size: .86rem;
     }
