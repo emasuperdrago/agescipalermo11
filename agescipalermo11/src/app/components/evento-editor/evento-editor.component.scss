@@ -223,3 +223,59 @@
   padding: 0;
   border: none;
 }
+
+// Da telefono: testi e spazi più piccoli, così il modulo sta in meno schermate.
+@media (max-width: 599px) {
+  .modulo {
+    gap: 12px;
+    padding: 14px 12px calc(22px + env(safe-area-inset-bottom));
+  }
+
+  .obbligatori { font-size: .74rem; }
+
+  .riga { gap: 10px; }
+
+  .campo {
+    gap: 4px;
+
+    input,
+    textarea {
+      min-height: 42px;
+      padding: 9px 12px;
+      border-radius: 11px;
+      font-size: .86rem;
+    }
+  }
+
+  .etichetta { font-size: .74rem; }
+
+  .interruttore {
+    gap: 8px;
+    font-size: .78rem;
+  }
+
+  .etichette { gap: 6px; }
+
+  .scelta-etichetta {
+    padding: 6px 13px;
+    font-size: .78rem;
+  }
+
+  .evidenza {
+    gap: 6px;
+    padding: 8px 14px;
+    font-size: .8rem;
+
+    ion-icon { font-size: 1rem; }
+  }
+
+  .errore { font-size: .78rem; }
+
+  .salva {
+    min-height: 46px;
+    border-radius: 14px;
+    font-size: .9rem;
+  }
+
+  .nota-capi { margin-top: 6px; font-size: .7rem; }
+}

@@ -66,3 +66,29 @@
     }
   }
 }
+
+// Da telefono: tendine più basse, come gli altri campi dei moduli.
+@media (max-width: 599px) {
+  .selettore-data {
+    gap: 6px;
+
+    select, .campo-giorno {
+      min-height: 42px;
+      padding: 9px 28px 9px 10px;
+      border-radius: 11px;
+      background-position: right 8px center;
+      background-size: 14px;
+      font-size: .86rem;
+    }
+
+    .griglia-giorni {
+      gap: 3px;
+      padding: 6px;
+
+      button {
+        height: 32px;
+        font-size: .82rem;
+      }
+    }
+  }
+}
