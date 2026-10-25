@@ -201,7 +201,11 @@ export class DettaglioCanzonierePage implements OnInit, OnDestroy {
     this.passo = nuovo > 11 ? nuovo - 12 : nuovo < -11 ? nuovo + 12 : nuovo;
   }
 
-  tornaAllOriginale() {
+  /** Gli accordi tornano come sono scritti, senza capotasto (solo per chi guarda), dopo una conferma. */
+  async tornaAllOriginale() {
+    const capotasto = this.capotasto ? ' e senza capotasto' : '';
+    if (!(await this.conferma.chiedi('Tornare alla tonalità originale?',
+      `Gli accordi tornano come sono scritti (${this.tonalitaScritta})${capotasto}.`, 'Torna all’originale'))) return;
     this.passo = 0;
     this.capotasto = 0;
   }
