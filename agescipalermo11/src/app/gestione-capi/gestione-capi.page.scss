@@ -167,10 +167,15 @@
     padding: 10px 14px;
     border: 1.5px solid $slate-200;
     border-radius: 14px;
+    // Sfondo e colori scritti qui: senza, il telefono (col tema scuro) la colora a modo suo.
+    background: $white;
+    color-scheme: light;
     font-family: inherit;
     font-size: .92rem;
     color: $dark;
     outline: none;
+
+    &::placeholder { color: $slate-400; }
 
     &:focus {
       border-color: $viola-m;
