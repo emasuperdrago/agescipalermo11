@@ -1,5 +1,6 @@
 @use '../../theme/variables' as *;
 @use '../../theme/testata' as *;
+@use '../../theme/telefono-pagine' as *;
 
 @include testata-pagina;
 
@@ -326,4 +327,79 @@
   font-size: .85rem;
   font-weight: 600;
   color: $red;
+}
+
+// ---------- Da telefono ----------
+
+@include pagina-telefono;
+
+@media (max-width: 599px) {
+  .copertina {
+    &__contenuto { gap: 12px; }
+
+    &__foto,
+    &__iniziale {
+      width: 56px;
+      height: 56px;
+    }
+
+    &__iniziale { font-size: 1.5rem; }
+  }
+
+  // Qui i titoli delle schede non hanno spazio sotto (la scheda usa gap).
+  .scheda {
+    gap: 10px;
+
+    h2 { margin: 0; }
+  }
+
+  .grido {
+    padding: 11px 12px;
+    border-radius: 13px;
+
+    figcaption {
+      margin-bottom: 4px;
+      font-size: .7rem;
+    }
+
+    blockquote { font-size: .9rem; }
+  }
+
+  .guidoncini {
+    gap: 6px;
+
+    li {
+      padding: 7px 10px;
+      border-radius: 12px;
+    }
+
+    strong { font-size: .78rem; }
+    small { font-size: .68rem; }
+  }
+
+  .storia { font-size: .82rem; }
+
+  .azioni { gap: 8px; }
+
+  .grido-modulo {
+    padding: 10px;
+    border-radius: 13px;
+  }
+
+  .modulo { gap: 14px; }
+
+  .principale,
+  .secondario {
+    min-height: 38px;
+    padding: 0 15px;
+    font-size: .8rem;
+  }
+
+  .link-piccolo { font-size: .72rem; }
+
+  .aggiungi {
+    gap: 6px;
+    min-height: 40px;
+    border-radius: 14px;
+  }
 }

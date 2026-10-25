@@ -157,3 +157,48 @@
 
   .carica { align-self: stretch; }
 }
+
+// Da telefono: testi e tasti un po' più piccoli (come le pagine di PEG e Carta di Clan).
+@media (max-width: 599px) {
+  .riquadro {
+    gap: 10px;
+
+    &__nome {
+      strong { font-size: .9rem; }
+      small { font-size: .7rem; }
+    }
+
+    &__azioni { gap: 6px; }
+    &__peso { font-size: .68rem; }
+  }
+
+  .pastiglia {
+    padding: 3px 9px;
+    font-size: .68rem;
+  }
+
+  .tasto {
+    gap: 5px;
+    padding: 6px 11px;
+    font-size: .74rem;
+
+    ion-icon { font-size: .92rem; }
+  }
+
+  .carica {
+    padding: 11px;
+    border-radius: 15px;
+
+    ion-icon { font-size: 1.2rem; }
+    span { font-size: .8rem; }
+    small { font-size: .68rem; }
+  }
+
+  .vuoto {
+    padding: 14px 8px;
+
+    > ion-icon { font-size: 1.8rem; }
+    p { font-size: .82rem; }
+    > small { font-size: .72rem; }
+  }
+}

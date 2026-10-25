@@ -122,3 +122,27 @@ $altezza-foglio-grande: clamp(420px, 78vh, 900px);
 @keyframes gira-pdf {
   to { transform: rotate(360deg); }
 }
+
+// Da telefono: cornice e comandi un po' più piccoli.
+@media (max-width: 599px) {
+  .sfoglia {
+    gap: 10px;
+
+    &__cornice {
+      padding: 6px;
+      border-radius: 14px;
+    }
+
+    &__errore { font-size: .78rem; }
+    &__comandi { gap: 10px; }
+
+    &__freccia {
+      width: 34px;
+      height: 34px;
+
+      ion-icon { font-size: 1rem; }
+    }
+
+    &__conta { font-size: .74rem; }
+  }
+}

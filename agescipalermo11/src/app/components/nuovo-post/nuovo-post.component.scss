@@ -538,3 +538,135 @@
   font-size: .74rem;
   color: $slate;
 }
+
+// Da telefono: testi, campi e foto più piccoli, come gli altri moduli.
+@media (max-width: 599px) {
+  .modulo {
+    gap: 14px;
+    padding: 14px 12px calc(22px + env(safe-area-inset-bottom));
+  }
+
+  .obbligatori { font-size: .74rem; }
+
+  .campo textarea {
+    padding: 9px 12px;
+    border-radius: 11px;
+    font-size: .86rem;
+  }
+
+  .etichetta { font-size: .74rem; }
+  .contatore { font-size: .66rem; }
+
+  .foto {
+    min-height: 140px;
+    border-radius: 14px;
+
+    ion-icon { font-size: 1.8rem; }
+    img { max-height: 260px; }
+
+    &__cambia {
+      padding: 5px 10px;
+      font-size: .72rem;
+    }
+  }
+
+  .etichette,
+  .colori { gap: 6px; }
+
+  .scelta-etichetta {
+    padding: 6px 12px;
+    font-size: .78rem;
+  }
+
+  .colore {
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: 10px;
+    font-size: .76rem;
+
+    &__campione { width: 18px; height: 18px; }
+  }
+
+  .anteprima p {
+    padding: 12px 13px 16px;
+    font-size: .88rem;
+  }
+
+  .errore {
+    padding: 8px 12px;
+    font-size: .78rem;
+  }
+
+  .pubblica {
+    min-height: 46px;
+    border-radius: 14px;
+    font-size: .9rem;
+  }
+
+  .galleria {
+    gap: 6px;
+
+    &__foto { border-radius: 12px; }
+
+    &__aggiungi {
+      border-radius: 12px;
+      font-size: .72rem;
+
+      ion-icon { font-size: 1.3rem; }
+    }
+  }
+
+  .aiuto-foto,
+  .aiuto-hashtag { font-size: .68rem; }
+
+  .sottoetichetta { font-size: .7rem; }
+
+  .riga-link {
+    gap: 6px;
+
+    input {
+      min-height: 42px;
+      padding: 9px 12px;
+      border-radius: 11px;
+      font-size: .84rem;
+    }
+
+    &__aggiungi {
+      width: 42px;
+      border-radius: 11px;
+      font-size: 1.1rem;
+    }
+  }
+
+  .elenco-video li {
+    padding: 7px 9px;
+    border-radius: 11px;
+    font-size: .76rem;
+
+    span small { font-size: .66rem; }
+  }
+
+  .carica-video {
+    padding: 10px;
+    border-radius: 12px;
+    font-size: .8rem;
+
+    ion-icon { font-size: 1.05rem; }
+  }
+
+  .hashtag {
+    min-height: 42px;
+    padding: 5px 8px;
+    border-radius: 11px;
+
+    input {
+      min-height: 30px;
+      font-size: .84rem;
+    }
+
+    &__voce {
+      padding: 3px 3px 3px 9px;
+      font-size: .74rem;
+    }
+  }
+}

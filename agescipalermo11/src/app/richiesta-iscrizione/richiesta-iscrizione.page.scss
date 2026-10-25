@@ -1,5 +1,6 @@
 @use '../../theme/variables' as *;
 @use '../../theme/testata' as *;
+@use '../../theme/telefono-pagine' as *;
 
 @include testata-pagina;
 
@@ -403,4 +404,92 @@
 
 @media (prefers-reduced-motion: reduce) {
   .anno, .spunta, .spunta__casella { transition: none; }
+}
+
+// ---------- Da telefono ----------
+
+@include pagina-telefono;
+
+@media (max-width: 599px) {
+  .scheda { gap: 12px; }
+
+  .obbligatori { font-size: .74rem; }
+
+  .coppia { gap: 12px; }
+
+  .campo { gap: 6px; }
+
+  .nascita {
+    gap: 6px;
+
+    select {
+      min-height: 42px;
+      padding: 9px 26px 9px 10px;
+      border-radius: 11px;
+      font-size: .86rem;
+    }
+  }
+
+  .aiuto { font-size: .7rem; }
+  .sottoetichetta { font-size: .7rem; }
+  .link-piccolo { font-size: .74rem; }
+
+  .scelte { gap: 6px; }
+
+  .anno {
+    min-height: 34px;
+    padding: 6px 11px;
+    font-size: .76rem;
+  }
+
+  .spunta {
+    gap: 10px;
+    min-height: 42px;
+    padding: 8px 12px;
+    border-radius: 12px;
+
+    &__casella {
+      width: 19px;
+      height: 19px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    &__testo { font-size: .8rem; }
+  }
+
+  .tappa { font-size: .74rem; }
+
+  .errore {
+    padding: 8px 12px;
+    font-size: .76rem;
+  }
+
+  .invia {
+    gap: 6px;
+    min-height: 46px;
+    border-radius: 14px;
+    font-size: .9rem;
+
+    ion-icon { font-size: 1.05rem; }
+  }
+
+  .privacy { font-size: .68rem; }
+
+  .scheda--fatto {
+    h2 { font-size: 1.08rem; }
+    p { font-size: .82rem; }
+  }
+
+  .fatto__icona {
+    width: 52px;
+    height: 52px;
+
+    ion-icon { font-size: 1.6rem; }
+  }
+
+  .altra {
+    min-height: 42px;
+    font-size: .82rem;
+  }
 }

@@ -1,5 +1,6 @@
 @use '../../theme/variables' as *;
 @use '../../theme/testata' as *;
+@use '../../theme/telefono-pagine' as *;
 
 @include testata-pagina;
 
@@ -1153,4 +1154,235 @@
   text-decoration: none;
 
   &:hover { text-decoration: underline; }
+}
+
+// ---------- Da telefono ----------
+
+@include pagina-telefono;
+
+@media (max-width: 599px) {
+  .sottotitolo {
+    margin-top: 20px;
+    font-size: .9rem;
+  }
+
+  .due-scelte {
+    gap: 5px;
+    margin: 12px 0 10px;
+
+    button {
+      gap: 5px;
+      padding: 6px 12px;
+      font-size: .76rem;
+
+      small { font-size: .64rem; }
+    }
+  }
+
+  .squadriglie {
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .squadriglia {
+    padding: 13px 8px;
+    border-radius: 15px;
+
+    &__foto,
+    &__iniziale {
+      width: 52px;
+      height: 52px;
+    }
+
+    &__iniziale { font-size: 1.3rem; }
+
+    h3 { font-size: .84rem; }
+
+    &__tasto {
+      padding: 4px 8px;
+      font-size: .66rem;
+
+      ion-icon { font-size: .8rem; }
+    }
+
+    &--nuova ion-icon { font-size: 1.3rem; }
+  }
+
+  .guidoncino {
+    gap: 5px;
+    padding: 4px 10px 4px 7px;
+
+    ion-icon { font-size: .88rem; }
+
+    &__testo {
+      font-size: .7rem;
+
+      small { font-size: .62rem; }
+    }
+  }
+
+  .storiche {
+    margin-top: 14px;
+    border-radius: 15px;
+
+    &__testa {
+      gap: 9px;
+      padding: 11px 12px;
+    }
+
+    &__icona { font-size: 1.1rem; }
+
+    &__testo {
+      strong { font-size: .84rem; }
+      small { font-size: .7rem; }
+    }
+
+    &__dentro {
+      padding: 2px 12px 13px;
+
+      p { font-size: .78rem; }
+
+      ul { gap: 6px; }
+
+      li {
+        font-size: .76rem;
+
+        img { width: 20px; height: 20px; }
+      }
+    }
+  }
+
+  .palmares {
+    gap: 6px;
+
+    &__riga {
+      padding: 10px 11px;
+      border-radius: 13px;
+    }
+
+    &__chi {
+      gap: 7px;
+
+      img { width: 26px; height: 26px; }
+      strong { font-size: .84rem; }
+      small { font-size: .62rem; }
+    }
+
+    &__iniziale {
+      width: 26px;
+      height: 26px;
+      font-size: .76rem;
+    }
+
+    &__guidoncini { gap: 5px; margin-top: 8px; }
+
+    &__vuoto {
+      margin-left: 33px;
+      font-size: .72rem;
+    }
+  }
+
+  .vetta {
+    margin-top: 16px;
+    padding: 12px 11px 13px;
+    border-radius: 15px;
+
+    h3 { font-size: .86rem; }
+    p { font-size: .78rem; }
+
+    ul { gap: 6px; }
+
+    &__voce {
+      gap: 8px;
+      padding: 6px 10px 6px 6px;
+      border-radius: 12px;
+
+      img { width: 32px; height: 32px; }
+    }
+
+    &__iniziale { width: 32px; height: 32px; }
+
+    &__testo {
+      strong { font-size: .82rem; }
+      small { font-size: .7rem; }
+    }
+  }
+
+  .passi {
+    gap: 6px;
+    margin-top: 12px;
+
+    li {
+      padding: 10px 11px 10px 44px;
+      border-radius: 13px;
+
+      &::before {
+        width: 22px;
+        height: 22px;
+        font-size: .7rem;
+      }
+
+      strong { font-size: .82rem; }
+      span { font-size: .72rem; }
+    }
+  }
+
+  .specialita {
+    gap: 6px;
+
+    &__voce {
+      gap: 5px;
+      padding: 11px 3px 9px;
+      border-radius: 13px;
+      font-size: .66rem;
+
+      ion-icon { font-size: 1.25rem; }
+    }
+
+    &__conta {
+      height: 17px;
+      font-size: .6rem;
+    }
+
+    &__dettaglio {
+      padding: 11px 12px;
+      border-radius: 13px;
+
+      h4 {
+        font-size: .86rem;
+
+        ion-icon { font-size: 1.05rem; }
+      }
+
+      p { font-size: .78rem; }
+      li { font-size: .76rem; }
+      small { font-size: .72rem; }
+    }
+  }
+
+  .segna {
+    gap: 8px;
+    margin-top: 16px;
+    padding: 12px;
+    border-radius: 15px;
+
+    h3 {
+      font-size: .86rem;
+
+      ion-icon { font-size: 1rem; }
+    }
+
+    label span { font-size: .68rem; }
+
+    select {
+      padding: 8px 10px;
+      border-radius: 11px;
+      font-size: .8rem;
+    }
+
+    &__invia {
+      padding: 9px 16px;
+      font-size: .8rem;
+    }
+  }
 }

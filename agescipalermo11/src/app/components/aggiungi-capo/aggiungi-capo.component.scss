@@ -117,3 +117,44 @@
   font-weight: 600;
   color: $red;
 }
+
+// Da telefono: come il resto della zona capi (vedi theme/_telefono-capi.scss).
+@media (max-width: 599px) {
+  .aggiungi-capo {
+    gap: 5px;
+    margin-bottom: 10px;
+    padding: 7px 13px;
+    font-size: .76rem;
+
+    ion-icon { font-size: .92rem; }
+  }
+
+  .nuovo-capo {
+    margin-bottom: 12px;
+    padding: 11px;
+    border-radius: 14px;
+
+    &__campi { gap: 8px; }
+
+    label { font-size: .7rem; }
+
+    input, select {
+      min-height: 38px;
+      padding: 7px 10px;
+      border-radius: 10px;
+      font-size: .82rem;
+    }
+
+    &__aiuto { font-size: .68rem; }
+  }
+
+  .mostra-tutti {
+    padding: 5px 10px;
+    font-size: .7rem;
+  }
+
+  .avviso--errore {
+    padding: 8px 10px;
+    font-size: .74rem;
+  }
+}

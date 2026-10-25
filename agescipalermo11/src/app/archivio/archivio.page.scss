@@ -1,5 +1,6 @@
 @use '../../theme/variables' as *;
 @use '../../theme/testata' as *;
+@use '../../theme/telefono-pagine' as *;
 
 @include testata-pagina;
 
@@ -328,4 +329,92 @@
   }
 
   &.filtro--scelto small { color: inherit; }
+}
+
+// ---------- Da telefono ----------
+
+@include pagina-telefono;
+
+// Come i post della home: da telefono due per riga, testi più piccoli.
+@media (max-width: 599px) {
+  .anno {
+    margin-bottom: 20px;
+
+    &__titolo {
+      margin-bottom: 10px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: .86rem;
+    }
+  }
+
+  .storie {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .storia {
+    border-radius: 14px;
+
+    &__badge { gap: 4px; }
+
+    &__corpo {
+      padding: 8px 9px 10px;
+      border-top-width: 3px;
+
+      h3 {
+        font-size: .78rem;
+        line-height: 1.3;
+      }
+
+      small { font-size: .64rem; }
+    }
+
+    &__azioni button {
+      width: 30px;
+      height: 30px;
+
+      ion-icon { font-size: .92rem; }
+    }
+  }
+
+  .filtri {
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .filtro {
+    gap: 5px;
+    min-height: 32px;
+    padding: 5px 11px;
+    font-size: .74rem;
+  }
+
+  .badge-etichetta {
+    gap: 4px;
+    padding: 3px 7px;
+    font-size: .6rem;
+
+    ion-icon { font-size: .72rem; }
+  }
+
+  .conteggio {
+    margin-bottom: 10px;
+    font-size: .66rem;
+  }
+
+  .vuoto {
+    padding: 24px 14px;
+    border-radius: 16px;
+
+    &__icona {
+      width: 48px;
+      height: 48px;
+
+      ion-icon { font-size: 1.35rem; }
+    }
+
+    &__titolo { font-size: .92rem; }
+    &__testo { font-size: .78rem; }
+  }
 }

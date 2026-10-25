@@ -1,5 +1,6 @@
 @use '../../theme/variables' as *;
 @use '../../theme/testata' as *;
+@use '../../theme/telefono-pagine' as *;
 
 @include testata-pagina;
 
@@ -364,3 +365,7 @@
     letter-spacing: -.01em;
   }
 }
+
+// ---------- Da telefono ----------
+
+@include pagina-telefono;

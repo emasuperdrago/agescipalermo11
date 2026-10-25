@@ -1,5 +1,6 @@
 @use '../../theme/variables' as *;
 @use '../../theme/testata' as *;
+@use '../../theme/telefono-pagine' as *;
 
 @include testata-pagina;
 
@@ -349,4 +350,71 @@
   font-size: .85rem;
   font-weight: 600;
   color: $red;
+}
+
+// ---------- Da telefono ----------
+
+@include pagina-telefono;
+
+@media (max-width: 599px) {
+  .principale,
+  .secondario {
+    min-height: 36px;
+    padding: 0 14px;
+    font-size: .78rem;
+  }
+
+  .sezione {
+    gap: 10px;
+    padding: 14px 12px;
+    border-top-width: 4px;
+    border-radius: 0 0 18px 18px;
+
+    &__titolo {
+      gap: 8px;
+      font-size: .96rem;
+    }
+
+    &__icona {
+      width: 28px;
+      height: 28px;
+      border-radius: 10px;
+      font-size: .95rem;
+    }
+  }
+
+  .elenco,
+  .voce { gap: 6px; }
+
+  .voce__link {
+    gap: 10px;
+    min-height: 48px;
+    padding: 8px 11px;
+    border-radius: 13px;
+
+    > ion-icon { font-size: 1rem; }
+    strong { font-size: .82rem; }
+    small { font-size: .68rem; }
+  }
+
+  .icona {
+    width: 30px;
+    height: 30px;
+    font-size: .88rem;
+  }
+
+  .vuota { font-size: .76rem; }
+
+  .modulo {
+    padding: 11px;
+    border-radius: 14px;
+
+    &__errore { font-size: .74rem; }
+  }
+
+  .aggiungi {
+    gap: 6px;
+    min-height: 42px;
+    border-radius: 14px;
+  }
 }

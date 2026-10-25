@@ -1,4 +1,5 @@
 @use '../../../theme/variables' as *;
+@use '../../../theme/telefono-pagine' as *;
 
 // Stessa impostazione degli altri pop-up (ragazzi, eventi, posti, canti).
 
@@ -291,4 +292,66 @@
 
 @media (prefers-reduced-motion: reduce) {
   .attesa span { animation: none; opacity: .7; }
+}
+
+@include modulo-telefono;
+
+@media (max-width: 599px) {
+  .riservato {
+    padding: 8px 11px;
+    font-size: .72rem;
+
+    ion-icon { font-size: .95rem; }
+  }
+
+  .riquadro {
+    gap: 10px;
+    padding: 13px 12px;
+    border-radius: 15px;
+
+    h2 { font-size: .9rem; }
+  }
+
+  .dati {
+    gap: 8px 12px;
+
+    dt { font-size: .64rem; }
+    dd { font-size: .82rem; }
+  }
+
+  .sottoetichetta { font-size: .7rem; }
+  .link-piccolo { font-size: .74rem; }
+
+  .allegati { gap: 6px; }
+
+  .allegato {
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 12px;
+
+    &__icona { font-size: 1.2rem; }
+
+    &__nome {
+      strong { font-size: .8rem; }
+      small { font-size: .68rem; }
+    }
+  }
+
+  .icona {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    font-size: .95rem;
+  }
+
+  .vuoto { font-size: .76rem; }
+
+  .allega {
+    gap: 6px;
+    min-height: 42px;
+    border-radius: 12px;
+    font-size: .82rem;
+
+    ion-icon { font-size: 1rem; }
+  }
 }

@@ -1,4 +1,5 @@
 @use '../../../theme/variables' as *;
+@use '../../../theme/telefono-pagine' as *;
 
 // Stessa impostazione degli altri pop-up (eventi, posti, canti).
 
@@ -153,5 +154,25 @@
   small {
     font-size: .78rem;
     color: $slate;
+  }
+}
+
+@include modulo-telefono;
+
+@media (max-width: 599px) {
+  .pasticca {
+    min-height: 34px;
+    padding: 6px 11px;
+    font-size: .76rem;
+  }
+
+  .tesoriere {
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 12px;
+
+    input { width: 18px; height: 18px; }
+    strong { font-size: .82rem; }
+    small { font-size: .7rem; }
   }
 }

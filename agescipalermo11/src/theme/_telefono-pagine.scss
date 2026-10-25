@@ -1,0 +1,194 @@
+@use 'variables' as *;
+
+// Le pagine interne (branche, clan, PEG, link utili…), da telefono: testi e spazi un po' più
+// piccoli, come storia, calendario e zona capi. Su computer e tablet non cambia niente.
+// Le parti uguali in tutte le pagine stanno qui; ogni pagina aggiunge le sue sotto.
+// Uso, in fondo allo SCSS della pagina: @use '../../theme/telefono-pagine' as *; @include pagina-telefono;
+@mixin pagina-telefono {
+  @media (max-width: 599px) {
+    .copertina {
+      padding: 14px 16px 52px;
+
+      h1 { font-size: 1.3rem; }
+      p { font-size: .76rem; }
+    }
+
+    .corpo {
+      gap: 12px;
+      margin-top: -40px;
+      padding: 0 10px 24px;
+    }
+
+    .scheda {
+      padding: 14px 13px 15px;
+      border-radius: 18px;
+
+      h2 {
+        gap: 6px;
+        margin-bottom: 10px;
+        font-size: .98rem;
+
+        ion-icon { font-size: 1.1rem; }
+      }
+    }
+
+    .testo {
+      font-size: .82rem;
+      line-height: 1.6;
+    }
+
+    .nota { font-size: .76rem; }
+    .invito { font-size: .72rem; }
+
+    .avviso-errore,
+    .avviso--errore { font-size: .78rem; }
+
+    // "Modifica la pagina" dei capi.
+    .modifica-pagina {
+      gap: 6px;
+      padding: 7px 13px;
+      font-size: .76rem;
+
+      ion-icon { font-size: .92rem; }
+    }
+
+    .aggiungi {
+      font-size: .8rem;
+
+      ion-icon { font-size: 1rem; }
+    }
+
+    // I moduli scritti nella pagina (link utili, squadriglie, iscrizione).
+    .campo {
+      // Le caselle da spuntare restano come sono.
+      input:not([type="checkbox"], [type="radio"]),
+      textarea,
+      select {
+        min-height: 42px;
+        padding: 9px 12px;
+        border-radius: 11px;
+        font-size: .86rem;
+      }
+    }
+
+    .etichetta { font-size: .74rem; }
+
+    // ---------- Le parti delle branche (Branco, Reparto, Clan) ----------
+
+    .pilastri { gap: 8px; }
+
+    .pilastro {
+      border-radius: 15px;
+
+      &__testa {
+        gap: 10px;
+        padding: 11px 12px;
+
+        h3 { font-size: .88rem; }
+      }
+
+      &__icona { font-size: 1.25rem; }
+      &__freccia { font-size: .95rem; }
+
+      &__testo {
+        padding: 0 12px 12px;
+        font-size: .8rem;
+        line-height: 1.55;
+      }
+    }
+
+    .promessa {
+      h3 {
+        margin-bottom: 8px;
+        font-size: .9rem;
+      }
+
+      blockquote {
+        padding: 12px 13px;
+        border-left-width: 3px;
+        border-radius: 0 13px 13px 0;
+        font-size: .84rem;
+        line-height: 1.6;
+      }
+
+      > small { font-size: .7rem; }
+    }
+
+    .legge {
+      margin-top: 20px;
+
+      h3 { font-size: .9rem; }
+
+      ol { gap: 6px; }
+
+      li {
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 12px;
+        font-size: .8rem;
+
+        &::before {
+          min-width: 20px;
+          height: 20px;
+          font-size: .66rem;
+          line-height: 20px;
+        }
+      }
+    }
+
+    .motto {
+      margin-top: 20px;
+      padding: 15px 13px;
+      border-radius: 16px;
+
+      small { font-size: .64rem; }
+      strong { font-size: 1.1rem; }
+    }
+
+    .scheletro > div { border-radius: 18px; }
+  }
+}
+
+// I moduli nei pop-up (canto, ragazzo, nuovo post…), da telefono: campi e testi più piccoli, come
+// i moduli di eventi, posti e storia. Uso: @include modulo-telefono; in fondo allo SCSS del pop-up.
+@mixin modulo-telefono {
+  @media (max-width: 599px) {
+    .modulo {
+      gap: 14px;
+      padding: 14px 12px calc(22px + env(safe-area-inset-bottom));
+    }
+
+    .obbligatori { font-size: .74rem; }
+
+    .coppia { gap: 14px; }
+
+    .campo {
+      gap: 6px;
+
+      // Le caselle da spuntare restano come sono.
+      input:not([type="checkbox"], [type="radio"]),
+      textarea,
+      select {
+        min-height: 42px;
+        padding: 9px 12px;
+        border-radius: 11px;
+        font-size: .86rem;
+      }
+    }
+
+    .etichetta { font-size: .74rem; }
+    .aiuto { font-size: .7rem; }
+    .scelte { gap: 6px; }
+
+    .errore {
+      padding: 8px 12px;
+      font-size: .78rem;
+    }
+
+    .salva {
+      min-height: 46px;
+      border-radius: 14px;
+      font-size: .9rem;
+    }
+  }
+}

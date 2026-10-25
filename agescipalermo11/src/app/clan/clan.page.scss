@@ -1,5 +1,6 @@
 @use '../../theme/variables' as *;
 @use '../../theme/testata' as *;
+@use '../../theme/telefono-pagine' as *;
 
 @include testata-pagina;
 
@@ -229,4 +230,46 @@
 
 @media (prefers-reduced-motion: reduce) {
   .scheletro > div { animation: none; }
+}
+
+// ---------- Da telefono ----------
+
+@include pagina-telefono;
+
+@media (max-width: 599px) {
+  .pilastro {
+    padding: 12px 4px;
+    border-radius: 15px;
+
+    ion-icon { font-size: 1.4rem; }
+    h3 { font-size: .74rem; }
+  }
+
+  .porta {
+    gap: 11px;
+    padding: 12px 13px;
+    border-radius: 18px;
+
+    &__icona { font-size: 1.5rem; }
+
+    &__testo {
+      strong { font-size: .9rem; }
+      small { font-size: .72rem; }
+    }
+  }
+
+  .verso-archivio {
+    gap: 8px;
+    margin-top: 12px;
+    padding: 11px 12px;
+    border-radius: 15px;
+
+    ion-icon { font-size: 1.15rem; }
+
+    span {
+      font-size: .82rem;
+
+      small { font-size: .7rem; }
+    }
+  }
 }

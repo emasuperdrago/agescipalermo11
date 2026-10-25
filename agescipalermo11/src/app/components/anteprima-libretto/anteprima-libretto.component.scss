@@ -365,3 +365,86 @@
   font-weight: 600;
   color: $red;
 }
+
+// Da telefono: scelte del libretto più compatte (come gli altri moduli).
+@media (max-width: 599px) {
+  .pagina { gap: 12px; }
+  .scelte { gap: 10px; }
+
+  .riquadro {
+    gap: 10px;
+    padding: 12px;
+    border-radius: 15px;
+
+    h2 { font-size: .9rem; }
+  }
+
+  .campo input {
+    min-height: 42px;
+    padding: 9px 11px;
+    border-radius: 11px;
+    font-size: .84rem;
+  }
+
+  .etichetta { font-size: .72rem; }
+
+  .spunta {
+    gap: 8px;
+
+    input { width: 18px; height: 18px; }
+    strong { font-size: .8rem; }
+    small { font-size: .7rem; }
+  }
+
+  .parte {
+    gap: 8px;
+
+    &__nome { font-size: .74rem; }
+  }
+
+  .tendina select {
+    min-height: 36px;
+    font-size: .78rem;
+  }
+
+  .icona { width: 36px; height: 36px; }
+
+  .link-piccolo { font-size: .72rem; }
+  .aiuto { font-size: .7rem; }
+
+  .azioni { gap: 8px; }
+
+  .principale,
+  .secondario {
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: 14px;
+    font-size: .86rem;
+  }
+
+  .canti li {
+    padding: 3px 3px 3px 9px;
+    font-size: .78rem;
+  }
+
+  .cerca {
+    &__campo input {
+      min-height: 40px;
+      font-size: .84rem;
+    }
+
+    &__risultati button {
+      min-height: 36px;
+      font-size: .78rem;
+    }
+
+    &__vuoto { font-size: .72rem; }
+  }
+
+  .anteprima {
+    min-height: 360px;
+    padding: 8px;
+    border-radius: 15px;
+  }
+}

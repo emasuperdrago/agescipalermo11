@@ -1,5 +1,6 @@
 @use '../../theme/variables' as *;
 @use '../../theme/testata' as *;
+@use '../../theme/telefono-pagine' as *;
 
 @include testata-pagina;
 
@@ -181,4 +182,56 @@
 
 @media (prefers-reduced-motion: reduce) {
   .scorciatoia { transition: none; }
+}
+
+// ---------- Da telefono ----------
+
+@include pagina-telefono;
+
+@media (max-width: 599px) {
+  .copertina__numero {
+    padding: 3px 11px;
+    font-size: .7rem;
+  }
+
+  .scheda__titolo {
+    margin-bottom: 10px;
+    font-size: .68rem;
+  }
+
+  .scorciatoie {
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .scorciatoia {
+    gap: 10px;
+    padding: 9px 11px;
+    border-left-width: 4px;
+    border-radius: 12px;
+
+    &__icona {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+
+      ion-icon { font-size: 1rem; }
+    }
+
+    &__testo {
+      strong { font-size: .84rem; }
+      small { font-size: .7rem; }
+    }
+
+    &__freccia { font-size: .95rem; }
+  }
+
+  .torna-home {
+    gap: 6px;
+    min-height: 44px;
+    border-radius: 14px;
+    font-size: .88rem;
+
+    ion-icon { font-size: 1.05rem; }
+  }
 }

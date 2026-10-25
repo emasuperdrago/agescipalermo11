@@ -1,5 +1,6 @@
 @use '../../theme/variables' as *;
 @use '../../theme/testata' as *;
+@use '../../theme/telefono-pagine' as *;
 
 @include testata-pagina;
 
@@ -182,4 +183,34 @@
   ion-icon { font-size: 1.15rem; }
 
   &:hover { background: rgba($viola-l, .1); }
+}
+
+// ---------- Da telefono ----------
+
+@include pagina-telefono;
+
+@media (max-width: 599px) {
+  .murales {
+    border-radius: 18px;
+
+    figcaption {
+      padding: 8px 12px 10px;
+      font-size: .72rem;
+    }
+  }
+
+  // Qui il motto è una scheda a sé: niente spazio sopra (vedi pagina-telefono).
+  .motto {
+    margin: 0;
+    padding: 16px 14px;
+    border-radius: 18px;
+
+    strong { font-size: 1.2rem; }
+  }
+
+  .aggiungi {
+    gap: 6px;
+    padding: 14px;
+    border-radius: 18px;
+  }
 }

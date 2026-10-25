@@ -147,3 +147,47 @@
     &:hover { border-color: $red; }
   }
 }
+
+// Da telefono: come il dettaglio dei post (testi più piccoli).
+@media (max-width: 599px) {
+  .post {
+    margin-top: 12px;
+    border-radius: 18px;
+
+    &__foto { max-height: 200px; }
+
+    &__corpo {
+      padding: 12px 13px 15px;
+      border-top-width: 4px;
+    }
+
+    &__segni { gap: 6px; margin-bottom: 8px; }
+
+    h1 { font-size: 1.08rem; }
+  }
+
+  .etichetta,
+  .attesa {
+    gap: 5px;
+    padding: 3px 9px;
+    font-size: .66rem;
+  }
+
+  .firma { font-size: .72rem; }
+  .testo { font-size: .84rem; }
+  .nota { font-size: .72rem; }
+
+  .azioni {
+    gap: 8px;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .pulsante {
+    gap: 6px;
+    min-height: 44px;
+    border-radius: 14px;
+    font-size: .86rem;
+
+    ion-icon { font-size: 1.05rem; }
+  }
+}

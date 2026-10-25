@@ -220,3 +220,58 @@
   .distintivo img { transition: none; }
 }
 
+
+// Da telefono: ricerca, distintivi e scheda aperta un po' più piccoli (come le pagine delle branche).
+@media (max-width: 599px) {
+  .conta {
+    margin: 10px 0 8px;
+    font-size: .7rem;
+  }
+
+  .cerca {
+    gap: 6px;
+    margin-top: 12px;
+    padding: 0 12px;
+
+    ion-icon { font-size: 1rem; }
+
+    input {
+      padding: 9px 0;
+      font-size: .84rem;
+    }
+  }
+
+  .griglia .vuoto { font-size: .78rem; }
+
+  .distintivo {
+    gap: 5px;
+    padding: 9px 4px 8px;
+    border-radius: 13px;
+
+    span { font-size: .64rem; }
+  }
+
+  .griglia.griglia--quadrati .distintivo span { font-size: .62rem; }
+
+  .foglio__riquadro {
+    padding: 24px 16px 14px;
+    border-radius: 20px;
+
+    h3 {
+      margin: 14px 0 4px;
+      font-size: 1rem;
+    }
+
+    p { font-size: .82rem; }
+  }
+
+  .foglio__frecce {
+    margin-top: 14px;
+
+    button {
+      width: 38px;
+      height: 38px;
+      font-size: 1.1rem;
+    }
+  }
+}
