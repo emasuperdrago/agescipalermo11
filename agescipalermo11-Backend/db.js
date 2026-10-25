@@ -6,10 +6,12 @@
 //  - le query si scrivono con "?" e qui diventano $1, $2… come vuole PostgreSQL;
 //  - un INSERT restituisce l'id nuovo in this.lastID (gli si aggiunge RETURNING);
 //  - i campi cifrati ("cif1:...") tornano già decifrati (vedi cifratura.js);
-//  - si usa un solo collegamento alla volta: le query vanno in fila e BEGIN ... COMMIT
-//    valgono per tutto quello che c'è in mezzo.
+//  - BEGIN ... COMMIT valgono per tutto quello che c'è in mezzo: la transazione si tiene il
+//    suo collegamento (vedi `contesto`);
+//  - su Vercel le altre query passano dal "driver serverless" di Neon (vedi `viaWeb`).
 const { Pool, types } = require('pg');
 const { AsyncLocalStorage } = require('async_hooks');
+const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const path = require('path');
 const fs = require('fs');
@@ -53,6 +55,17 @@ pool.on('error', (err) => console.error('Database: collegamento interrotto, si r
 // Su Vercel: prima che la funzione venga "congelata", Vercel aspetta che i collegamenti fermi
 // si chiudano (idleTimeoutMillis qui sopra). Così al risveglio non se ne trova mai uno morto.
 if (process.env.VERCEL) require('@vercel/functions').attachDatabasePool(pool);
+
+/**
+ * Su Vercel le query normali non passano da un collegamento aperto ma dal "driver serverless"
+ * di Neon: ogni query è una richiesta web a sé. Così non ci sono collegamenti da tenere vivi,
+ * che dopo il congelamento potrebbero essere morti o restare appesi. Le transazioni e la
+ * preparazione all'avvio, che hanno bisogno di un collegamento vero, restano sul pool qui sopra.
+ */
+const viaWeb = process.env.VERCEL && process.env.DATABASE_URL
+  ? require('@neondatabase/serverless').neon(process.env.DATABASE_URL, { fullResults: true, types })
+  : null;
+const ATTESA_WEB_MS = 8000;
 
 /**
  * Ogni richiesta (e la preparazione all'avvio) ha il suo contesto. Quando fa BEGIN, il contesto
@@ -129,7 +142,9 @@ function parametriPuliti(parametri) {
 /** Errori del collegamento (non della query): il database non ha risposto o ha chiuso. */
 function collegamentoCaduto(err) {
   return ['ECONNRESET', 'EPIPE', 'ETIMEDOUT', 'ECONNREFUSED', '57P01', '57P03', '08006', '08003'].includes(err?.code)
-    || /Connection terminated|Query read timeout|timeout exceeded when trying to connect/i.test(err?.message ?? '');
+    || ['AbortError', 'TimeoutError'].includes(err?.name) || ['AbortError', 'TimeoutError'].includes(err?.cause?.name)
+    || /Connection terminated|Query read timeout|timeout exceeded when trying to connect|fetch failed|aborted|timed out/i
+      .test(`${err?.message ?? ''} ${err?.cause?.message ?? ''}`);
 }
 
 async function interroga(sql, parametri = []) {
@@ -168,6 +183,17 @@ async function sulCollegamento(testo, valori) {
       throw err;
     }
   }
+  // Fuori dalle transazioni, su Vercel: una richiesta web a Neon, con un'attesa massima.
+  if (viaWeb && comando !== 'BEGIN') {
+    const esito = await viaWeb.query(testo, valori, { fetchOptions: { signal: AbortSignal.timeout(ATTESA_WEB_MS) } });
+    // Numeri grandi (COUNT, SUM, BIGINT) e decimali: come numeri, come col collegamento classico.
+    const numeriche = (esito.fields ?? []).filter(f => f.dataTypeID === 20 || f.dataTypeID === 1700).map(f => f.name);
+    if (numeriche.length) {
+      for (const riga of esito.rows)
+        for (const nome of numeriche) if (riga[nome] !== null && riga[nome] !== undefined) riga[nome] = Number(riga[nome]);
+    }
+    return { rows: esito.rows, rowCount: esito.rowCount };
+  }
   const client = await collegamento();
   let rotto = false;
   try {
@@ -188,10 +214,30 @@ let pronto;
 // Su Vercel possono accendersi più copie del backend nello stesso momento: se il database è
 // ancora vuoto, creerebbero tabelle e dati di partenza tutte insieme, pestandosi i piedi.
 // Con questo "lucchetto" del database si prepara una copia alla volta (le altre aspettano e
-// poi trovano tutto già fatto). Con un solo collegamento (max: 1) il lucchetto resta suo.
+// poi trovano tutto già fatto). La preparazione si tiene un collegamento tutto per sé
+// (vedi preparaTutto), così il lucchetto resta suo dall'inizio alla fine.
 const LUCCHETTO_PREPARAZIONE = 1101983;
 
+// Su Vercel il backend si accende tante volte: la preparazione intera (tabelle, migrazioni,
+// dati di partenza) serve solo quando cambia questo file o schema.js. Il segno di quale versione
+// è già stata preparata sta nelle impostazioni del database.
+const VERSIONE_PREPARAZIONE = crypto.createHash('sha256')
+  .update(fs.readFileSync(__filename)).update(fs.readFileSync(path.join(__dirname, 'schema.js')))
+  .digest('hex').slice(0, 16);
+
 async function prepara() {
+  if (viaWeb) {
+    try {
+      const fatta = await interroga(`SELECT valore FROM impostazioni WHERE chiave = 'versione_preparata'`);
+      if (fatta.rows[0]?.valore === VERSIONE_PREPARAZIONE) return;
+    } catch { /* database nuovo o non raggiungibile: si prova la preparazione intera */ }
+  }
+  await preparaTutto();
+  await interroga(`INSERT INTO impostazioni (chiave, valore) VALUES (?, ?)
+                   ON CONFLICT (chiave) DO UPDATE SET valore = EXCLUDED.valore`, ['versione_preparata', VERSIONE_PREPARAZIONE]);
+}
+
+async function preparaTutto() {
   // Tutta la preparazione su un collegamento solo: il "lucchetto" vale per quel collegamento.
   return conContesto(async () => {
     const qui = contesto.getStore();

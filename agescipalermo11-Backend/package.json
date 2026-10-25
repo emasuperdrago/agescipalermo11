@@ -23,6 +23,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@neondatabase/serverless": "1.2.0",
     "@vercel/blob": "2.8.1",
     "@vercel/functions": "3.9.11",
     "bcrypt": "^6.0.0",
