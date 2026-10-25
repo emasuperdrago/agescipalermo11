@@ -503,3 +503,175 @@ $colori-etichetta: (
     &:hover { background: rgba($white, .32); }
   }
 }
+
+// ---------- Da telefono: testi e spazi più piccoli (come le altre pagine) ----------
+
+@media (max-width: 599px) {
+  .testata-post ion-toolbar { --min-height: 56px; }
+
+  .indietro { font-size: .88rem; }
+
+  .marchio {
+    gap: 8px;
+
+    img { width: 32px; height: 32px; }
+
+    &__testo {
+      strong { font-size: .82rem; }
+      small { font-size: .55rem; }
+    }
+  }
+
+  .copertina {
+    padding: 30px 16px 96px;
+
+    &::before {
+      top: 14px;
+      width: 100px;
+      height: 16px;
+    }
+
+    &::after {
+      bottom: 76px;
+      width: 100px;
+      height: 16px;
+    }
+
+    &__meta {
+      gap: 7px;
+      margin-bottom: 12px;
+    }
+
+    &__data {
+      gap: 5px;
+      margin-right: 2px;
+      font-size: .7rem;
+      letter-spacing: .6px;
+
+      ion-icon { font-size: .85rem; }
+    }
+
+    h1 { font-size: 1.45rem; }
+  }
+
+  .badge {
+    gap: 5px;
+    padding: 3px 9px;
+    font-size: .66rem;
+
+    &--evidenza ion-icon { font-size: .78rem; }
+  }
+
+  .pallino { width: 8px; height: 8px; }
+
+  .hashtag {
+    gap: 5px;
+    margin-top: 10px;
+
+    &__voce {
+      padding: 4px 10px;
+      font-size: .7rem;
+    }
+  }
+
+  .articolo { padding-bottom: calc(48px + env(safe-area-inset-bottom)); }
+
+  .articolo__figura {
+    --bordo-figura: 10px;
+    margin-top: -72px;
+    padding: 0 10px;
+  }
+
+  .articolo__foto {
+    min-height: 150px;
+    border-width: 4px;
+    border-radius: 18px;
+    box-shadow: 0 16px 40px rgba($dark, .16);
+  }
+
+  .sfoglia {
+    width: 34px;
+    height: 34px;
+    font-size: 1.05rem;
+
+    &--prima { left: calc(var(--bordo-figura) + 10px); }
+    &--dopo { right: calc(var(--bordo-figura) + 10px); }
+  }
+
+  .contafoto {
+    right: calc(var(--bordo-figura) + 12px);
+    bottom: 12px;
+    padding: 3px 9px;
+    font-size: .68rem;
+  }
+
+  .miniature {
+    gap: 6px;
+    margin-top: 10px;
+    padding: 0 10px 4px;
+  }
+
+  .miniatura {
+    width: 50px;
+    height: 50px;
+    border-width: 2px;
+    border-radius: 10px;
+  }
+
+  .articolo__video {
+    gap: 10px;
+    margin-top: 12px;
+    padding: 0 10px;
+  }
+
+  .video,
+  .video-esterno { border-radius: 14px; }
+
+  .video-esterno--instagram { height: 560px; }
+
+  .articolo__testo {
+    margin-top: 20px;
+    margin-inline: 10px;
+    padding: 18px 16px;
+    border-radius: 16px;
+    border-top-width: 4px;
+    font-size: .86rem;
+    line-height: 1.7;
+
+    &::first-letter {
+      margin: 4px 8px 0 0;
+      font-size: 3em;
+    }
+  }
+
+  .stato {
+    width: calc(100% - 20px);
+    margin: 40px auto;
+    padding: 24px 18px;
+    border-radius: 18px;
+
+    &__titolo { font-size: 1.1rem; }
+    &__testo { font-size: .82rem; }
+  }
+
+  .torna {
+    gap: 6px;
+    padding: 9px 20px;
+    font-size: .84rem;
+  }
+
+  .scheletro {
+    &__copertina { height: 180px; }
+
+    &__foto {
+      height: 240px;
+      margin: -72px 10px 0;
+    }
+
+    &__riga {
+      margin: 20px 10px 0;
+
+      &--corta { margin-top: 10px; }
+    }
+  }
+}
