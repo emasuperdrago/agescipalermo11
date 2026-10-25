@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -6,11 +6,15 @@ import {
 } from '@ionic/angular/standalone';
 import { closeOutline } from 'ionicons/icons';
 import {
-  CantiService, SEGNO_ACCORDI, SEGNO_GRASSETTO, SEGNO_TESTO, SEZIONI_CANTO, segnoRiga, senzaSegniGrassetto
+  CantiService, SEGNO_ACCORDI, SEGNO_GRASSETTO, SEGNO_TESTO, SEZIONI_CANTO, nomeSezione, segnoRiga, senzaSegniGrassetto
 } from '../../services/canti';
+import { ConfermaService } from '../../services/conferma';
 import { Canto, DatiCanto, SezioneCanto } from '../../../types/models';
 
-/** Pop-up per aggiungere un canto o, se riceve `canto`, modificarlo. Si chiude con role "salvato". */
+/**
+ * Pop-up per aggiungere un canto o, se riceve `canto`, modificarlo. Si chiude con role "salvato".
+ * Prima di salvare chiede conferma; chiudendolo con modifiche non salvate chiede se perderle.
+ */
 @Component({
   selector: 'app-canto-editor',
   templateUrl: './canto-editor.component.html',
@@ -37,16 +41,45 @@ export class CantoEditorComponent implements OnInit {
   salvando = false;
   errore = '';
 
+  private conferma = inject(ConfermaService);
+  private elemento = inject(ElementRef);
+  /** Com'era il canto all'apertura: per sapere se c'è qualcosa da perdere chiudendo. */
+  private iniziale = { titolo: '', sezione: '' as SezioneCanto | '', testo: '' };
+
   constructor(private modalCtrl: ModalController, private canti: CantiService) {}
 
   ngOnInit() {
+    this.chiediPrimaDiUscire();
     if (this.canto) {
       this.titolo = this.canto.titolo;
       this.sezione = this.canto.sezione;
       this.testo = this.canto.testo;
-      return;
+    } else {
+      this.sezione = this.sezioneIniziale ?? '';
     }
-    this.sezione = this.sezioneIniziale ?? '';
+    this.iniziale = { titolo: this.titolo, sezione: this.sezione, testo: this.testo };
+  }
+
+  /** È cambiato qualcosa rispetto all'apertura. */
+  get cambiato(): boolean {
+    return this.titolo !== this.iniziale.titolo || this.sezione !== this.iniziale.sezione
+      || this.testo !== this.iniziale.testo;
+  }
+
+  /**
+   * Il pop-up si può chiudere in tanti modi (la X, Esc, toccando fuori, trascinandolo giù):
+   * se ci sono modifiche non salvate, prima si chiede.
+   */
+  private chiediPrimaDiUscire() {
+    // Il pop-up che contiene questo modulo (all'apertura non è ancora fra quelli "in cima").
+    const modale = (this.elemento.nativeElement as HTMLElement).closest('ion-modal');
+    if (!modale) return;
+    modale.canDismiss = (_dati?: unknown, ruolo?: string) => {
+      if (ruolo === 'salvato' || !this.cambiato) return Promise.resolve(true);
+      return this.conferma.chiedi('Uscire senza salvare?',
+        this.modifica ? 'Le modifiche al canto andranno perse.' : 'Il canto che stai scrivendo andrà perso.',
+        'Esci senza salvare', 'Continua a scrivere');
+    };
   }
 
   get modifica(): boolean {
@@ -158,7 +191,7 @@ export class CantoEditorComponent implements OnInit {
     this.modalCtrl.dismiss(null, 'annulla');
   }
 
-  salva() {
+  async salva() {
     if (!this.titolo.trim()) {
       this.errore = 'Scrivi il titolo del canto.';
       return;
@@ -172,7 +205,20 @@ export class CantoEditorComponent implements OnInit {
       return;
     }
 
-    const dati: DatiCanto = { titolo: this.titolo.trim(), sezione: this.sezione, testo: this.testo };
+    // Modifica senza cambiamenti: non c'è niente da salvare.
+    if (this.canto && !this.cambiato) {
+      this.modalCtrl.dismiss(null, 'annulla');
+      return;
+    }
+    const titolo = this.titolo.trim();
+    const confermato = this.canto
+      ? await this.conferma.chiedi('Salvare le modifiche?',
+        `"${titolo}" cambia per tutti: nel canzoniere e nei prossimi libretti.`, 'Salva')
+      : await this.conferma.chiedi('Aggiungere il canto?',
+        `"${titolo}" entra nel canzoniere, nella sezione ${nomeSezione(this.sezione)}.`, 'Aggiungi');
+    if (!confermato) return;
+
+    const dati: DatiCanto = { titolo, sezione: this.sezione, testo: this.testo };
     this.salvando = true;
     this.errore = '';
     const richiesta = this.canto ? this.canti.aggiorna(this.canto.id, dati) : this.canti.crea(dati);

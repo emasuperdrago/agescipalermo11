@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, ElementRef, Input, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -9,6 +9,7 @@ import { SfogliaPdfComponent } from '../sfoglia-pdf/sfoglia-pdf.component';
 import { SelettoreDataComponent } from '../selettore-data/selettore-data.component';
 import { AuthService } from '../../services/auth';
 import { CantiService, PARTI_MESSA } from '../../services/canti';
+import { ConfermaService } from '../../services/conferma';
 import { BozzaLibretto, DatiLibretto, ParteMessa } from '../../../types/models';
 
 /** Per cercare senza badare a maiuscole e accenti ("cantero" trova "Canterò"). */
@@ -49,6 +50,8 @@ export class AnteprimaLibrettoComponent implements OnInit, OnDestroy {
   private auth = inject(AuthService);
   private modalCtrl = inject(ModalController);
   private toastCtrl = inject(ToastController);
+  private conferma = inject(ConfermaService);
+  private elemento = inject(ElementRef);
 
   /** I canti scelti, con il titolo, in ordine alfabetico. */
   scelti: { id: number; titolo: string }[] = [];
@@ -75,6 +78,8 @@ export class AnteprimaLibrettoComponent implements OnInit, OnDestroy {
   salvando = false;
   private idBozza: number | null = null;
   private salvata = false;
+  /** Qualcosa è cambiato dall'ultimo salvataggio della bozza (o dall'apertura). */
+  private daSalvare = false;
   private timer?: ReturnType<typeof setTimeout>;
   /** È cambiato qualcosa e l'anteprima nuova deve ancora partire. */
   private inAttesa = false;
@@ -113,6 +118,22 @@ export class AnteprimaLibrettoComponent implements OnInit, OnDestroy {
       },
       error: () => this.errore = 'Non riesco a leggere i canti. Riprova tra poco.',
     });
+    this.chiediPrimaDiUscire();
+  }
+
+  /**
+   * Chi può salvare le bozze, chiudendo con modifiche non salvate, si sente chiedere se perderle
+   * (con la X, Esc, toccando fuori o trascinando giù il pop-up).
+   */
+  private chiediPrimaDiUscire() {
+    // Il pop-up che contiene questo modulo (all'apertura non è ancora fra quelli "in cima").
+    const modale = (this.elemento.nativeElement as HTMLElement).closest('ion-modal');
+    if (!modale) return;
+    modale.canDismiss = () => {
+      if (!this.puoSalvare || !this.daSalvare || !this.scelti.length) return Promise.resolve(true);
+      return this.conferma.chiedi('Uscire senza salvare?',
+        'Le modifiche al libretto non sono nelle bozze: andranno perse.', 'Esci senza salvare', 'Resta');
+    };
   }
 
   ngOnDestroy() {
@@ -193,6 +214,7 @@ export class AnteprimaLibrettoComponent implements OnInit, OnDestroy {
 
   /** Qualcosa è cambiato: l'anteprima si rifà poco dopo. */
   cambiato() {
+    this.daSalvare = true;
     this.aggiorna(ATTESA_ANTEPRIMA);
   }
 
@@ -262,12 +284,16 @@ export class AnteprimaLibrettoComponent implements OnInit, OnDestroy {
     setTimeout(() => URL.revokeObjectURL(indirizzo), 60_000);
   }
 
-  salvaBozza() {
+  async salvaBozza() {
+    // Una bozza già salvata la vedono e la usano tutti i capi: si chiede prima di cambiarla.
+    if (this.idBozza !== null && !(await this.conferma.chiedi('Aggiornare la bozza?',
+      `"${this.evento.trim() || 'Senza titolo'}" cambia per tutti i capi.`, 'Aggiorna'))) return;
     this.salvando = true;
     this.canti.salvaBozza(this.dati(), this.idBozza).subscribe({
       next: bozza => {
         this.salvando = false;
         this.salvata = true;
+        this.daSalvare = false;
         this.idBozza = bozza.id;
         this.avvisa('Salvato nelle bozze.');
       },

@@ -15,6 +15,7 @@ import {
   Alterazioni, CantiService, RigaCanto, coloreSezione, haAccordi, nomeSezione, nomeTonalita, righeCanto
 } from '../services/canti';
 import { CantoEditorComponent } from '../components/canto-editor/canto-editor.component';
+import { ConfermaService } from '../services/conferma';
 import { Canto } from '../../types/models';
 
 /** Fin dove si sposta il capotasto (oltre, le corde sono troppo corte per suonare bene). */
@@ -113,6 +114,7 @@ export class DettaglioCanzonierePage implements OnInit, OnDestroy {
   // lunga stia nel foglio. La larghezza del foglio si misura sullo schermo vero.
 
   private zone = inject(NgZone);
+  private conferma = inject(ConfermaService);
   private osservatore?: ResizeObserver;
   /** Spazio per il testo dentro il foglio, in pixel (0 = non ancora misurato). */
   private larghezzaTesto = 0;
@@ -208,9 +210,13 @@ export class DettaglioCanzonierePage implements OnInit, OnDestroy {
     this.passo = this.passoGruppo;
   }
 
-  /** I capi salvano la tonalità di adesso come quella del gruppo (il testo non cambia). */
-  salvaTonalitaGruppo() {
+  /** I capi salvano la tonalità di adesso come quella del gruppo (il testo non cambia), dopo una conferma. */
+  async salvaTonalitaGruppo() {
     if (!this.canto) return;
+    const messaggio = this.passo
+      ? `"${this.canto.titolo}" si aprirà per tutti in ${this.tonalita}, anche nei libretti.`
+      : `"${this.canto.titolo}" tornerà per tutti com'è scritto, anche nei libretti.`;
+    if (!(await this.conferma.chiedi('Cambiare la tonalità del gruppo?', messaggio, 'Cambia'))) return;
     this.salvandoTonalita = true;
     this.canti.salvaTonalita(this.canto.id, this.passo).subscribe({
       next: canto => {
