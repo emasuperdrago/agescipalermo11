@@ -1,4 +1,5 @@
 @use '../../theme/variables' as *;
+@use '../../theme/testata' as *;
 
 // Colori delle branche: gli stessi di menu, etichette dei post e dettaglio.
 $colori-branca: (
@@ -13,66 +14,9 @@ $colori-branca: (
   font-family: 'Poppins', sans-serif;
 }
 
-// ---------- Barra in alto (come nel dettaglio post) ----------
+// ---------- Barra in alto (la stessa delle altre pagine interne) ----------
 
-.testata-pagina ion-toolbar {
-  --background: rgba(255, 255, 255, .94);
-  --border-width: 0;
-  --padding-start: 8px;
-  --padding-end: 16px;
-  --min-height: 64px;
-}
-
-.indietro {
-  --color: #{$viola};
-  --border-radius: 999px;
-  --padding-start: 12px;
-  --padding-end: 14px;
-  --background-hover: #{rgba($viola-l, .12)};
-  font-family: 'Poppins', sans-serif;
-  font-weight: 700;
-  text-transform: none;
-  letter-spacing: 0;
-}
-
-.marchio {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: $dark;
-  text-decoration: none;
-
-  img {
-    width: 38px;
-    height: 38px;
-    padding: 2px;
-    border: 1px solid $slate-200;
-    border-radius: 50%;
-    background: $white;
-  }
-
-  &__testo {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    line-height: 1.15;
-
-    strong {
-      font-size: .95rem;
-      font-weight: 800;
-      letter-spacing: .5px;
-      text-transform: uppercase;
-    }
-
-    small {
-      font-size: .62rem;
-      font-weight: 600;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: $slate;
-    }
-  }
-}
+@include testata-pagina;
 
 // ---------- Scheda profilo ----------
 
@@ -310,4 +254,101 @@ $colori-branca: (
   font-weight: 700;
   color: $white;
   text-decoration: none;
+}
+
+// ---------- Da telefono: testi e spazi più piccoli (come mappa e calendario) ----------
+
+@media (max-width: 599px) {
+  .scheda-profilo { padding-bottom: 28px; }
+
+  .copertina { height: 120px; }
+
+  .intestazione {
+    margin-top: -60px;
+    padding: 0 12px;
+
+    h1 {
+      margin: 12px 0 10px;
+      font-size: 1.3rem;
+    }
+  }
+
+  .avatar {
+    width: 112px;
+    height: 112px;
+    border-width: 5px;
+    border-radius: 26px;
+    box-shadow: 0 12px 30px rgba($dark, .14);
+
+    ion-icon { font-size: 3.6rem; }
+  }
+
+  // Sotto la fascia, nell'angolo: non tocca più la foto.
+  .logout {
+    top: 130px;
+    right: 10px;
+    gap: 5px;
+    padding: 6px 11px;
+    font-size: .74rem;
+
+    ion-icon { font-size: .9rem; }
+  }
+
+  .modifica {
+    gap: 6px;
+    padding: 8px 16px;
+    box-shadow: 0 6px 16px rgba($viola, .26);
+    font-size: .8rem;
+
+    ion-icon { font-size: .92rem; }
+  }
+
+  .campi {
+    gap: 8px;
+    width: calc(100% - 20px);
+    margin-top: 20px;
+  }
+
+  .campo {
+    gap: 10px;
+    padding: 9px 12px;
+    border-left-width: 4px;
+
+    &__icona {
+      width: 32px;
+      height: 32px;
+
+      ion-icon { font-size: 1rem; }
+    }
+
+    &__etichetta {
+      font-size: .6rem;
+      letter-spacing: .6px;
+    }
+
+    &__valore {
+      gap: 6px;
+      font-size: .88rem;
+    }
+
+    &__azione {
+      padding: 5px 11px;
+      font-size: .7rem;
+    }
+  }
+
+  .pallino { width: 8px; height: 8px; }
+
+  .visitatore {
+    width: calc(100% - 20px);
+    padding: 20px 16px;
+    border-radius: 18px;
+    font-size: .82rem;
+  }
+
+  .accedi {
+    margin-top: 10px;
+    padding: 9px 24px;
+    font-size: .84rem;
+  }
 }

@@ -27,6 +27,9 @@ export interface Capo extends UtenteCensito {
 /** Capo gruppo: gestisce staff e capi. Si assegna solo dal database, non in registrazione. */
 export interface Admin extends UtenteCensito {
   ruolo: 'admin';
+  /** Titoli (solo nei propri dati): admin c'è solo per chi gestisce il sito. */
+  capogruppo?: boolean;
+  admin?: boolean;
 }
 
 export interface Ragazzo extends UtenteCensito {

@@ -156,3 +156,58 @@
 
   &:disabled { opacity: .6; cursor: default; }
 }
+
+// Da telefono: testi e spazi più piccoli, come gli altri moduli.
+@media (max-width: 599px) {
+  .modulo {
+    gap: 14px;
+    padding: 16px 12px calc(22px + env(safe-area-inset-bottom));
+  }
+
+  .foto {
+    gap: 10px;
+
+    &__riquadro {
+      width: 112px;
+      height: 112px;
+      border-width: 4px;
+      border-radius: 24px;
+
+      ion-icon { font-size: 3.6rem; }
+    }
+
+    &__azioni { gap: 6px; }
+    &__nota { font-size: .68rem; }
+  }
+
+  .pulsante-foto,
+  .rimuovi-foto {
+    gap: 5px;
+    padding: 7px 12px;
+    font-size: .76rem;
+
+    ion-icon { font-size: .92rem; }
+  }
+
+  .obbligatori { font-size: .74rem; }
+
+  .campo {
+    gap: 4px;
+
+    input {
+      min-height: 42px;
+      padding: 9px 12px;
+      border-radius: 11px;
+      font-size: .86rem;
+    }
+  }
+
+  .etichetta { font-size: .74rem; }
+  .errore { font-size: .78rem; }
+
+  .salva {
+    min-height: 46px;
+    border-radius: 14px;
+    font-size: .9rem;
+  }
+}

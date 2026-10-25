@@ -615,6 +615,19 @@ function utentePubblico(u) {
     };
 }
 
+/**
+ * I dati di chi ha fatto l'accesso, per il suo profilo: in più i titoli, così il profilo scrive
+ * "Capogruppo" e non "admin". Il titolo di admin lo sa solo chi gestisce il sito (vedi eGestore).
+ */
+function utenteProprio(u) {
+    const gestore = u.gestore_sito === 1;
+    return {
+        ...utentePubblico(u),
+        capogruppo: u.capogruppo === 1,
+        admin: gestore ? u.titolo_admin === 1 : undefined
+    };
+}
+
 
 app.get('/', (req, res) => {
     res.send('🚀 Backend agescipalermo11 attivo');
@@ -714,7 +727,7 @@ app.post('/api/login', (req, res) => {
                 error: `Prima conferma la tua email: apri il link che ti abbiamo mandato a ${emailMascherata(utente.email)}.`,
                 motivo: 'email-da-confermare',
             });
-        res.json({ message: "Accesso eseguito!", token: tokenUtente(utente), utente: utentePubblico(utente) });
+        res.json({ message: "Accesso eseguito!", token: tokenUtente(utente), utente: utenteProprio(utente) });
     });
 });
 
@@ -905,7 +918,7 @@ app.post('/api/conferma-email', async (req, res) => {
         await dbRun('UPDATE link_email SET usato = 1 WHERE id = ?', [link.id]);
         await dbRun('UPDATE utenti SET email_confermata = 1 WHERE id = ?', [utente.id]);
         const aggiornato = await dbGet('SELECT * FROM utenti WHERE id = ?', [utente.id]);
-        res.json({ message: "Email confermata!", token: tokenUtente(aggiornato), utente: utentePubblico(aggiornato) });
+        res.json({ message: "Email confermata!", token: tokenUtente(aggiornato), utente: utenteProprio(aggiornato) });
     } catch (err) {
         erroreInterno(res, err);
     }
@@ -992,7 +1005,7 @@ app.post('/api/password-dimenticata/nuova', async (req, res) => {
         await dbRun(`UPDATE link_email SET usato = 1 WHERE rif_utente = ? AND tipo = 'password'`, [utente.id]);
         azzeraTentativi(req, utente.codice_censimento);
         const aggiornato = await dbGet('SELECT * FROM utenti WHERE id = ?', [utente.id]);
-        res.json({ message: "Password cambiata!", token: tokenUtente(aggiornato), utente: utentePubblico(aggiornato) });
+        res.json({ message: "Password cambiata!", token: tokenUtente(aggiornato), utente: utenteProprio(aggiornato) });
     } catch (err) {
         erroreInterno(res, err);
     }
@@ -1034,7 +1047,7 @@ app.get('/api/utenti/me', verificaUtenteCensito, (req, res) => {
     db.get('SELECT * FROM utenti WHERE id = ?', [req.user.id], (err, utente) => {
         if (err) return erroreInterno(res, err);
         if (!utente) return res.status(404).json({ error: "Utente non trovato." });
-        res.json({ utente: utentePubblico(utente) });
+        res.json({ utente: utenteProprio(utente) });
     });
 });
 
@@ -1070,7 +1083,7 @@ app.put('/api/utenti/me', verificaUtenteCensito, (req, res) => {
                     if (utente.foto && utente.foto !== percorsoFoto) eliminaFile(CARTELLA_FOTO_PROFILI, utente.foto);
                     db.get('SELECT * FROM utenti WHERE id = ?', [utente.id], (getErr, aggiornato) => {
                         if (getErr || !aggiornato) return res.status(500).json({ error: "Profilo salvato ma non riletto." });
-                        res.json({ utente: utentePubblico(aggiornato) });
+                        res.json({ utente: utenteProprio(aggiornato) });
                     });
                 });
         };

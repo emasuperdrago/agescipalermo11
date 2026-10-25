@@ -12,9 +12,9 @@ import {
 import { AuthService } from '../services/auth';
 import { ModificaProfiloComponent } from '../components/modifica-profilo/modifica-profilo.component';
 import { BarraInferioreComponent } from '../components/barra-inferiore/barra-inferiore.component';
-import { Branca, Utente } from '../../types/models';
+import { Branca, Utente, Visitatore } from '../../types/models';
 
-const NOMI_RUOLO = { ragazzo: 'Ragazzo/a', capo: 'Capo', admin: 'Capo gruppo (admin)' } as const;
+const NOMI_RUOLO = { ragazzo: 'Ragazzo/a', capo: 'Capo' } as const;
 const NOMI_BRANCA: Record<Branca, string> = { branco: 'Branco', reparto: 'Reparto', clan: 'Clan' };
 
 interface CampoProfilo {
@@ -122,7 +122,7 @@ export class ProfiloPage implements OnInit {
       { etichetta: 'Cognome', valore: u.cognome, icona: personOutline },
       { etichetta: 'Codice censimento', valore: String(u.codice_censimento), icona: idCardOutline },
       { etichetta: 'Email', valore: u.email ?? 'Nessuna', icona: mailOutline, azione: 'email' },
-      { etichetta: 'Ruolo', valore: NOMI_RUOLO[u.ruolo], icona: shieldCheckmarkOutline },
+      { etichetta: 'Ruolo', valore: nomeRuolo(u), icona: shieldCheckmarkOutline },
       {
         etichetta: 'Branca',
         valore: u.branca ? NOMI_BRANCA[u.branca] : 'Nessuna (gruppo)',
@@ -201,4 +201,14 @@ export class ProfiloPage implements OnInit {
     const toast = await this.toastCtrl.create({ message: 'Profilo aggiornato.', duration: 1800, position: 'top' });
     await toast.present();
   }
+}
+
+/**
+ * Il ruolo scritto nel profilo. Il ruolo 'admin' del database sono i permessi del capogruppo:
+ * si scrive "Capogruppo", e "Admin" solo a chi gestisce il sito (l'unico che riceve quel titolo).
+ */
+function nomeRuolo(u: Exclude<Utente, Visitatore>): string {
+  if (u.ruolo !== 'admin') return NOMI_RUOLO[u.ruolo];
+  if (u.admin) return u.capogruppo ? 'Capogruppo e admin' : 'Admin';
+  return u.capogruppo === false ? 'Capo' : 'Capogruppo';
 }
