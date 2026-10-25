@@ -99,7 +99,8 @@
     font-weight: 800;
     color: $dark;
 
-    ion-icon {
+    // Solo l'icona del titolo: quelle dei pulsanti nel titolo ("Aggiungi", "Scarica") hanno i loro colori.
+    > ion-icon {
       font-size: 1.3rem;
       color: $viola-m;
     }
