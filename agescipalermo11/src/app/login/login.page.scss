@@ -205,3 +205,87 @@
 
   &:hover { text-decoration: underline; }
 }
+
+// ---------- Da telefono: tutto il modulo sta in una schermata (foto un po' più bassa) ----------
+
+@media (max-width: 599px) {
+  .stage {
+    padding: 26vh 12px 24px;
+
+    > .foto { height: 36vh; }
+  }
+
+  .barra { margin-bottom: 10px; }
+
+  .indietro {
+    padding: 5px 12px;
+    font-size: .8rem;
+  }
+
+  .scheda {
+    padding: 20px 16px 18px;
+    border-radius: 22px;
+  }
+
+  .titolo { font-size: 1.4rem; }
+
+  .sottotitolo {
+    margin: 4px 0 14px;
+    font-size: .78rem;
+  }
+
+  .tabs {
+    margin-bottom: 14px;
+    border-radius: 12px;
+
+    button {
+      min-height: 34px;
+      border-radius: 9px;
+      font-size: .8rem;
+    }
+  }
+
+  .messaggio {
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    font-size: .76rem;
+  }
+
+  .form { gap: 10px; }
+
+  .riga { gap: 10px; }
+
+  .campo {
+    gap: 4px;
+
+    span { font-size: .72rem; }
+
+    input,
+    select {
+      min-height: 42px;
+      padding: 9px 12px;
+      border-radius: 11px;
+      font-size: .86rem;
+    }
+  }
+
+  .check {
+    gap: 6px;
+    font-size: .76rem;
+
+    input { width: 14px; height: 14px; }
+  }
+
+  .pulsante {
+    min-height: 46px;
+    margin-top: 4px;
+    border-radius: 14px;
+    font-size: .92rem;
+  }
+
+  .nota {
+    margin-top: 14px;
+    font-size: .76rem;
+    line-height: 1.7;
+  }
+}

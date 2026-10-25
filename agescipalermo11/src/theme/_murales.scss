@@ -26,6 +26,9 @@ $sfondo-pagina: $lavanda;
   justify-content: flex-start;
   padding: 34vh 16px 32px;
   overflow: hidden;
+  // Lo sfondo sfocato è più largo dello schermo: con "clip" (e non solo "hidden") il browser
+  // non può far scorrere la pagina di lato quando un campo prende il fuoco.
+  overflow: clip;
   isolation: isolate;
 
   // Sfondo di tutta la pagina: la stessa foto, leggermente sfocata e schiarita con toni pastello.
