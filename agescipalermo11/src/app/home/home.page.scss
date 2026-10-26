@@ -613,6 +613,31 @@ $desktop: 992px;
   }
 }
 
+// Da telefono le scritte sulla foto sono più piccole: si vede di più la foto.
+@media (max-width: 599px) {
+  .eroe__contenuto {
+    padding: 20px 16px 32px;
+
+    h1 {
+      margin-bottom: 10px;
+      font-size: 1.55rem;
+      line-height: 1.15;
+      letter-spacing: -.3px;
+    }
+
+    p {
+      margin-bottom: 16px;
+      font-size: .84rem;
+      line-height: 1.5;
+    }
+  }
+
+  .eroe__azione {
+    padding: 10px 20px;
+    font-size: .88rem;
+  }
+}
+
 // ---------- Ultime dal gruppo (post) ----------
 
 // Richiamo al modulo di iscrizione, fra l'apertura e le notizie.
