@@ -1,0 +1,156 @@
+@use '../../../theme/variables' as *;
+
+.lupetto {
+  position: fixed;
+  inset: 0;
+  z-index: 30001;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba($dark, .55);
+  backdrop-filter: blur(3px);
+  font-family: 'Poppins', sans-serif;
+  animation: entra .3s ease-out;
+}
+
+.scheda {
+  position: relative;
+  width: min(100%, 680px);
+  padding: 16px 16px 14px;
+  border-radius: 22px;
+  background: $white;
+  box-shadow: 0 24px 60px rgba($dark, .3);
+
+  h2 {
+    margin: 0 0 10px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: $dark;
+  }
+}
+
+.chiudi {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: $slate-100;
+  font-size: .95rem;
+  color: $slate-600;
+  cursor: pointer;
+}
+
+.avviso {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 44px 10px 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: .8rem;
+  font-weight: 600;
+
+  &--senza { background: #FFF4D6; color: #8A6400; }
+  &--con { background: rgba($green, .16); color: $green-d; }
+
+  button {
+    padding: 4px 12px;
+    border: none;
+    border-radius: 999px;
+    background: $green-d;
+    font-family: inherit;
+    font-size: .76rem;
+    font-weight: 700;
+    color: $white;
+    cursor: pointer;
+  }
+}
+
+.campo {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tela {
+  display: block;
+  width: 100%;
+  aspect-ratio: 640 / 220;
+}
+
+.messaggio {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba($white, .45);
+  text-align: center;
+
+  strong {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: $viola;
+  }
+
+  small {
+    max-width: 80%;
+    font-size: .76rem;
+    color: $slate-600;
+  }
+
+  &--fine strong { color: #D8392F; }
+}
+
+.rigioca {
+  margin-top: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: $sfumatura-viola;
+  font-size: .78rem;
+  font-weight: 700;
+  color: $white;
+}
+
+.punteggio {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 2px 0;
+  font-size: .82rem;
+  color: $slate-600;
+
+  strong { color: $dark; font-variant-numeric: tabular-nums; }
+}
+
+@keyframes entra {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 599px) {
+  .lupetto { padding: 10px; }
+
+  .scheda {
+    padding: 12px 10px 10px;
+    border-radius: 18px;
+
+    h2 { font-size: .95rem; }
+  }
+
+  .avviso { font-size: .72rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lupetto { animation: none; }
+}

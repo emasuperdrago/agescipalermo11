@@ -1,0 +1,41 @@
+<div class="lupetto" role="dialog" aria-labelledby="titolo-lupetto">
+  <div class="scheda">
+    <button type="button" class="chiudi" (click)="chiudi()" aria-label="Chiudi il gioco">✕</button>
+
+    @if (sorprese.offline()) {
+      <p class="avviso avviso--senza">📡 Niente connessione. Intanto che torna, aiuta il lupetto!</p>
+    } @else {
+      <p class="avviso avviso--con">✅ Sei di nuovo connesso.
+        <button type="button" (click)="chiudi()">Torna al sito</button>
+      </p>
+    }
+
+    <h2 id="titolo-lupetto">Il lupetto sul sentiero</h2>
+
+    <div class="campo" (pointerdown)="salta()">
+      <canvas #tela class="tela" aria-label="Il gioco: tocca per saltare"></canvas>
+
+      @if (stato() === 'pronto') {
+        <div class="messaggio">
+          <strong>Tocca per partire</strong>
+          <small>Poi tocca (o premi spazio) per saltare tronchi e sassi</small>
+        </div>
+      }
+      @if (stato() === 'fine') {
+        <div class="messaggio messaggio--fine">
+          <strong>Ahi! Il lupetto è inciampato</strong>
+          <small>
+            {{ punti() }} punti ·
+            @if (nuovoRecord()) { <b>nuovo record!</b> } @else { record {{ record() }} }
+          </small>
+          <span class="rigioca">Tocca per rigiocare</span>
+        </div>
+      }
+    </div>
+
+    <p class="punteggio">
+      <span>Punti <strong>{{ punti() }}</strong></span>
+      <span>Record <strong>{{ record() }}</strong></span>
+    </p>
+  </div>
+</div>

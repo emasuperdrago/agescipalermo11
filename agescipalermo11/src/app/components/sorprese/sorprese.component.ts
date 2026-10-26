@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { SorpreseService } from '../../services/sorprese';
 import { DragoComponent } from '../drago/drago.component';
+import { LupettoComponent } from '../lupetto/lupetto.component';
 
 /** Un punto a caso dello schermo (in percentuale), con un ritardo per l'animazione. */
 interface Punto { x: number; y: number; ritardo: number; misura: number }
@@ -27,7 +28,7 @@ function puntiACaso(quanti: number, altezzaMassima = 100): Punto[] {
   templateUrl: './sorprese.component.html',
   styleUrls: ['./sorprese.component.scss'],
   standalone: true,
-  imports: [DragoComponent],
+  imports: [DragoComponent, LupettoComponent],
 })
 export class SorpreseComponent {
   readonly sorprese = inject(SorpreseService);

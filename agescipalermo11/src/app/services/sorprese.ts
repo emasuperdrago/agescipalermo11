@@ -14,7 +14,8 @@ import { CantiService } from './canti';
  *  - 5 tocchi sul murales di Marco: l'orso con la sua frase;
  *  - nella home, certi giorni: 11 novembre (compleanno del gruppo), 22 febbraio (Thinking Day),
  *    23 aprile (San Giorgio: un drago che vola per lo schermo, da sconfiggere a colpi).
- * La pagina "non trovata" ha il suo minigioco (vedi components/sentiero-perso).
+ * La pagina "non trovata" ha il suo minigioco (vedi components/sentiero-perso); quando cade la
+ * connessione, invece di un errore c'è il lupetto che salta i tronchi (vedi components/lupetto).
  */
 export type Scena =
   | 'campo' | 'lupi' | 'tigre' | 'bp' | 'gigli' | 'anni80' | 'canto' | 'orso'
@@ -70,6 +71,10 @@ export class SorpreseService {
   readonly dragoVita = DRAGO_VITA;
   /** Gli anni del gruppo, per il compleanno. */
   readonly anni = signal(0);
+  /** Il gioco del lupetto (quando cade la connessione, o per prova). */
+  readonly lupetto = signal(false);
+  /** Il telefono è senza connessione adesso. */
+  readonly offline = signal(typeof navigator !== 'undefined' && navigator.onLine === false);
   /** Il morse: il punto acceso o spento, e il codice scritto sotto. */
   readonly morseAcceso = signal(false);
   readonly morseCodice = ['PALERMO', '11']
@@ -97,6 +102,12 @@ export class SorpreseService {
       document.addEventListener('pointercancel', () => this.lascia(), true);
       document.addEventListener('click', e => this.clic(e), true);
       window.addEventListener('devicemotion', e => this.scossa(e));
+      // Cade la connessione: arriva il lupetto. Torna: lo si dice (il gioco resta finché si vuole).
+      window.addEventListener('offline', () => this.zone.run(() => {
+        this.offline.set(true);
+        this.lupetto.set(true);
+      }));
+      window.addEventListener('online', () => this.zone.run(() => this.offline.set(false)));
     });
     // I giorni speciali, entrando nella home.
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(e => {
@@ -118,7 +129,8 @@ export class SorpreseService {
    * Per chi gestisce il sito: fa partire subito una sorpresa, anche quelle dei giorni speciali
    * (che si vedono nella home: ci si va prima). Vedi la pagina del profilo.
    */
-  async prova(nome: Scena | 'drago') {
+  async prova(nome: Scena | 'drago' | 'lupetto') {
+    if (nome === 'lupetto') return this.lupetto.set(true);
     if (nome === 'morse') return this.segnaleMorse();
     if (nome === 'canto') return this.cantoASorpresa();
     if (nome === 'compleanno' || nome === 'thinking' || nome === 'drago') {
