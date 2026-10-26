@@ -1344,9 +1344,14 @@ $colori-etichetta: (
 .filtro-hashtag {
   display: flex;
   gap: 8px;
+  // Pochi hashtag stanno al centro; tanti non escono dallo schermo (centrati, i primi finirebbero
+  // fuori a sinistra senza poterci arrivare) e si scorrono di lato.
+  max-width: 100%;
   margin: 0 0 16px;
   padding-bottom: 4px;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 
   &::-webkit-scrollbar { display: none; }
@@ -1390,11 +1395,18 @@ $colori-etichetta: (
   }
 }
 
+// Gli hashtag del post: in una riga sola, che si scorre di lato se non ci stanno tutti.
 .storia__hashtag {
   display: flex;
-  flex-wrap: wrap;
   gap: 4px;
+  min-width: 0;
   padding: 0 14px 12px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
 }
 
 // ---------- Telefono: due post per riga ----------
