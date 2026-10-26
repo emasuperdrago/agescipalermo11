@@ -12,6 +12,7 @@ import {
 } from 'ionicons/icons';
 import * as L from 'leaflet';
 import { AuthService } from '../services/auth';
+import { SorpreseService } from '../services/sorprese';
 import { movimentoRidotto } from '../animazioni/scorrimento-orizzontale';
 import {
   BRANCHE_POSTO, CENTRO_PALERMO, PostiService, ZOOM_PALERMO, aggiungiSfondoMappa, dateCampo, iconaBandierina,
@@ -71,6 +72,7 @@ export class MappaPage implements AfterViewInit, OnDestroy, OnInit {
     private modalCtrl: ModalController,
     private alertCtrl: AlertController,
     private toastCtrl: ToastController,
+    private sorprese: SorpreseService,
   ) {
     this.leggiFiltro();
   }
@@ -93,6 +95,38 @@ export class MappaPage implements AfterViewInit, OnDestroy, OnInit {
     });
     this.osservatore.observe(el);
     this.disegnaBandierine();
+    this.tendaNascosta(el);
+  }
+
+  /**
+   * Easter egg: tenendo premuto un punto vuoto della mappa (non una bandierina, non un pulsante)
+   * compare "Monta la tenda qui!" e parte il gioco della tenda (vedi components/tenda).
+   */
+  private tendaNascosta(el: HTMLElement) {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let da: { x: number; y: number } | null = null;
+    const annulla = () => { clearTimeout(timer); da = null; };
+    el.addEventListener('pointerdown', (e: PointerEvent) => {
+      if ((e.target as Element).closest('.leaflet-marker-icon, .leaflet-control, .leaflet-popup')) return;
+      da = { x: e.clientX, y: e.clientY };
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (!this.mappa || !da) return;
+        const punto = this.mappa.mouseEventToLatLng(e as unknown as MouseEvent);
+        L.popup({ closeButton: false, className: 'popup-tenda' }).setLatLng(punto)
+          .setContent('⛺ Monta la tenda qui!').openOn(this.mappa);
+        setTimeout(() => {
+          this.mappa?.closePopup();
+          this.sorprese.tenda.set(true);
+        }, 900);
+        da = null;
+      }, 800);
+    });
+    el.addEventListener('pointermove', (e: PointerEvent) => {
+      if (da && Math.hypot(e.clientX - da.x, e.clientY - da.y) > 10) annulla();
+    });
+    el.addEventListener('pointerup', annulla);
+    el.addEventListener('pointercancel', annulla);
   }
 
   // Ionic a volte crea la pagina due volte e l'ingresso arriva a una copia sola: la pagina si

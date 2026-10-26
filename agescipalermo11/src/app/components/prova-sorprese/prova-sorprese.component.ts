@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Scena, SorpreseService } from '../../services/sorprese';
 
-interface Prova { nome: Scena | 'drago' | 'bosco' | 'lupetto'; titolo: string; come: string }
+interface Prova { nome: Scena | 'drago' | 'bosco' | 'lupetto' | 'indovina' | 'tenda'; titolo: string; come: string }
 
 /**
  * Solo per gli admin, nel profilo: un pulsante per ogni easter egg, anche per quelli dei giorni
@@ -34,6 +34,8 @@ export class ProvaSorpreseComponent {
     { nome: 'drago', titolo: '🐉 Drago di San Giorgio', come: 'In home il 23 aprile' },
     { nome: 'bosco', titolo: '🧭 Perso nel bosco', come: 'Un indirizzo che non esiste' },
     { nome: 'lupetto', titolo: '🐺 Lupetto senza internet', come: 'Quando cade la connessione' },
+    { nome: 'indovina', titolo: '🎵 Indovina il canto', come: 'In fondo alla lista del canzoniere' },
+    { nome: 'tenda', titolo: '⛺ Monta la tenda', come: 'Tenere premuto un punto vuoto della mappa' },
   ];
 
   prova(p: Prova) {

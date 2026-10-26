@@ -161,6 +161,12 @@
             </li>
           }
         </ul>
+        <!-- Easter egg: chi arriva fino in fondo trova la sfida (vedi components/indovina-canto). -->
+        @if (!modalitaSelezione) {
+          <button type="button" class="sfida" (click)="sorprese.indovina.set(true)">
+            🎵 Ti senti esperto? <strong>Indovina il canto</strong>
+          </button>
+        }
       }
     }
   </div>

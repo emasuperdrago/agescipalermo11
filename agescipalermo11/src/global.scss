@@ -717,6 +717,14 @@ ion-tab-button ion-label {
   }
 }
 
+// Easter egg della mappa: il fumetto "Monta la tenda qui!" (vedi mappa.page.ts).
+.popup-tenda .leaflet-popup-content-wrapper {
+  border-radius: 999px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 800;
+  color: #4A7F22;
+}
+
 .leaflet-tooltip.nome-posto {
   padding: 4px 10px;
   border: none;

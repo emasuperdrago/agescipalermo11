@@ -1,0 +1,70 @@
+<div class="indovina" role="dialog" aria-labelledby="titolo-indovina">
+  <div class="scheda">
+    <button type="button" class="chiudi" (click)="chiudi()" aria-label="Chiudi il gioco">✕</button>
+    <h2 id="titolo-indovina">🎵 Indovina il canto</h2>
+
+    @switch (stato()) {
+      @case ('errore') {
+        <p class="nota">Non riesco a leggere il canzoniere adesso. Riprova tra poco.</p>
+      }
+      @case ('fine') {
+        <div class="fine">
+          <p class="fine__punti">{{ punti() }} <small>punti</small></p>
+          <p class="fine__giuste">{{ giuste() }} su {{ totale }} giuste</p>
+          <p class="fine__giudizio">{{ giudizio }}</p>
+          <p class="fine__record">
+            @if (nuovoRecord()) { <span>Nuovo record!</span> } @else { Il tuo record: {{ record() }} punti }
+          </p>
+          <div class="azioni">
+            <button type="button" class="principale" (click)="ricomincia()">Gioca ancora</button>
+            <button type="button" class="secondario" (click)="chiudi()">Chiudi</button>
+          </div>
+        </div>
+      }
+      @default {
+        <p class="conta">
+          <span>Domanda {{ numero() }} di {{ totale }}</span>
+          <span>{{ punti() }} punti</span>
+        </p>
+        <div class="tempo" aria-hidden="true">
+          <span [style.width.%]="restano() / 15 * 100" [class.tempo--poco]="restano() < 5"></span>
+        </div>
+
+        @if (domanda(); as d) {
+          <blockquote class="versi" [class.versi--attesa]="stato() === 'carica'">
+            @for (v of d.versi; track $index) { <p>{{ v }}</p> }
+          </blockquote>
+
+          <div class="scelte">
+            @for (c of d.scelte; track c.id; let i = $index) {
+              <button type="button" class="scelta"
+                      [class.scelta--giusta]="stato() === 'risposta' && c.id === d.giusto.id"
+                      [class.scelta--sbagliata]="stato() === 'risposta' && scelta() === i && c.id !== d.giusto.id"
+                      [disabled]="stato() !== 'gioca'" (click)="rispondi(i)">
+                {{ c.titolo }}
+              </button>
+            }
+          </div>
+
+          @if (stato() === 'risposta') {
+            <p class="esito" [class.esito--si]="scelta() !== null && scelta()! >= 0 && d.scelte[scelta()!].id === d.giusto.id">
+              @if (scelta() === -1) {
+                ⏰ Tempo scaduto! Era «{{ d.giusto.titolo }}».
+              } @else if (d.scelte[scelta()!].id === d.giusto.id) {
+                ✅ Giusto!
+              } @else {
+                ❌ No, era «{{ d.giusto.titolo }}».
+              }
+              <button type="button" class="link" (click)="apriCanto()">Apri il canto</button>
+            </p>
+            <button type="button" class="principale avanti" (click)="avanti()">
+              {{ numero() < totale ? 'Avanti' : 'Vedi il risultato' }}
+            </button>
+          }
+        } @else {
+          <p class="nota">Sto scegliendo i canti…</p>
+        }
+      }
+    }
+  </div>
+</div>

@@ -15,7 +15,9 @@ import { CantiService } from './canti';
  *  - nella home, certi giorni: 11 novembre (compleanno del gruppo), 22 febbraio (Thinking Day),
  *    23 aprile (San Giorgio: un drago che vola per lo schermo, da sconfiggere a colpi).
  * La pagina "non trovata" ha il suo minigioco (vedi components/sentiero-perso); quando cade la
- * connessione, invece di un errore c'è il lupetto che salta i tronchi (vedi components/lupetto).
+ * connessione, invece di un errore c'è il lupetto che salta i tronchi (vedi components/lupetto);
+ * in fondo al canzoniere si sfida "Indovina il canto" (components/indovina-canto); tenendo premuto
+ * un punto vuoto della mappa si monta la tenda prima del temporale (components/tenda).
  */
 export type Scena =
   | 'campo' | 'lupi' | 'tigre' | 'bp' | 'gigli' | 'anni80' | 'canto' | 'orso'
@@ -73,6 +75,9 @@ export class SorpreseService {
   readonly anni = signal(0);
   /** Il gioco del lupetto (quando cade la connessione, o per prova). */
   readonly lupetto = signal(false);
+  /** I minigiochi "Indovina il canto" e "Monta la tenda". */
+  readonly indovina = signal(false);
+  readonly tenda = signal(false);
   /** Il telefono è senza connessione adesso. */
   readonly offline = signal(typeof navigator !== 'undefined' && navigator.onLine === false);
   /** Il morse: il punto acceso o spento, e il codice scritto sotto. */
@@ -129,8 +134,10 @@ export class SorpreseService {
    * Per chi gestisce il sito: fa partire subito una sorpresa, anche quelle dei giorni speciali
    * (che si vedono nella home: ci si va prima). Vedi la pagina del profilo.
    */
-  async prova(nome: Scena | 'drago' | 'lupetto') {
+  async prova(nome: Scena | 'drago' | 'lupetto' | 'indovina' | 'tenda') {
     if (nome === 'lupetto') return this.lupetto.set(true);
+    if (nome === 'indovina') return this.indovina.set(true);
+    if (nome === 'tenda') return this.tenda.set(true);
     if (nome === 'morse') return this.segnaleMorse();
     if (nome === 'canto') return this.cantoASorpresa();
     if (nome === 'compleanno' || nome === 'thinking' || nome === 'drago') {

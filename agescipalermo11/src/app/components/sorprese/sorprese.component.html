@@ -128,3 +128,11 @@
 @if (sorprese.lupetto()) {
   <app-lupetto />
 }
+
+<!-- I minigiochi: "Indovina il canto" (fondo del canzoniere) e "Monta la tenda" (mappa). -->
+@if (sorprese.indovina()) {
+  <app-indovina-canto />
+}
+@if (sorprese.tenda()) {
+  <app-tenda />
+}

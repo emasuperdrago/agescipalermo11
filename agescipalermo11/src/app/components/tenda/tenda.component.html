@@ -1,0 +1,67 @@
+<div class="tenda" role="dialog" aria-labelledby="titolo-tenda">
+  <div class="scheda" [class.scheda--sbagliato]="sbagliato()">
+    <button type="button" class="chiudi" (click)="chiudi()" aria-label="Chiudi il gioco">✕</button>
+    <h2 id="titolo-tenda">⛺ Monta la tenda prima del temporale</h2>
+
+    <p class="conta">
+      <span>Tenda {{ livello() + 1 }} di {{ livelli }}</span>
+      @if (stato() === 'gioca') { <span>⏱ {{ restano().toFixed(1) }} s</span> }
+      <span>{{ punti() }} punti</span>
+    </p>
+
+    <!-- Il prato: il cielo si scurisce e la nuvola arriva man mano che il tempo passa. -->
+    <div class="prato" [style.--temporale]="temporale" [class.prato--fulmine]="fulmine">
+      <span class="nuvola" aria-hidden="true">⛈️</span>
+      @if (stato() === 'volata') {
+        @for (n of [0,1,2,3,4,5,6,7,8,9,10,11]; track n) {
+          <span class="goccia" [style.left.%]="n * 8 + 3" [style.animation-delay.s]="n * .07" aria-hidden="true"></span>
+        }
+      }
+
+      <!-- La tenda: un telo a terra, che diventa montata alla fine. -->
+      <div class="telo" [class.telo--montata]="stato() === 'montata' || stato() === 'fine'"
+           [class.telo--volata]="stato() === 'volata'" aria-hidden="true">
+        @if (stato() === 'montata' || stato() === 'fine') { <span>⛺</span> }
+      </div>
+
+      @if (stato() === 'gioca' || stato() === 'montata') {
+        @for (p of picchetti(); track $index; let i = $index) {
+          <button type="button" class="picchetto" [style.left.%]="p.x" [style.top.%]="p.y"
+                  [class.picchetto--acceso]="acceso() === i" [class.picchetto--piantato]="p.piantato"
+                  (pointerdown)="pianta(i)" [attr.aria-label]="'Picchetto ' + (i + 1)">
+            {{ p.piantato ? '📍' : '' }}
+          </button>
+        }
+      }
+
+      @switch (stato()) {
+        @case ('pronto') {
+          <div class="messaggio">
+            <strong>Arriva un temporale!</strong>
+            <small>Tocca i picchetti che si accendono, uno alla volta, prima che arrivi la nuvola</small>
+            <button type="button" class="principale" (click)="parti()">Monta la tenda</button>
+          </div>
+        }
+        @case ('montata') {
+          <div class="messaggio messaggio--ok"><strong>Tenda montata! ⛺</strong></div>
+        }
+        @case ('volata') {
+          <div class="messaggio messaggio--ko">
+            <strong>Il temporale ha portato via la tenda! 💨</strong>
+            <button type="button" class="principale" (click)="parti()">Riprova</button>
+          </div>
+        }
+        @case ('fine') {
+          <div class="messaggio messaggio--ok">
+            <strong>Squadriglia al riparo! 🎉</strong>
+            <small>
+              {{ punti() }} punti ·
+              @if (nuovoRecord()) { <b>nuovo record!</b> } @else { record {{ record() }} }
+            </small>
+            <button type="button" class="principale" (click)="parti()">Gioca ancora</button>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>

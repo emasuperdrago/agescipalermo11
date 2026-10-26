@@ -12,6 +12,7 @@ import {
   downloadOutline, musicalNotesOutline, searchOutline, trashOutline
 } from 'ionicons/icons';
 import { AuthService } from '../services/auth';
+import { SorpreseService } from '../services/sorprese';
 import { CantiService, SEZIONI_CANTO, coloreSezione, nomeSezione } from '../services/canti';
 import { CantoEditorComponent } from '../components/canto-editor/canto-editor.component';
 import { AnteprimaLibrettoComponent } from '../components/anteprima-libretto/anteprima-libretto.component';
@@ -61,6 +62,7 @@ export class CanzonierePage implements OnInit {
     private modalCtrl: ModalController,
     private alertCtrl: AlertController,
     private toastCtrl: ToastController,
+    readonly sorprese: SorpreseService,
   ) {
     this.richieste.pipe(
       debounceTime(250),

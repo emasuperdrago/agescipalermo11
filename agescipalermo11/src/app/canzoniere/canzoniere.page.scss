@@ -579,3 +579,21 @@
     ion-icon { font-size: .8rem; }
   }
 }
+
+// In fondo alla lista, quasi nascosto: la sfida "Indovina il canto" (un easter egg).
+.sfida {
+  display: block;
+  margin: 18px auto 8px;
+  padding: 8px 16px;
+  border: 1.5px dashed rgba($viola-m, .35);
+  border-radius: 999px;
+  background: transparent;
+  font-family: inherit;
+  font-size: .8rem;
+  color: $slate;
+  cursor: pointer;
+
+  strong { color: $viola; }
+
+  &:hover { background: rgba($viola-l, .08); }
+}
