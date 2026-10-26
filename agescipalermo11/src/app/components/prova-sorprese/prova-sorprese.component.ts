@@ -5,8 +5,8 @@ import { Scena, SorpreseService } from '../../services/sorprese';
 interface Prova { nome: Scena | 'drago' | 'bosco'; titolo: string; come: string }
 
 /**
- * Solo per chi gestisce il sito, nel profilo: un pulsante per ogni easter egg, anche per quelli
- * dei giorni speciali, così si provano quando si vuole. Gli altri non lo vedono.
+ * Solo per gli admin, nel profilo: un pulsante per ogni easter egg, anche per quelli dei giorni
+ * speciali, così si provano quando si vuole. Capi e capigruppo non lo vedono.
  * Uso: <app-prova-sorprese />
  */
 @Component({

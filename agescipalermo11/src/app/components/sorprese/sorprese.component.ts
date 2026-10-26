@@ -3,6 +3,7 @@ import { NavigationEnd, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { SorpreseService } from '../../services/sorprese';
+import { DragoComponent } from '../drago/drago.component';
 
 /** Un punto a caso dello schermo (in percentuale), con un ritardo per l'animazione. */
 interface Punto { x: number; y: number; ritardo: number; misura: number }
@@ -17,8 +18,8 @@ function puntiACaso(quanti: number, altezzaMassima = 100): Punto[] {
 }
 
 /**
- * Disegna le sorprese di SorpreseService sopra tutto il sito. Un tocco le chiude (tranne il drago,
- * che si colpisce). Chi preferisce meno movimento le vede ferme.
+ * Disegna le sorprese di SorpreseService sopra tutto il sito. Un tocco le chiude (il drago ha il
+ * suo componente: lì i tocchi sono colpi). Chi preferisce meno movimento le vede ferme.
  * Uso: una volta sola, in app.component.html: <app-sorprese />
  */
 @Component({
@@ -26,6 +27,7 @@ function puntiACaso(quanti: number, altezzaMassima = 100): Punto[] {
   templateUrl: './sorprese.component.html',
   styleUrls: ['./sorprese.component.scss'],
   standalone: true,
+  imports: [DragoComponent],
 })
 export class SorpreseComponent {
   readonly sorprese = inject(SorpreseService);
@@ -57,10 +59,5 @@ export class SorpreseComponent {
 
   chiudi() {
     this.sorprese.chiudi();
-  }
-
-  colpisci(evento: Event) {
-    evento.stopPropagation();
-    this.sorprese.colpisciDrago();
   }
 }

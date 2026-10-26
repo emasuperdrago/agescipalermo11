@@ -13,7 +13,7 @@ import { CantiService } from './canti';
  *    scuoterlo funziona dopo i 3 tocchi, che chiedono il permesso del movimento: Apple lo vuole così);
  *  - 5 tocchi sul murales di Marco: l'orso con la sua frase;
  *  - nella home, certi giorni: 11 novembre (compleanno del gruppo), 22 febbraio (Thinking Day),
- *    23 aprile (San Giorgio: un drago da sconfiggere).
+ *    23 aprile (San Giorgio: un drago che vola per lo schermo, da sconfiggere a colpi).
  * La pagina "non trovata" ha il suo minigioco (vedi components/sentiero-perso).
  */
 export type Scena =
@@ -48,6 +48,8 @@ export const FRASI_BP = [
 ];
 
 const ANNO_FONDAZIONE = 1983;
+/** Quanti colpi servono per sconfiggere il drago. */
+const DRAGO_VITA = 10;
 const TOCCHI_LOGO = 11;
 const TOCCHI_MURALES = 5;
 /** Selettore dei loghi del gruppo (testate, home, benvenuto). */
@@ -65,6 +67,7 @@ export class SorpreseService {
   readonly frase = signal(FRASI_BP[0]);
   /** Il 23 aprile, nella home: il drago da sconfiggere (colpi che mancano; 0 = sconfitto, null = niente drago). */
   readonly drago = signal<number | null>(null);
+  readonly dragoVita = DRAGO_VITA;
   /** Gli anni del gruppo, per il compleanno. */
   readonly anni = signal(0);
   /** Il morse: il punto acceso o spento, e il codice scritto sotto. */
@@ -121,7 +124,7 @@ export class SorpreseService {
     if (nome === 'compleanno' || nome === 'thinking' || nome === 'drago') {
       await this.router.navigateByUrl('/home');
       setTimeout(() => this.zone.run(() => {
-        if (nome === 'drago') return this.drago.set(7);
+        if (nome === 'drago') return this.drago.set(DRAGO_VITA);
         this.anni.set(new Date().getFullYear() - ANNO_FONDAZIONE);
         this.mostra(nome);
       }), 700);
@@ -135,15 +138,19 @@ export class SorpreseService {
     this.scena.set(null);
   }
 
-  /** Un colpo al drago di San Giorgio. */
-  colpisciDrago() {
+  /** Un colpo al drago di San Giorgio; vero se era l'ultimo. */
+  colpisciDrago(): boolean {
     const colpi = this.drago();
-    if (!colpi) return;
+    if (!colpi) return false;
     this.drago.set(colpi - 1);
-    if (colpi - 1 === 0) {
-      try { sessionStorage.setItem('dragoSconfitto', '1'); } catch { /* pazienza */ }
-      setTimeout(() => this.zone.run(() => this.drago.set(null)), 4000);
-    }
+    if (colpi - 1 > 0) return false;
+    try { sessionStorage.setItem('dragoSconfitto', '1'); } catch { /* pazienza */ }
+    return true;
+  }
+
+  /** Il drago se ne va (dopo la vittoria, o chiudendolo). */
+  chiudiDrago() {
+    this.drago.set(null);
   }
 
   // ---------- Parole ----------
@@ -357,7 +364,7 @@ export class SorpreseService {
       } else if (mese === 4 && giorno === 23) {
         let sconfitto = false;
         try { sconfitto = !!sessionStorage.getItem('dragoSconfitto'); } catch { /* pazienza */ }
-        if (!sconfitto && this.drago() === null) this.zone.run(() => this.drago.set(7));
+        if (!sconfitto && this.drago() === null) this.zone.run(() => this.drago.set(DRAGO_VITA));
       }
     }, 900);
   }

@@ -628,8 +628,11 @@ function utenteProprio(u) {
         ...utentePubblico(u),
         capogruppo: u.capogruppo === 1,
         admin: gestore ? u.titolo_admin === 1 : undefined,
-        // Solo a chi gestisce il sito (per le sue prove, es. gli easter egg nel profilo).
-        gestore: gestore || undefined
+        // Solo a chi gestisce il sito (per le sue prove).
+        gestore: gestore || undefined,
+        // Gli admin (e chi gestisce il sito) provano gli easter egg dal profilo. Non dice a nessuno
+        // chi è admin: lo sa solo lui, dai suoi dati; la scritta del ruolo resta quella di sempre.
+        provaSorprese: gestore || u.titolo_admin === 1 || undefined
     };
 }
 

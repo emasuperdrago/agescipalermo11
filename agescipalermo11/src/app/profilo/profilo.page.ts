@@ -101,10 +101,10 @@ export class ProfiloPage implements OnInit {
     return this.auth.urlFotoProfilo(this.utente);
   }
 
-  /** Solo chi gestisce il sito vede le prove degli easter egg. */
-  get gestore(): boolean {
+  /** Le prove degli easter egg: solo gli admin (non capi e capigruppo). */
+  get provaSorprese(): boolean {
     const u = this.utente;
-    return !!u && u.ruolo === 'admin' && u.gestore === true;
+    return !!u && u.ruolo === 'admin' && u.provaSorprese === true;
   }
 
   get visitatore(): boolean {

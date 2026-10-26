@@ -119,15 +119,7 @@
   }
 }
 
-<!-- 23 aprile, San Giorgio: il drago nella home. Ogni tocco è un colpo. -->
+<!-- 23 aprile, San Giorgio: il drago nella home (vedi components/drago). -->
 @if (dragoInVista()) {
-  @if (sorprese.drago() === 0) {
-    <div class="vittoria" role="status">⚔️ San Giorgio ha vinto! Buona festa, scout!</div>
-  } @else {
-    <button type="button" class="drago" (click)="colpisci($event)"
-            [attr.aria-label]="'Il drago di San Giorgio: ancora ' + sorprese.drago() + ' colpi'">
-      <span class="drago__corpo">🐉</span>
-      <span class="drago__colpi">{{ sorprese.drago() }}</span>
-    </button>
-  }
+  <app-drago />
 }

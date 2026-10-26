@@ -1,0 +1,40 @@
+@if (invito()) {
+  <p class="invito" role="status">🐉 Un drago minaccia il Palermo 11! Toccalo per aiutare San Giorgio</p>
+}
+
+@if (!vittoria()) {
+  <button type="button" class="drago" [class.drago--colpito]="colpito()" [class.drago--caduto]="caduto()"
+          [style.left.%]="x()" [style.top.%]="y()" (click)="colpisci($event)"
+          [attr.aria-label]="'Il drago di San Giorgio: ancora ' + sorprese.drago() + ' colpi'">
+    <span class="drago__corpo" [class.drago__corpo--destra]="versoDestra()">🐉</span>
+    @if (fuoco() && !caduto()) {
+      <span class="drago__fuoco" [class.drago__fuoco--destra]="versoDestra()" aria-hidden="true">🔥🔥</span>
+    }
+    <span class="drago__vita" aria-hidden="true">
+      <span [style.width.%]="vita * 100"></span>
+    </span>
+  </button>
+}
+
+@for (b of botte(); track b.id) {
+  <span class="botta" [style.left.px]="b.x" [style.top.px]="b.y" aria-hidden="true">{{ b.testo }}</span>
+}
+
+@if (vittoria()) {
+  <div class="vittoria" (click)="chiudi()" role="status">
+    <figure class="vittoria__scheda">
+      <span class="vittoria__rosa" aria-hidden="true">🌹</span>
+      <p class="vittoria__titolo">San Giorgio ha vinto!</p>
+      <p class="vittoria__leggenda">Dove cadde il drago, dice la leggenda, sbocciò una rosa.</p>
+      <p class="vittoria__tempo">
+        ⚔️ Sconfitto in <strong>{{ tempo }} secondi</strong>
+        @if (nuovoRecord) {
+          <span class="vittoria__record">Nuovo record!</span>
+        } @else {
+          <small>Il tuo record: {{ record }} s</small>
+        }
+      </p>
+      <small class="vittoria__auguri">Buona festa di San Giorgio, patrono degli scout!</small>
+    </figure>
+  </div>
+}
