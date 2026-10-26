@@ -1,0 +1,176 @@
+@use '../../../theme/variables' as *;
+
+.gioco {
+  padding: 18px 16px 20px;
+  border-radius: 20px;
+  background: $white;
+  box-shadow: 0 14px 40px rgba($dark, .08);
+  font-family: 'Poppins', sans-serif;
+
+  &__titolo {
+    margin: 0 0 4px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: $dark;
+  }
+
+  &__testo {
+    margin: 0 0 14px;
+    font-size: .85rem;
+    color: $slate-600;
+  }
+
+  &__area {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+  }
+}
+
+.bosco {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px;
+  border-radius: 14px;
+  background: #E7F2DC;
+
+  &__riga {
+    display: flex;
+    gap: 3px;
+  }
+
+  &__casella {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: none;
+    border-radius: 9px;
+    background: rgba($white, .55);
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+
+    &--io {
+      background: $white;
+      box-shadow: 0 0 0 2px $green-d;
+    }
+  }
+}
+
+.comandi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.bussola {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  border: 3px solid $slate-200;
+  border-radius: 50%;
+  background: radial-gradient(circle, $white 55%, $slate-100 100%);
+
+  &__n {
+    position: absolute;
+    top: 3px;
+    left: 50%;
+    font-size: .7rem;
+    font-weight: 800;
+    color: #D8392F;
+    transform: translateX(-50%);
+  }
+
+  // L'ago: rosso verso il campo, grigio dall'altra parte.
+  &__ago {
+    position: absolute;
+    top: 12px;
+    left: calc(50% - 4px);
+    width: 8px;
+    height: 54px;
+    background: linear-gradient(180deg, #D8392F 50%, $slate-400 50%);
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    transform-origin: 50% 50%;
+    transition: transform .4s cubic-bezier(.2, .9, .3, 1.2);
+  }
+}
+
+.frecce {
+  display: grid;
+  grid-template-areas: '. su .' 'sx . dx' '. giu .';
+  gap: 4px;
+
+  button {
+    width: 40px;
+    height: 40px;
+    border: 1.5px solid $slate-200;
+    border-radius: 12px;
+    background: $white;
+    font-size: .9rem;
+    color: $green-d;
+    cursor: pointer;
+
+    &:active { background: #E7F2DC; }
+  }
+
+  &__su { grid-area: su; }
+  &__sx { grid-area: sx; }
+  &__dx { grid-area: dx; }
+  &__giu { grid-area: giu; }
+}
+
+.fine {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  &__home,
+  &__ancora {
+    padding: 9px 18px;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: .85rem;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  &__home {
+    border: none;
+    background: $sfumatura-viola;
+    color: $white;
+  }
+
+  &__ancora {
+    border: 1.5px solid $slate-200;
+    background: $white;
+    color: $viola;
+  }
+}
+
+@media (max-width: 599px) {
+  .gioco {
+    padding: 14px 12px 15px;
+    border-radius: 18px;
+
+    &__titolo { font-size: .95rem; }
+    &__testo { font-size: .76rem; }
+  }
+
+  .bosco__casella {
+    width: 34px;
+    height: 34px;
+    font-size: 1.15rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bussola__ago { transition: none; }
+}

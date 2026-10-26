@@ -1,0 +1,123 @@
+@switch (sorprese.scena()) {
+  @case ('campo') {
+    <!-- "Estote parati": il sito si accampa sotto le stelle. -->
+    <div class="scena scena--campo" (click)="chiudi()" role="status">
+      @for (s of stelle; track $index) {
+        <span class="stella" [style.left.%]="s.x" [style.top.%]="s.y" [style.animation-delay.s]="s.ritardo"
+              [style.width.px]="s.misura" [style.height.px]="s.misura"></span>
+      }
+      <p class="scena__frase">Estote parati!<small>Siate pronti</small></p>
+      <div class="campo">
+        <span class="campo__tenda">⛺</span>
+        <span class="campo__tenda campo__tenda--piccola">⛺</span>
+        <span class="campo__fuoco">🔥</span>
+        <span class="campo__tenda campo__tenda--piccola">⛺</span>
+        <span class="campo__tenda">⛺</span>
+      </div>
+    </div>
+  }
+  @case ('lupi') {
+    <div class="scena scena--trasparente" (click)="chiudi()" role="status">
+      <p class="fumetto">Del nostro meglio!</p>
+      <div class="corsa">
+        @for (n of [0, 1, 2, 3, 4]; track n) {
+          <span class="lupo" [style.animation-delay.s]="n * .28" [style.bottom.px]="40 + (n % 3) * 26">🐺</span>
+        }
+      </div>
+    </div>
+  }
+  @case ('tigre') {
+    <div class="scena scena--trasparente" (click)="chiudi()" role="status">
+      <p class="fumetto fumetto--paura">Shere Khan! Lupi, al riparo!</p>
+      <div class="corsa">
+        <span class="tigre">🐯</span>
+        @for (n of [0, 1, 2]; track n) {
+          <span class="lupo lupo--scappa" [style.animation-delay.s]=".6 + n * .2" [style.bottom.px]="50 + n * 28">🐺</span>
+        }
+      </div>
+    </div>
+  }
+  @case ('bp') {
+    <div class="scena scena--trasparente" (click)="chiudi()" role="status">
+      <figure class="bp">
+        <svg class="bp__cappello" viewBox="0 0 120 60" aria-hidden="true">
+          <ellipse cx="60" cy="48" rx="56" ry="9" fill="#8B6B3E" />
+          <path d="M34 47 C34 22 44 10 60 10 C76 10 86 22 86 47 Z" fill="#A9844F" />
+          <path d="M60 10 L60 30 M48 14 L54 30 M72 14 L66 30" stroke="#7A5A2E" stroke-width="2.5" fill="none" />
+          <rect x="34" y="40" width="52" height="5" fill="#5C4321" />
+        </svg>
+        <blockquote>«{{ sorprese.frase() }}»</blockquote>
+        <figcaption>Baden-Powell</figcaption>
+      </figure>
+    </div>
+  }
+  @case ('gigli') {
+    <!-- 11 tocchi sul logo: fuochi d'artificio a forma di giglio. -->
+    <div class="scena scena--notte" (click)="chiudi()" role="status">
+      @for (f of fuochi; track $index) {
+        <span class="fuoco" [style.left.%]="f.x" [style.top.%]="f.y" [style.animation-delay.s]="f.ritardo / 2">⚜️</span>
+      }
+      <p class="scena__frase scena__frase--oro">Palermo 11<small>dal 1983</small></p>
+    </div>
+  }
+  @case ('anni80') {
+    <div class="scena scena--trasparente" (click)="chiudi()" role="status">
+      <p class="neon">★ 1983 ★<br />PALERMO 11</p>
+    </div>
+  }
+  @case ('canto') {
+    <div class="scena scena--trasparente" role="status">
+      <p class="fumetto">🎲 Canto a sorpresa!</p>
+    </div>
+  }
+  @case ('orso') {
+    <!-- Il murales di Marco: l'orso con la sua frase. -->
+    <div class="scena scena--morbida" (click)="chiudi()" role="status">
+      <figure class="orso">
+        <span class="orso__faccia" aria-hidden="true">🐻</span>
+        <blockquote>E fattilla una risata</blockquote>
+        <figcaption>Marco, Orso Giocoso</figcaption>
+      </figure>
+    </div>
+  }
+  @case ('compleanno') {
+    <div class="scena scena--festa" (click)="chiudi()" role="status">
+      @for (c of coriandoli; track $index) {
+        <span class="coriandolo" [style.left.%]="c.x" [style.animation-delay.s]="c.ritardo"
+              [style.background]="colori[$index % colori.length]"></span>
+      }
+      <figure class="festa">
+        <span class="festa__simbolo" aria-hidden="true">🎂</span>
+        <p>Oggi il Palermo 11 compie {{ sorprese.anni() }} anni!</p>
+        <small>Dall'11 novembre 1983: buon compleanno a tutti noi.</small>
+      </figure>
+    </div>
+  }
+  @case ('thinking') {
+    <div class="scena scena--festa" (click)="chiudi()" role="status">
+      <div class="festoni" aria-hidden="true">
+        @for (n of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]; track n) {
+          <span [style.background]="colori[n % colori.length]"></span>
+        }
+      </div>
+      <figure class="festa">
+        <span class="festa__simbolo" aria-hidden="true">🌍</span>
+        <p>Buon Thinking Day!</p>
+        <small>Oggi gli scout e le guide di tutto il mondo pensano gli uni agli altri. E buon compleanno, B.-P.!</small>
+      </figure>
+    </div>
+  }
+}
+
+<!-- 23 aprile, San Giorgio: il drago nella home. Ogni tocco è un colpo. -->
+@if (dragoInVista()) {
+  @if (sorprese.drago() === 0) {
+    <div class="vittoria" role="status">⚔️ San Giorgio ha vinto! Buona festa, scout!</div>
+  } @else {
+    <button type="button" class="drago" (click)="colpisci($event)"
+            [attr.aria-label]="'Il drago di San Giorgio: ancora ' + sorprese.drago() + ' colpi'">
+      <span class="drago__corpo">🐉</span>
+      <span class="drago__colpi">{{ sorprese.drago() }}</span>
+    </button>
+  }
+}

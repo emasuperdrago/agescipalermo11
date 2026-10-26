@@ -1,0 +1,46 @@
+<section class="gioco" aria-labelledby="titolo-gioco">
+  <h2 id="titolo-gioco" class="gioco__titolo">Ti sei perso nel bosco?</h2>
+  <p class="gioco__testo">
+    @if (arrivato) {
+      Sei tornato al campo in {{ passi }} {{ passi === 1 ? 'passo' : 'passi' }}. Ottimo orientamento!
+    } @else {
+      Segui la bussola e ritrova il campo: si vede solo quando ci sei vicino.
+    }
+  </p>
+
+  <div class="gioco__area">
+    <div class="bosco" role="grid" aria-label="Il bosco">
+      @for (r of righe; track r) {
+        <div class="bosco__riga" role="row">
+          @for (c of colonne; track c) {
+            <button type="button" class="bosco__casella" role="gridcell"
+                    [class.bosco__casella--io]="r === io.riga && c === io.colonna"
+                    (click)="vai(r, c)" [attr.aria-label]="'Casella ' + (r + 1) + ', ' + (c + 1)">
+              {{ cosaC(r, c) }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="comandi">
+      <div class="bussola" aria-hidden="true">
+        <span class="bussola__n">N</span>
+        <span class="bussola__ago" [style.transform]="'rotate(' + direzione + 'deg)'"></span>
+      </div>
+      @if (!arrivato) {
+        <div class="frecce">
+          <button type="button" class="frecce__su" (click)="sposta(-1, 0)" aria-label="Vai a nord">▲</button>
+          <button type="button" class="frecce__sx" (click)="sposta(0, -1)" aria-label="Vai a ovest">◀</button>
+          <button type="button" class="frecce__dx" (click)="sposta(0, 1)" aria-label="Vai a est">▶</button>
+          <button type="button" class="frecce__giu" (click)="sposta(1, 0)" aria-label="Vai a sud">▼</button>
+        </div>
+      } @else {
+        <div class="fine">
+          <a class="fine__home" routerLink="/home" [replaceUrl]="true">Torna alla home</a>
+          <button type="button" class="fine__ancora" (click)="ricomincia()">Gioca ancora</button>
+        </div>
+      }
+    </div>
+  </div>
+</section>

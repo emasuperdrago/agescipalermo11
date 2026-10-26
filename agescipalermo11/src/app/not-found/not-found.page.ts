@@ -8,6 +8,7 @@ import {
 } from 'ionicons/icons';
 import { AuthService } from '../services/auth';
 import { BarraInferioreComponent } from '../components/barra-inferiore/barra-inferiore.component';
+import { SentieroPersoComponent } from '../components/sentiero-perso/sentiero-perso.component';
 
 interface Scorciatoia {
   nome: string;
@@ -24,7 +25,7 @@ interface Scorciatoia {
   standalone: true,
   imports: [
     RouterLink, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonRouterLink,
-    IonRouterLinkWithHref, IonContent, BarraInferioreComponent,
+    IonRouterLinkWithHref, IonContent, BarraInferioreComponent, SentieroPersoComponent,
   ],
 })
 export class NotFoundPage {

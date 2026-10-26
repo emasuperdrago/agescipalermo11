@@ -1,0 +1,419 @@
+@use '../../../theme/variables' as *;
+
+// Le sorprese stanno sopra tutto (anche sopra i pop-up) e si chiudono con un tocco.
+.scena {
+  position: fixed;
+  inset: 0;
+  z-index: 30000;
+  overflow: hidden;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  animation: appare .35s ease-out;
+
+  &--trasparente { background: transparent; }
+  &--campo { background: linear-gradient(180deg, #0B1230 0%, #1B2A5C 60%, #2E3B2A 100%); }
+  &--notte { background: rgba(#0B1230, .88); }
+  &--morbida { background: rgba($dark, .55); backdrop-filter: blur(3px); }
+  &--festa { background: rgba($white, .9); }
+
+  &__frase {
+    position: absolute;
+    top: 30%;
+    left: 0;
+    right: 0;
+    margin: 0;
+    text-align: center;
+    font-size: clamp(1.8rem, 8vw, 3.2rem);
+    font-weight: 800;
+    color: $white;
+    text-shadow: 0 4px 24px rgba(0, 0, 0, .5);
+
+    small {
+      display: block;
+      font-size: .4em;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      opacity: .8;
+    }
+
+    &--oro { color: #F2C14E; }
+  }
+}
+
+@keyframes appare {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// ---------- Estote parati ----------
+
+.stella {
+  position: absolute;
+  border-radius: 50%;
+  background: $white;
+  animation: brilla 1.8s ease-in-out infinite;
+}
+
+@keyframes brilla {
+  0%, 100% { opacity: .25; }
+  50% { opacity: 1; }
+}
+
+.campo {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 3vw;
+  font-size: clamp(2.6rem, 12vw, 5rem);
+
+  &__tenda--piccola { font-size: .75em; }
+
+  &__fuoco {
+    font-size: .9em;
+    animation: fiamma .5s ease-in-out infinite alternate;
+    transform-origin: 50% 100%;
+  }
+}
+
+@keyframes fiamma {
+  from { transform: scale(1, 1); filter: brightness(1); }
+  to { transform: scale(1.08, .94); filter: brightness(1.25); }
+}
+
+// ---------- Lupi e tigre ----------
+
+.fumetto {
+  position: absolute;
+  top: 26%;
+  left: 50%;
+  margin: 0;
+  padding: 14px 22px;
+  border-radius: 22px;
+  background: $white;
+  box-shadow: 0 14px 40px rgba($dark, .25);
+  font-size: clamp(1.1rem, 5vw, 1.6rem);
+  font-weight: 800;
+  color: $viola;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  animation: rimbalza .5s ease-out;
+
+  &--paura { color: #D8392F; }
+}
+
+@keyframes rimbalza {
+  0% { transform: translateX(-50%) scale(.6); }
+  70% { transform: translateX(-50%) scale(1.08); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+
+.corsa {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.lupo,
+.tigre {
+  position: absolute;
+  font-size: clamp(2.4rem, 11vw, 4rem);
+}
+
+// I lupi corrono da sinistra a destra (l'emoji guarda a sinistra: si gira).
+.lupo {
+  left: -20%;
+  animation: corri-destra 2.6s linear forwards;
+
+  &--scappa { animation-duration: 1.6s; }
+}
+
+.tigre {
+  bottom: 60px;
+  right: -25%;
+  animation: cammina-sinistra 4.2s linear forwards;
+}
+
+@keyframes corri-destra {
+  from { left: -20%; transform: scaleX(-1) translateY(0); }
+  25% { transform: scaleX(-1) translateY(-10px); }
+  50% { transform: scaleX(-1) translateY(0); }
+  75% { transform: scaleX(-1) translateY(-10px); }
+  to { left: 115%; transform: scaleX(-1) translateY(0); }
+}
+
+@keyframes cammina-sinistra {
+  from { right: -25%; }
+  to { right: 120%; }
+}
+
+// ---------- Baden-Powell ----------
+
+.bp {
+  position: absolute;
+  right: 16px;
+  bottom: 96px;
+  width: min(320px, calc(100% - 32px));
+  margin: 0;
+  padding: 16px 18px 14px;
+  border-radius: 20px;
+  background: #FFF8EC;
+  box-shadow: 0 18px 50px rgba($dark, .28);
+  animation: sale .5s cubic-bezier(.2, .9, .3, 1.2);
+
+  &__cappello {
+    display: block;
+    width: 84px;
+    margin: -46px auto 6px;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .25));
+  }
+
+  blockquote {
+    margin: 0;
+    font-size: .95rem;
+    font-style: italic;
+    line-height: 1.5;
+    color: #3B2A14;
+  }
+
+  figcaption {
+    margin-top: 8px;
+    text-align: right;
+    font-size: .78rem;
+    font-weight: 800;
+    letter-spacing: .5px;
+    color: #8B6B3E;
+  }
+}
+
+@keyframes sale {
+  from { transform: translateY(120%); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+// ---------- Fuochi a forma di giglio ----------
+
+.fuoco {
+  position: absolute;
+  font-size: 2rem;
+  opacity: 0;
+  animation: scoppia 1.6s ease-out infinite;
+}
+
+@keyframes scoppia {
+  0% { transform: scale(.2); opacity: 0; }
+  20% { opacity: 1; }
+  70% { transform: scale(2.4); opacity: .9; filter: drop-shadow(0 0 12px #F2C14E); }
+  100% { transform: scale(3); opacity: 0; }
+}
+
+// ---------- Anni '80 ----------
+
+.neon {
+  position: absolute;
+  top: 34%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  font-size: clamp(1.8rem, 9vw, 3.4rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: #FF4FD8;
+  text-shadow: 0 0 6px #FF4FD8, 0 0 18px #FF4FD8, 0 0 36px #00E5FF;
+  animation: tremola 1.2s steps(2) infinite;
+}
+
+@keyframes tremola {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .85; }
+}
+
+// ---------- L'orso di Marco ----------
+
+.orso {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(340px, calc(100% - 40px));
+  margin: 0;
+  padding: 22px 20px 18px;
+  border-radius: 24px;
+  background: $white;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba($dark, .3);
+  transform: translate(-50%, -50%);
+  animation: appare .5s ease-out;
+
+  &__faccia {
+    display: block;
+    font-size: 4.2rem;
+    animation: dondola 2.4s ease-in-out infinite;
+  }
+
+  blockquote {
+    margin: 8px 0 0;
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: $viola;
+  }
+
+  figcaption {
+    margin-top: 6px;
+    font-size: .8rem;
+    font-weight: 600;
+    color: $slate;
+  }
+}
+
+@keyframes dondola {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
+}
+
+// ---------- Compleanno e Thinking Day ----------
+
+.coriandolo {
+  position: absolute;
+  top: -10px;
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  animation: cade 3s linear infinite;
+}
+
+@keyframes cade {
+  from { transform: translateY(0) rotate(0); }
+  to { transform: translateY(110vh) rotate(540deg); }
+}
+
+.festoni {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+
+  span {
+    width: 6.25%;
+    height: 34px;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    animation: ondeggia 1.8s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes ondeggia {
+  from { transform: rotate(-4deg); }
+  to { transform: rotate(4deg); }
+}
+
+.festa {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(380px, calc(100% - 40px));
+  margin: 0;
+  text-align: center;
+  transform: translate(-50%, -50%);
+
+  &__simbolo {
+    display: block;
+    font-size: 4.6rem;
+    animation: rimbalza-su 1.2s ease-in-out infinite;
+  }
+
+  p {
+    margin: 10px 0 6px;
+    font-size: clamp(1.4rem, 6vw, 2rem);
+    font-weight: 800;
+    color: $viola;
+  }
+
+  small {
+    font-size: .92rem;
+    color: $slate-600;
+  }
+}
+
+@keyframes rimbalza-su {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+// ---------- Il drago di San Giorgio ----------
+
+.drago {
+  position: fixed;
+  right: 18px;
+  bottom: 104px;
+  z-index: 29000;
+  display: grid;
+  place-items: center;
+  width: 74px;
+  height: 74px;
+  border: none;
+  border-radius: 50%;
+  background: rgba($white, .92);
+  box-shadow: 0 10px 30px rgba($dark, .25);
+  cursor: pointer;
+  animation: vola 2.6s ease-in-out infinite;
+
+  &__corpo { font-size: 2.6rem; }
+
+  &__colpi {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #D8392F;
+    font-family: 'Poppins', sans-serif;
+    font-size: .8rem;
+    font-weight: 800;
+    line-height: 24px;
+    color: $white;
+  }
+
+  &:active .drago__corpo { transform: scale(.8) rotate(-12deg); }
+}
+
+@keyframes vola {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+.vittoria {
+  position: fixed;
+  left: 50%;
+  bottom: 110px;
+  z-index: 29000;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: $sfumatura-viola;
+  box-shadow: 0 12px 30px rgba($viola, .35);
+  font-family: 'Poppins', sans-serif;
+  font-weight: 800;
+  color: $white;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  animation: appare .4s ease-out;
+}
+
+// Meno movimento: le sorprese restano, ma ferme.
+@media (prefers-reduced-motion: reduce) {
+  .scena, .stella, .campo__fuoco, .fumetto, .lupo, .tigre, .bp, .fuoco, .neon, .orso__faccia,
+  .coriandolo, .festoni span, .festa__simbolo, .drago, .vittoria { animation: none; }
+
+  .lupo { left: 30%; transform: scaleX(-1); }
+  .tigre { right: 30%; }
+  .fuoco { opacity: 1; transform: scale(2); }
+  .coriandolo { display: none; }
+}

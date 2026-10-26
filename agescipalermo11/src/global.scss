@@ -741,3 +741,23 @@ ion-alert .alert-message {
     --height: 90vh;
   }
 }
+
+// ---------- Easter egg: il sito negli anni '80 (codice Konami, vedi services/sorprese.ts) ----------
+// Per qualche secondo: colori sparati, caratteri da computer di allora e le righe di un vecchio schermo.
+body.anni-80 {
+  ion-app {
+    filter: saturate(1.9) contrast(1.15) hue-rotate(-18deg);
+    transition: filter .4s;
+  }
+
+  ion-app * { font-family: 'Courier New', monospace !important; }
+
+  &::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 29999;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .14) 0 2px, transparent 2px 4px);
+  }
+}
