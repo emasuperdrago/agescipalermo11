@@ -1,6 +1,6 @@
-import { HttpClient, HttpInterceptorFn } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Observable, firstValueFrom, from, switchMap } from 'rxjs';
+import { Observable, catchError, firstValueFrom, from, switchMap, throwError } from 'rxjs';
 import { apiUrl } from '../services/api';
 import { AuthService } from '../services/auth';
 
@@ -62,6 +62,15 @@ export const caricamentiGrandiInterceptor: HttpInterceptorFn = (req, next) => {
       const idUtente = chi && 'id' in chi ? chi.id : undefined;
       if (!m.diretto || file.size < m.soglia || !idUtente) return next(req);
       return from(caricaSuBlob(file, idUtente)).pipe(
+        // Il caricamento su Blob non passa da HttpClient: il suo errore diventa uno come gli altri,
+        // con un messaggio che si capisce (altrimenti le pagine scrivono "errore undefined").
+        catchError((err: unknown) => {
+          console.error('Caricamento su Blob:', err);
+          return throwError(() => new HttpErrorResponse({
+            status: 502, url: req.url,
+            error: { error: 'Il caricamento delle foto o dei file non è riuscito. Riprova; se continua, esci e rientra.' },
+          }));
+        }),
         switchMap(percorso => next(req.clone({
           body: null,
           setHeaders: {

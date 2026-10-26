@@ -412,8 +412,11 @@ async function caricaUtente(req, res, next) {
             gestore: utente.gestore_sito === 1,
         };
         // Sta usando il sito: dopo i primi minuti gli si allunga la sessione con un token nuovo.
-        if (Math.floor(Date.now() / 1000) - (dati.iat ?? 0) > RINNOVO_DOPO_SECONDI)
+        // La risposta col token nuovo non si tiene: il browser la riuserebbe (304) col token vecchio.
+        if (Math.floor(Date.now() / 1000) - (dati.iat ?? 0) > RINNOVO_DOPO_SECONDI) {
             res.setHeader('X-Token-Nuovo', tokenUtente(utente));
+            res.setHeader('Cache-Control', 'no-store');
+        }
     } catch (err) {
         // Il database non ha risposto: non vuol dire che l'accesso non vale. Meglio dire di
         // riprovare (il sito lo fa da solo per le letture) che trattare la persona come uscita.
@@ -1025,7 +1028,12 @@ app.post('/api/logout', verificaUtenteCensito, async (req, res) => {
 
 // Il sito la chiama quando si sta usando senza fare richieste (es. scrivendo un post): serve
 // solo a ricevere il token nuovo, così la sessione non scade a metà.
-app.get('/api/sessione', verificaToken, (req, res) => res.json({ attiva: true }));
+// Serve per allungare la sessione (vedi caricaUtente): la risposta non si tiene mai, altrimenti
+// il browser risponderebbe da solo con una copia vecchia e il suo token ormai scaduto.
+app.get('/api/sessione', verificaToken, (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({ attiva: true, quando: Date.now() });
+});
 
 app.post('/api/login/visitatore', (req, res) => {
     const token = firmaToken({ ruolo: 'visitatore' });
