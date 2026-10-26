@@ -561,6 +561,8 @@ $desktop: 992px;
 
 .eroe__contenuto {
   position: relative;
+  // Sopra il velo scuro della foto (.eroe::after, z-index 1): altrimenti scurisce anche titolo e pulsante.
+  z-index: 2;
   flex: 1;
   display: flex;
   flex-direction: column;
