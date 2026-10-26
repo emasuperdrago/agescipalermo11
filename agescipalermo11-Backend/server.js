@@ -2693,6 +2693,10 @@ const COLORI_SEZIONE = {
     preghiere: '#7D57C2', branco: '#B98A00', reparto: '#5A9E2A',
     clan: '#D8392F', liturgici: '#0B87A8', fuoco: '#E36F3C',
 };
+// Il colore unico di un libretto: la messa è blu, le branche hanno il loro, il gruppo il viola.
+const COLORI_LIBRETTO = {
+    messa: '#1D5FA8', branco: '#B98A00', reparto: '#5A9E2A', clan: '#D8392F', gruppo: VIOLA,
+};
 const NOMI_SEZIONE = {
     preghiere: 'Preghiere', branco: 'Branco', reparto: 'Reparto',
     clan: 'Clan', liturgici: 'Liturgici', fuoco: 'Al fuoco',
@@ -2706,10 +2710,10 @@ const LARGHEZZA_LETTERA = DIMENSIONE_TESTO * 0.602;
 const ALTEZZA_TESTATA = 54;
 
 /** Barra viola in cima a ogni pagina, come quella del sito. A destra l'evento e, sotto, la data. */
-function testata(doc, sottotitolo, data = '') {
+function testata(doc, sottotitolo, data = '', colore = VIOLA) {
     const larghezza = doc.page.width - MARGINE * 2;
     doc.save();
-    doc.roundedRect(MARGINE, MARGINE - 14, larghezza, ALTEZZA_TESTATA - 12, 14).fill(VIOLA);
+    doc.roundedRect(MARGINE, MARGINE - 14, larghezza, ALTEZZA_TESTATA - 12, 14).fill(colore);
     try {
         doc.image(path.join(__dirname, 'dati', 'logo.png'), MARGINE + 12, MARGINE - 8, { width: 30 });
     } catch { /* senza logo la barra resta comunque */ }
@@ -2748,7 +2752,9 @@ function soloParole(testo) {
  * Opzioni:
  *  - conAccordi: con le righe degli accordi (carattere a larghezza fissa) o solo parole;
  *  - grande: carattere più grande, da leggere in assemblea;
- *  - copertina: { evento, data, luogo } per la prima pagina (null = niente copertina);
+ *  - libretto: { evento, data, luogo, colore } per i libretti: niente copertina né indice, si parte
+ *    subito con i canti e in cima alla prima pagina c'è una riga con evento · data · luogo; tutto
+ *    (barra in alto, titoli, accordi) prende lo stesso colore;
  *  - tonalita: per un canto solo, quella scelta da chi scarica ({ passo, capotasto, alterazioni });
  *    altrimenti ogni canto esce nella tonalità del gruppo;
  *  - colonne: 2 per il libretto compatto (due colonne per pagina), 1 come prima.
@@ -2756,22 +2762,25 @@ function soloParole(testo) {
  * scorrono come in un giornale: finita la colonna sinistra si continua nella destra, poi nella
  * pagina dopo (gli accordi restano attaccati al loro verso, il titolo non resta solo in fondo).
  */
-function creaPdfCanti(voci, res, { conAccordi = true, grande = false, copertina = null, tonalita = null, colonne = 1 } = {}) {
+function creaPdfCanti(voci, res, { conAccordi = true, grande = false, tonalita = null, colonne = 1, libretto = null } = {}) {
+    // Il colore unico del libretto (null = ogni canto col colore della sua sezione, come prima).
+    const coloreUnico = libretto?.colore ?? null;
+    const coloreDi = (c) => coloreUnico ?? COLORI_SEZIONE[c.sezione] ?? VIOLA;
     const doc = new PDFDocument({
         size: 'A4', autoFirstPage: false,
         margins: { top: MARGINE + ALTEZZA_TESTATA, bottom: MARGINE + 14, left: MARGINE, right: MARGINE },
-        info: { Title: copertina?.evento || 'Canzoniere Palermo 11', Author: 'Gruppo Scout AGESCI Palermo 11' },
+        info: { Title: libretto?.evento || 'Canzoniere Palermo 11', Author: 'Gruppo Scout AGESCI Palermo 11' },
     });
-    const titoloFile = copertina?.evento || (voci.length === 1 ? voci[0].canto.titolo : 'Canzoniere');
-    const sottotitolo = copertina?.evento ? copertina.evento
+    const evento = libretto?.evento || '';
+    const quando = libretto?.data;
+    const titoloFile = evento || (voci.length === 1 ? voci[0].canto.titolo : 'Canzoniere');
+    const sottotitolo = evento ? evento
         : voci.length === 1 ? 'Canzoniere' : `Canzoniere · ${voci.length} canti`;
     let pagina = 0;
-    let inCopertina = false;
     doc.on('pageAdded', () => {
         pagina += 1;
-        if (inCopertina) return;
-        testata(doc, sottotitolo, dataLunga(copertina?.data));
-        piePagina(doc, pagina, copertina?.evento);
+        testata(doc, sottotitolo, dataLunga(quando), coloreUnico ?? VIOLA);
+        piePagina(doc, pagina, evento || null);
         doc.y = MARGINE + ALTEZZA_TESTATA;
     });
 
@@ -2781,18 +2790,27 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, copertina 
     doc.pipe(res);
 
     const larghezza = doc.page ? doc.page.width - MARGINE * 2 : 595.28 - MARGINE * 2;
-    if (copertina) {
-        inCopertina = true;
-        doc.addPage({ margins: { top: MARGINE, bottom: MARGINE, left: MARGINE, right: MARGINE } });
-        disegnaCopertina(doc, copertina);
-        inCopertina = false;
-    }
     doc.addPage();
     const fondo = () => doc.page.height - MARGINE - 14;
     const cima = MARGINE + ALTEZZA_TESTATA;
 
+    // Il libretto parte subito coi canti: in cima una riga con evento · data · luogo.
+    if (libretto) {
+        const resto = [dataLunga(libretto.data), libretto.luogo].filter(Boolean).join(' · ');
+        if (evento || resto) {
+            doc.font('Helvetica-Bold').fontSize(grande ? 17 : 15).fillColor(coloreUnico ?? VIOLA)
+                .text(evento || resto, MARGINE, doc.y + 2, { width: larghezza, continued: !!(evento && resto) });
+            if (evento && resto) doc.font('Helvetica').fontSize(grande ? 12 : 11).fillColor(GRIGIO).text(`  ·  ${resto}`);
+            const sotto = doc.y + 6;
+            doc.save().moveTo(MARGINE, sotto).lineTo(MARGINE + larghezza, sotto)
+                .lineWidth(1).strokeColor(coloreUnico ?? VIOLA).strokeOpacity(.35).stroke().restore();
+            doc.y = sotto + 16;
+        }
+    }
+
     // Indice, quando i canti sono parecchi: titolo (e la parte della messa) a sinistra, sezione a destra.
-    if (voci.length >= 4) {
+    // Nei libretti no: si parte subito coi canti.
+    if (!libretto && voci.length >= 4) {
         doc.font('Helvetica-Bold').fontSize(16).fillColor(VIOLA).text('Indice', MARGINE, doc.y + 6, { lineBreak: false });
         let y = doc.y + 24;
         for (const { canto: c, titoletto } of voci) {
@@ -2927,22 +2945,23 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, copertina 
 
     /** Scrive la testa del canto (titoletto, sezione, titolo, tonalità) da qui in giù. */
     const scriviTesta = (c, titoletto, tono, larghezza, x) => {
-        const colore = COLORI_SEZIONE[c.sezione] ?? VIOLA;
+        const colore = coloreDi(c);
         if (titoletto) {
-            doc.font('Helvetica-Bold').fontSize(11).fillColor(VIOLA_CHIARO)
+            doc.font('Helvetica-Bold').fontSize(11).fillColor(coloreUnico ?? VIOLA_CHIARO)
                 .text(titoletto.toUpperCase(), x(), doc.y, { width: larghezza, characterSpacing: 1.2 });
             doc.moveDown(0.25);
         }
         doc.font('Helvetica-Bold').fontSize(8).fillColor(colore)
             .text((NOMI_SEZIONE[c.sezione] ?? '').toUpperCase(), x(), doc.y, { width: larghezza, characterSpacing: 0.8 });
-        doc.font('Helvetica-Bold').fontSize(grande ? 16 : 14).fillColor('#0F172A').text(c.titolo, x(), doc.y + 1, { width: larghezza });
+        // Nel libretto anche il titolo prende il colore unico.
+        doc.font('Helvetica-Bold').fontSize(grande ? 16 : 14).fillColor(coloreUnico ?? '#0F172A').text(c.titolo, x(), doc.y + 1, { width: larghezza });
         if (tono) doc.font('Helvetica').fontSize(8.5).fillColor(GRIGIO).text(tono, x(), doc.y + 1, { width: larghezza });
         doc.moveDown(0.4);
     };
 
     /** Scrive una riga del canto da qui in giù (gli accordi nel colore della sezione). */
     const scriviRiga = (c, r, larghezza, x) => {
-        const colore = COLORI_SEZIONE[c.sezione] ?? VIOLA;
+        const colore = coloreDi(c);
         const opzioni = r.troppoLunga
             ? { width: larghezza, lineGap: r.interlinea - r.dimensione }
             : { lineBreak: false, width: larghezza * 2 };
@@ -3087,29 +3106,6 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, copertina 
     doc.end();
 }
 
-/** La prima pagina del libretto: logo, gruppo, evento, data e luogo. */
-function disegnaCopertina(doc, { evento, data, luogo }) {
-    const larghezza = doc.page.width - MARGINE * 2;
-    const centro = doc.page.width / 2;
-    doc.save();
-    doc.roundedRect(MARGINE, MARGINE, larghezza, doc.page.height - MARGINE * 2, 22).lineWidth(1.2).stroke('#E3C0FF');
-    try {
-        doc.image(path.join(__dirname, 'dati', 'logo.png'), centro - 55, 190, { width: 110 });
-    } catch { /* senza logo la copertina resta comunque */ }
-    doc.font('Helvetica-Bold').fontSize(11).fillColor(VIOLA_CHIARO)
-        .text('GRUPPO SCOUT AGESCI PALERMO 11', MARGINE, 330, { width: larghezza, align: 'center', characterSpacing: 1.5 });
-    doc.font('Helvetica-Bold').fontSize(28).fillColor(VIOLA)
-        .text(evento || 'Canzoniere', MARGINE + 30, 370, { width: larghezza - 60, align: 'center' });
-    let y = doc.y + 18;
-    const quando = dataLunga(data);
-    if (quando) {
-        doc.font('Helvetica').fontSize(14).fillColor('#0F172A').text(quando, MARGINE, y, { width: larghezza, align: 'center' });
-        y = doc.y + 6;
-    }
-    if (luogo) doc.font('Helvetica').fontSize(13).fillColor(GRIGIO).text(luogo, MARGINE, y, { width: larghezza, align: 'center' });
-    doc.restore();
-}
-
 /** "Domenica 25 ottobre 2026" da "2026-10-25"; vuoto se la data non c'è. */
 function dataLunga(data) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(data ?? ''))) return '';
@@ -3152,7 +3148,7 @@ app.get('/api/canti/pdf/scarica', async (req, res) => {
 });
 
 
-// ---------- Libretti: PDF con copertina, anche per la messa, e bozze ----------
+// ---------- Libretti: PDF dei canti scelti, anche per la messa, e bozze ----------
 
 // Le parti della messa, in ordine. Comunione e conclusione possono avere più canti.
 const PARTI_MESSA = [
@@ -3165,7 +3161,7 @@ const PARTI_MESSA = [
 const MAX_BOZZE = 100;
 
 /**
- * Le scelte del libretto, pulite: canti scelti, copertina (evento, data, luogo), opzioni e,
+ * Le scelte del libretto, pulite: canti scelti, evento, data e luogo, opzioni (colore compreso) e,
  * per la messa, quale canto va in ogni parte (solo fra quelli scelti).
  */
 function leggiLibretto(body) {
@@ -3190,6 +3186,8 @@ function leggiLibretto(body) {
             accordi: body?.accordi !== false, grande: body?.grande === true,
             // Due colonne: il libretto compatto (di base); false = una colonna come prima.
             dueColonne: body?.dueColonne !== false,
+            // Di chi è il libretto: dà il colore a tutto (la messa è sempre blu).
+            branca: ['branco', 'reparto', 'clan'].includes(body?.branca) ? body.branca : 'gruppo',
         },
     };
 }
@@ -3225,7 +3223,10 @@ app.post('/api/canti/pdf', async (req, res) => {
         if (!voci.length) return res.status(404).json({ error: "Nessuno dei canti scelti esiste più." });
         creaPdfCanti(voci, res, {
             conAccordi: libretto.accordi, grande: libretto.grande, colonne: libretto.dueColonne ? 2 : 1,
-            copertina: { evento: libretto.evento, data: libretto.data, luogo: libretto.luogo },
+            libretto: {
+                evento: libretto.evento, data: libretto.data, luogo: libretto.luogo,
+                colore: COLORI_LIBRETTO[libretto.messa ? 'messa' : libretto.branca],
+            },
         });
     } catch (err) {
         if (!res.headersSent) erroreInterno(res, err);

@@ -106,6 +106,67 @@
   }
 }
 
+// Il colore del libretto: un pallino per scelta, quella scelta si colora tutta.
+.colore-libretto {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: none;
+
+  &__scelte {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  &__voce {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 0 12px;
+    border: 1.5px solid $slate-200;
+    border-radius: 999px;
+    background: $white;
+    font-family: inherit;
+    font-size: .8rem;
+    font-weight: 700;
+    color: $slate-600;
+    cursor: pointer;
+
+    .pallino { background: var(--colore); }
+
+    &:hover { border-color: var(--colore); }
+
+    &--scelta {
+      border-color: var(--colore);
+      background: var(--colore);
+      color: $white;
+
+      .pallino { background: $white; }
+    }
+  }
+
+  &__messa {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font-size: .82rem;
+    font-weight: 700;
+    color: #1D5FA8;
+  }
+
+  .pallino {
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+}
+
 // Una riga per parte della messa: nome a sinistra, tendine a destra.
 .parte {
   display: grid;

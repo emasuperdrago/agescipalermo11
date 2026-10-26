@@ -15,7 +15,8 @@
     <!-- Le scelte: ogni modifica rifà l'anteprima qui accanto. -->
     <form class="scelte" (ngSubmit)="scarica()">
       <section class="riquadro">
-        <h2>Copertina</h2>
+        <h2>Il libretto</h2>
+        <p class="aiuto">Evento, data e luogo vanno nella prima riga della prima pagina.</p>
         <label class="campo">
           <span class="etichetta">Evento</span>
           <input name="evento" [(ngModel)]="evento" (ngModelChange)="cambiato()" maxlength="120"
@@ -39,6 +40,23 @@
           <input type="checkbox" name="messa" [(ngModel)]="messa" (ngModelChange)="alternaMessa()" />
           <span><strong>Libretto per la messa</strong><small>I canti vanno nell'ordine della messa, ognuno col suo titoletto.</small></span>
         </label>
+        <!-- Il colore di tutto il libretto: barra in alto, titoli e accordi. -->
+        <fieldset class="colore-libretto">
+          <legend class="etichetta">Colore</legend>
+          @if (messa) {
+            <p class="colore-libretto__messa"><span class="pallino" style="background: #1D5FA8"></span> Messa: tutto blu</p>
+          } @else {
+            <div class="colore-libretto__scelte" role="group" aria-label="Di chi è il libretto">
+              @for (b of sceltaBranca; track b.valore) {
+                <button type="button" class="colore-libretto__voce" [class.colore-libretto__voce--scelta]="branca === b.valore"
+                        [style.--colore]="b.colore" [attr.aria-pressed]="branca === b.valore" (click)="scegliBranca(b.valore)">
+                  <span class="pallino" aria-hidden="true"></span>
+                  {{ b.nome }}
+                </button>
+              }
+            </div>
+          }
+        </fieldset>
         <label class="spunta">
           <input type="checkbox" name="accordi" [(ngModel)]="accordi" (ngModelChange)="toccaOpzione()" />
           <span><strong>Con gli accordi</strong><small>Senza, solo le parole: più comodo per chi canta.</small></span>

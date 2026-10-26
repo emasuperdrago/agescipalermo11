@@ -899,7 +899,11 @@ export interface DatiLibretto {
   grande: boolean;
   /** Il libretto compatto, a due colonne (le bozze salvate prima non ce l'hanno: due colonne). */
   dueColonne?: boolean;
+  /** Di chi è il libretto: dà il colore a titoli e accordi (la messa è sempre blu). */
+  branca?: BrancaLibretto;
 }
+
+export type BrancaLibretto = 'gruppo' | 'branco' | 'reparto' | 'clan';
 
 /** Una bozza salvata: la vedono e la cambiano i capi. */
 export interface BozzaLibretto {

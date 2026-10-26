@@ -10,7 +10,7 @@ import { SelettoreDataComponent } from '../selettore-data/selettore-data.compone
 import { AuthService } from '../../services/auth';
 import { CantiService, PARTI_MESSA } from '../../services/canti';
 import { ConfermaService } from '../../services/conferma';
-import { BozzaLibretto, DatiLibretto, ParteMessa } from '../../../types/models';
+import { BozzaLibretto, BrancaLibretto, DatiLibretto, ParteMessa } from '../../../types/models';
 
 /** Per cercare senza badare a maiuscole e accenti ("cantero" trova "Canterò"). */
 const normalizza = (testo: string) => testo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
@@ -68,6 +68,14 @@ export class AnteprimaLibrettoComponent implements OnInit, OnDestroy {
   grande = false;
   /** Due colonne per pagina: il libretto prende circa la metà dei fogli. */
   dueColonne = true;
+  /** Di chi è il libretto (il colore di tutto): di base quella di chi lo prepara. */
+  branca: BrancaLibretto = 'gruppo';
+  readonly sceltaBranca: { valore: BrancaLibretto; nome: string; colore: string }[] = [
+    { valore: 'gruppo', nome: 'Gruppo', colore: '#462678' },
+    { valore: 'branco', nome: 'Branco', colore: '#B98A00' },
+    { valore: 'reparto', nome: 'Reparto', colore: '#5A9E2A' },
+    { valore: 'clan', nome: 'Clan', colore: '#D8392F' },
+  ];
   /** Le opzioni toccate a mano non si cambiano più da sole accendendo la messa. */
   private opzioniToccate = false;
 
@@ -92,6 +100,9 @@ export class AnteprimaLibrettoComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     const da = this.bozza?.libretto;
+    // Un libretto nuovo prende il colore della branca di chi lo prepara.
+    const mia = this.auth.utente && 'branca' in this.auth.utente ? this.auth.utente.branca : null;
+    if (mia) this.branca = mia;
     if (da) {
       this.idBozza = this.bozza!.id;
       this.ids = da.ids;
@@ -102,6 +113,7 @@ export class AnteprimaLibrettoComponent implements OnInit, OnDestroy {
       this.accordi = da.accordi;
       this.grande = da.grande;
       this.dueColonne = da.dueColonne ?? true;
+      this.branca = da.branca ?? 'gruppo';
       this.opzioniToccate = true;
       for (const p of PARTI_MESSA) this.parti[p.valore] = [...(da.parti[p.valore] ?? [])];
     }
@@ -207,6 +219,12 @@ export class AnteprimaLibrettoComponent implements OnInit, OnDestroy {
     this.cambiato();
   }
 
+  scegliBranca(branca: BrancaLibretto) {
+    if (this.branca === branca) return;
+    this.branca = branca;
+    this.cambiato();
+  }
+
   toccaOpzione() {
     this.opzioniToccate = true;
     this.cambiato();
@@ -225,6 +243,7 @@ export class AnteprimaLibrettoComponent implements OnInit, OnDestroy {
     return {
       ids: this.scelti.map(c => c.id), evento: this.evento.trim(), data: this.data ?? '', luogo: this.luogo.trim(),
       messa: this.messa, parti, accordi: this.accordi, grande: this.grande, dueColonne: this.dueColonne,
+      branca: this.branca,
     };
   }
 
