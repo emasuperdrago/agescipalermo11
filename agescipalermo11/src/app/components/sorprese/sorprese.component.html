@@ -65,6 +65,16 @@
       <p class="neon">★ 1983 ★<br />PALERMO 11</p>
     </div>
   }
+  @case ('morse') {
+    <!-- Il logo tenuto premuto: PALERMO 11 in morse, con luce e suono. -->
+    <div class="scena scena--notte" (click)="chiudi()" role="status">
+      <div class="morse">
+        <span class="morse__luce" [class.morse__luce--accesa]="sorprese.morseAcceso()"></span>
+        <p class="morse__parole">PALERMO 11</p>
+        <p class="morse__codice">{{ sorprese.morseCodice }}</p>
+      </div>
+    </div>
+  }
   @case ('canto') {
     <div class="scena scena--trasparente" role="status">
       <p class="fumetto">🎲 Canto a sorpresa!</p>

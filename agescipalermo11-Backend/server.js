@@ -627,7 +627,9 @@ function utenteProprio(u) {
     return {
         ...utentePubblico(u),
         capogruppo: u.capogruppo === 1,
-        admin: gestore ? u.titolo_admin === 1 : undefined
+        admin: gestore ? u.titolo_admin === 1 : undefined,
+        // Solo a chi gestisce il sito (per le sue prove, es. gli easter egg nel profilo).
+        gestore: gestore || undefined
     };
 }
 

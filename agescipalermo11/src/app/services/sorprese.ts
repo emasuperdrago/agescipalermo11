@@ -6,9 +6,11 @@ import { CantiService } from './canti';
 /**
  * Gli easter egg del sito: piccole sorprese nascoste, che chi non le conosce non vede mai.
  *  - parole scritte (nella ricerca o ovunque): "estote parati", "akela", "shere khan", "baden powell"/"bp";
- *  - 11 tocchi sul logo: fuochi a forma di giglio; logo tenuto premuto: "PALERMO 11" in morse (vibra);
+ *  - 11 tocchi sul logo: fuochi a forma di giglio; logo tenuto premuto: "PALERMO 11" in morse
+ *    (luce e suono ovunque, e vibra dove il telefono lo permette: l'iPhone non lo lascia fare ai siti);
  *  - il codice Konami (↑↑↓↓←→←→BA): il sito in stile anni '80 per qualche secondo;
- *  - scuotendo il telefono nel canzoniere: un canto a sorpresa;
+ *  - nel canzoniere, 3 tocchi sul titolo o il telefono scosso: un canto a sorpresa (sull'iPhone
+ *    scuoterlo funziona dopo i 3 tocchi, che chiedono il permesso del movimento: Apple lo vuole così);
  *  - 5 tocchi sul murales di Marco: l'orso con la sua frase;
  *  - nella home, certi giorni: 11 novembre (compleanno del gruppo), 22 febbraio (Thinking Day),
  *    23 aprile (San Giorgio: un drago da sconfiggere).
@@ -16,12 +18,12 @@ import { CantiService } from './canti';
  */
 export type Scena =
   | 'campo' | 'lupi' | 'tigre' | 'bp' | 'gigli' | 'anni80' | 'canto' | 'orso'
-  | 'compleanno' | 'thinking';
+  | 'compleanno' | 'thinking' | 'morse';
 
 /** Quanto resta sullo schermo ogni sorpresa (millisecondi). */
 const DURATA: Record<Scena, number> = {
   campo: 7000, lupi: 4500, tigre: 4500, bp: 6500, gigli: 4500, anni80: 8000, canto: 2200, orso: 6000,
-  compleanno: 7000, thinking: 7000,
+  compleanno: 7000, thinking: 7000, morse: 0,
 };
 
 /** Le parole segrete, già senza spazi e in minuscolo. */
@@ -65,6 +67,10 @@ export class SorpreseService {
   readonly drago = signal<number | null>(null);
   /** Gli anni del gruppo, per il compleanno. */
   readonly anni = signal(0);
+  /** Il morse: il punto acceso o spento, e il codice scritto sotto. */
+  readonly morseAcceso = signal(false);
+  readonly morseCodice = ['PALERMO', '11']
+    .map(parola => [...parola].map(l => MORSE[l].replace(/\./g, '·').replace(/-/g, '−')).join(' ')).join('   ');
 
   private timer?: ReturnType<typeof setTimeout>;
   private scritto = '';
@@ -74,6 +80,8 @@ export class SorpreseService {
   private premuto?: ReturnType<typeof setTimeout>;
   private bloccaClic = false;
   private ultimaScossa = 0;
+  private tocchiTitolo: number[] = [];
+  private audio?: AudioContext;
 
   avvia() {
     this.zone.runOutsideAngular(() => {
@@ -94,13 +102,32 @@ export class SorpreseService {
   }
 
   /** Mostra una sorpresa per un po' (se ce n'è già una, la sostituisce). */
-  mostra(scena: Scena) {
+  mostra(scena: Scena, durata = DURATA[scena]) {
     this.zone.run(() => {
       clearTimeout(this.timer);
       if (scena === 'bp') this.frase.set(FRASI_BP[Math.floor(Math.random() * FRASI_BP.length)]);
       this.scena.set(scena);
-      this.timer = setTimeout(() => this.zone.run(() => this.scena.set(null)), DURATA[scena]);
+      this.timer = setTimeout(() => this.zone.run(() => this.scena.set(null)), durata);
     });
+  }
+
+  /**
+   * Per chi gestisce il sito: fa partire subito una sorpresa, anche quelle dei giorni speciali
+   * (che si vedono nella home: ci si va prima). Vedi la pagina del profilo.
+   */
+  async prova(nome: Scena | 'drago') {
+    if (nome === 'morse') return this.segnaleMorse();
+    if (nome === 'canto') return this.cantoASorpresa();
+    if (nome === 'compleanno' || nome === 'thinking' || nome === 'drago') {
+      await this.router.navigateByUrl('/home');
+      setTimeout(() => this.zone.run(() => {
+        if (nome === 'drago') return this.drago.set(7);
+        this.anni.set(new Date().getFullYear() - ANNO_FONDAZIONE);
+        this.mostra(nome);
+      }), 700);
+      return;
+    }
+    this.mostra(nome);
   }
 
   chiudi() {
@@ -165,11 +192,13 @@ export class SorpreseService {
   private premi(e: PointerEvent) {
     const logo = (e.target as Element | null)?.closest?.(LOGHI);
     if (!logo) return;
+    // Il suono si può accendere solo durante un tocco (l'iPhone lo vuole): lo si prepara adesso.
+    this.sbloccaAudio();
     clearTimeout(this.premuto);
     // Tenuto premuto più di un secondo: PALERMO 11 in morse (vibra, dove il telefono lo sa fare).
     this.premuto = setTimeout(() => {
       this.bloccaClic = true;
-      this.vibraMorse();
+      this.segnaleMorse();
     }, 1000);
   }
 
@@ -195,6 +224,16 @@ export class SorpreseService {
       }
       return;
     }
+    // Nel canzoniere, 3 tocchi sul titolo: un canto a sorpresa (e, sull'iPhone, il permesso per scuoterlo).
+    if (/^\/canzoniere\/?(\?|$)/.test(this.router.url) && elemento?.closest?.('.copertina h1')) {
+      this.tocchiTitolo = this.conta(this.tocchiTitolo, 2000);
+      if (this.tocchiTitolo.length >= 3) {
+        this.tocchiTitolo = [];
+        this.chiediMovimento();
+        this.cantoASorpresa();
+      }
+      return;
+    }
     if (elemento?.closest?.('.murales img')) {
       this.tocchiMurales = this.conta(this.tocchiMurales, 4000);
       if (this.tocchiMurales.length >= TOCCHI_MURALES) {
@@ -210,21 +249,52 @@ export class SorpreseService {
     return [...tocchi.filter(t => adesso - t < entro), adesso];
   }
 
-  private vibraMorse() {
-    if (!('vibrate' in navigator)) return;
-    // Si alternano vibrazione e pausa: ogni segno vibra, poi si ferma (di più fra lettere e parole).
+  private sbloccaAudio() {
+    try {
+      this.audio ??= new AudioContext();
+      if (this.audio.state === 'suspended') this.audio.resume();
+    } catch { /* senza suono: restano luce e vibrazione */ }
+  }
+
+  /** "PALERMO 11" in morse: il punto si accende, suona e (dove si può) il telefono vibra. */
+  segnaleMorse() {
+    // Si alternano segno e pausa: ogni segno dura 80 ms (punto) o 240 (linea), poi si ferma
+    // (di più fra lettere e parole).
     const schema: number[] = [];
     const parole = ['PALERMO', '11'];
     parole.forEach((parola, p) => [...parola].forEach((lettera, l) => {
       const segni = [...MORSE[lettera]];
       segni.forEach((segno, s) => {
-        schema.push(segno === '.' ? 80 : 240);
+        schema.push(segno === '.' ? 120 : 360);
         const fineLettera = s === segni.length - 1;
         const fineParola = fineLettera && l === parola.length - 1;
-        schema.push(fineParola ? (p < parole.length - 1 ? 560 : 0) : fineLettera ? 240 : 80);
+        schema.push(fineParola ? (p < parole.length - 1 ? 840 : 0) : fineLettera ? 360 : 120);
       });
     }));
-    navigator.vibrate(schema);
+    const totale = schema.reduce((a, b) => a + b, 0);
+    if ('vibrate' in navigator) navigator.vibrate(schema);
+    this.mostra('morse', totale + 1200);
+    this.sbloccaAudio();
+    const audio = this.audio;
+    let tempo = 0;
+    schema.forEach((durata, i) => {
+      const acceso = i % 2 === 0;
+      setTimeout(() => this.zone.run(() => this.morseAcceso.set(acceso)), tempo);
+      if (acceso && audio) {
+        try {
+          const nota = audio.createOscillator();
+          const volume = audio.createGain();
+          nota.frequency.value = 700;
+          volume.gain.value = .12;
+          nota.connect(volume).connect(audio.destination);
+          const inizio = audio.currentTime + tempo / 1000;
+          nota.start(inizio);
+          nota.stop(inizio + durata / 1000);
+        } catch { /* niente suono, pazienza */ }
+      }
+      tempo += durata;
+    });
+    setTimeout(() => this.zone.run(() => this.morseAcceso.set(false)), tempo);
   }
 
   // ---------- Telefono scosso nel canzoniere ----------
@@ -237,6 +307,11 @@ export class SorpreseService {
     const adesso = Date.now();
     if (forza < 30 || adesso - this.ultimaScossa < 3000) return;
     this.ultimaScossa = adesso;
+    this.cantoASorpresa();
+  }
+
+  /** Un canto a caso del canzoniere. */
+  async cantoASorpresa() {
     try {
       const tutti = await firstValueFrom(this.canti.elenco());
       if (!tutti.length) return;
@@ -244,6 +319,12 @@ export class SorpreseService {
       this.mostra('canto');
       setTimeout(() => this.zone.run(() => this.router.navigate(['/canzoniere', canto.id])), 900);
     } catch { /* niente canto a sorpresa: pazienza */ }
+  }
+
+  /** Sull'iPhone il movimento del telefono si legge solo col permesso, chiesto durante un tocco. */
+  private chiediMovimento() {
+    const richiesta = (DeviceMotionEvent as unknown as { requestPermission?: () => Promise<string> }).requestPermission;
+    if (typeof richiesta === 'function') richiesta.call(DeviceMotionEvent).catch(() => { /* niente scosse */ });
   }
 
   // ---------- Giorni speciali ----------

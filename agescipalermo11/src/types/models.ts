@@ -30,6 +30,8 @@ export interface Admin extends UtenteCensito {
   /** Titoli (solo nei propri dati): admin c'è solo per chi gestisce il sito. */
   capogruppo?: boolean;
   admin?: boolean;
+  /** Vero solo per chi gestisce il sito (vede le prove degli easter egg nel profilo). */
+  gestore?: boolean;
 }
 
 export interface Ragazzo extends UtenteCensito {

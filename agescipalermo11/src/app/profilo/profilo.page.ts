@@ -12,6 +12,7 @@ import {
 import { AuthService } from '../services/auth';
 import { ModificaProfiloComponent } from '../components/modifica-profilo/modifica-profilo.component';
 import { BarraInferioreComponent } from '../components/barra-inferiore/barra-inferiore.component';
+import { ProvaSorpreseComponent } from '../components/prova-sorprese/prova-sorprese.component';
 import { Branca, Utente, Visitatore } from '../../types/models';
 
 const NOMI_RUOLO = { ragazzo: 'Ragazzo/a', capo: 'Capo' } as const;
@@ -34,7 +35,7 @@ interface CampoProfilo {
   standalone: true,
   imports: [
     RouterLink, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonRouterLink, IonRouterLinkWithHref, IonContent,
-    BarraInferioreComponent,
+    BarraInferioreComponent, ProvaSorpreseComponent,
   ],
 })
 export class ProfiloPage implements OnInit {
@@ -98,6 +99,12 @@ export class ProfiloPage implements OnInit {
 
   get urlFoto(): string | null {
     return this.auth.urlFotoProfilo(this.utente);
+  }
+
+  /** Solo chi gestisce il sito vede le prove degli easter egg. */
+  get gestore(): boolean {
+    const u = this.utente;
+    return !!u && u.ruolo === 'admin' && u.gestore === true;
   }
 
   get visitatore(): boolean {
