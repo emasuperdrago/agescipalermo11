@@ -39,6 +39,11 @@ export class ZonaCapiService {
     return this.http.post<EsitoApertura>(`${apiUrl()}/anno-scout/apri`, etichetta ? { etichetta } : {});
   }
 
+  /** Annulla l'apertura dell'anno (entro 10 minuti): torna in corso quello di prima. */
+  annullaAnno() {
+    return this.http.post<{ anno: AnnoScout | null; ragazzi: number }>(`${apiUrl()}/anno-scout/annulla`, {});
+  }
+
   // ---------- Ragazzi e quote ----------
 
   ragazzi(branca?: Branca | null) {

@@ -3,7 +3,7 @@ import {
   IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, IonIcon, ModalController
 } from '@ionic/angular/standalone';
 import { checkmarkCircleOutline, closeOutline, pencilOutline, trashOutline } from 'ionicons/icons';
-import { PostService, nomeEtichetta } from '../../services/post';
+import { PostService, etichetteDi, nomeEtichetta, nomiEtichette } from '../../services/post';
 import { Post } from '../../../types/models';
 
 /**
@@ -30,6 +30,8 @@ export class AnteprimaPostComponent {
     chiudi: closeOutline, pubblica: checkmarkCircleOutline, rifiuta: trashOutline, modifica: pencilOutline,
   };
   readonly nomeEtichetta = nomeEtichetta;
+  readonly nomiEtichette = nomiEtichette;
+  readonly etichetteDi = etichetteDi;
 
   constructor(private modalCtrl: ModalController, private posts: PostService) {}
 

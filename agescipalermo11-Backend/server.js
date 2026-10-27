@@ -336,6 +336,47 @@ function normalizzaEtichetteEvento(valore) {
     if (uniche.has('gruppo') || BRANCHE.every(b => uniche.has(b))) return { etichette: ['gruppo'] };
     return { etichette: BRANCHE.filter(b => uniche.has(b)) };
 }
+// Etichette di un post: come per gli eventi (senza "capi"): una o più branche, tutte e tre
+// diventano "gruppo", che sta da solo. Restituisce { errore } oppure { etichette }.
+function normalizzaEtichettePost(valore) {
+    const scelte = Array.isArray(valore) ? valore.map(String) : (valore ? [String(valore)] : []);
+    if (!scelte.length) return { errore: "Scegli almeno un'etichetta: branco, reparto, clan o gruppo." };
+    if (scelte.some(e => !ETICHETTE_POST.includes(e))) return { errore: "Etichette valide: branco, reparto, clan o gruppo." };
+    const uniche = new Set(scelte);
+    if (uniche.has('gruppo') || BRANCHE.every(b => uniche.has(b))) return { etichette: ['gruppo'] };
+    return { etichette: BRANCHE.filter(b => uniche.has(b)) };
+}
+
+/** Le etichette salvate di un post (i post di prima ne hanno una sola, in "etichetta"). */
+function etichetteDelPost(p) {
+    try {
+        const elenco = JSON.parse(p.etichette || 'null');
+        if (Array.isArray(elenco) && elenco.length) return elenco.filter(e => ETICHETTE_POST.includes(e));
+    } catch { /* si usa quella sola */ }
+    return p.etichetta ? [p.etichetta] : [];
+}
+
+/** Gli hashtag chiesti nell'elenco: uno o più, separati da virgola ("campo,route"); tutti puliti. */
+function hashtagRichiesti(valore) {
+    const scritti = Array.isArray(valore) ? valore : String(valore ?? '').split(',');
+    return [...new Set(scritti.map(pulisciHashtag).filter(Boolean))].slice(0, MAX_HASHTAG_POST);
+}
+
+/** Il pezzo di WHERE per etichetta e hashtag (tutti quelli chiesti), con i suoi parametri. */
+function filtroPost(etichetta, hashtag) {
+    const condizioni = [];
+    const parametri = [];
+    if (etichetta) {
+        condizioni.push(`COALESCE(etichette, json_build_array(etichetta)::text)::jsonb @> ?::jsonb`);
+        parametri.push(JSON.stringify([etichetta]));
+    }
+    if (hashtag.length) {
+        condizioni.push(`hashtag::jsonb @> ?::jsonb`);
+        parametri.push(JSON.stringify(hashtag));
+    }
+    return { sql: condizioni.map(c => `AND ${c}`).join(' '), parametri };
+}
+
 const RUOLI_CAPI = ['capo', 'admin'];
 const POST_PER_PAGINA = 12;
 
@@ -548,7 +589,8 @@ function postPubblico(p) {
         video_link: linkVideoDelPost(p),
         // I video caricati arrivano a parte (vedi inviaPost e il dettaglio): qui c'è solo quanti sono.
         video: p.video ?? [],
-        etichetta: p.etichetta,
+        etichetta: etichetteDelPost(p)[0] ?? p.etichetta,
+        etichette: etichetteDelPost(p),
         hashtag: hashtagDelPost(p),
         in_evidenza: p.in_evidenza === 1,
         data_creazione: p.data_creazione
@@ -1468,14 +1510,17 @@ function validaPost(body, { fotoObbligatoria }) {
     const didascalia = testo(body.didascalia);
     const contenuto = testo(body.testo) || null;
     const colore = String(body.colore ?? '').toUpperCase();
-    const etichetta = String(body.etichetta ?? '');
+    // Una o più etichette ("etichette"); le app di prima mandano solo "etichetta".
+    const sceltaEtichette = normalizzaEtichettePost(body.etichette ?? body.etichetta);
 
     if (!didascalia) return { errore: "La didascalia è obbligatoria." };
     if (didascalia.length > MAX_DIDASCALIA)
         return { errore: `La didascalia può avere al massimo ${MAX_DIDASCALIA} caratteri.` };
     if (contenuto && contenuto.length > MAX_TESTO_POST) return { errore: "Il testo è troppo lungo." };
     if (!COLORI_POST.includes(colore)) return { errore: "Scegli uno dei colori proposti." };
-    if (!ETICHETTE_POST.includes(etichetta)) return { errore: "Scegli l'etichetta: branco, reparto, clan o gruppo." };
+    if (sceltaEtichette.errore) return { errore: sceltaEtichette.errore };
+    const etichette = sceltaEtichette.etichette;
+    const etichetta = etichette[0];
 
     let foto = null;
     if (body.foto !== undefined && body.foto !== null && body.foto !== '') {
@@ -1504,7 +1549,7 @@ function validaPost(body, { fotoObbligatoria }) {
         hashtag = [...new Set(body.hashtag.map(pulisciHashtag).filter(Boolean))];
         if (hashtag.length > MAX_HASHTAG_POST) return { errore: `Al massimo ${MAX_HASHTAG_POST} hashtag per post.` };
     }
-    return { dati: { didascalia, contenuto, colore, etichetta, foto, videoLink, hashtag } };
+    return { dati: { didascalia, contenuto, colore, etichetta, etichette, foto, videoLink, hashtag } };
 }
 
 const MAX_FOTO_POST = 10;
@@ -1642,18 +1687,17 @@ function eliminaVideoDelPost(righe) {
 
 // Elenco a pagine: i post in evidenza sempre per primi, poi dal più recente.
 // ?offset=N salta i primi N, ?limite=M (1-12), ?etichetta=branco|reparto|clan|gruppo filtra,
-// ?hashtag=campoestivo tiene solo i post con quell'hashtag.
+// ?hashtag=campoestivo (o più, "campo,route") tiene solo i post che li hanno tutti.
 app.get('/api/post', (req, res) => {
     const offset = Math.max(0, Number.parseInt(req.query.offset, 10) || 0);
     const limite = Math.min(POST_PER_PAGINA, Math.max(1, Number.parseInt(req.query.limite, 10) || POST_PER_PAGINA));
     const etichetta = ETICHETTE_POST.includes(req.query.etichetta) ? req.query.etichetta : null;
-    const hashtag = pulisciHashtag(req.query.hashtag);
+    const filtro = filtroPost(etichetta, hashtagRichiesti(req.query.hashtag));
 
-    const sql = `SELECT * FROM post WHERE archiviato = 0 AND in_attesa = 0 ${etichetta ? 'AND etichetta = ?' : ''}
-                 ${hashtag ? 'AND hashtag::jsonb @> ?::jsonb' : ''}
+    const sql = `SELECT * FROM post WHERE archiviato = 0 AND in_attesa = 0 ${filtro.sql}
                  ORDER BY in_evidenza DESC, data_creazione DESC, id DESC
                  LIMIT ? OFFSET ?`;
-    const parametri = [...(etichetta ? [etichetta] : []), ...(hashtag ? [JSON.stringify([hashtag])] : []), limite + 1, offset];
+    const parametri = [...filtro.parametri, limite + 1, offset];
     db.all(sql, parametri, async (err, rows) => {
         if (err) return erroreInterno(res, err);
         const pagina = rows.slice(0, limite);
@@ -1764,11 +1808,10 @@ app.get('/api/post/hashtag', async (req, res) => {
 // L'archivio: tutti i post messi da parte, dal più recente al più vecchio.
 app.get('/api/post/archivio', (req, res) => {
     const etichetta = ETICHETTE_POST.includes(req.query.etichetta) ? req.query.etichetta : null;
-    const hashtag = pulisciHashtag(req.query.hashtag);
-    const sql = `SELECT * FROM post WHERE archiviato = 1 AND in_attesa = 0 ${etichetta ? 'AND etichetta = ?' : ''}
-                 ${hashtag ? 'AND hashtag::jsonb @> ?::jsonb' : ''}
+    const filtro = filtroPost(etichetta, hashtagRichiesti(req.query.hashtag));
+    const sql = `SELECT * FROM post WHERE archiviato = 1 AND in_attesa = 0 ${filtro.sql}
                  ORDER BY data_creazione DESC, id DESC LIMIT 1000`;
-    const parametri = [...(etichetta ? [etichetta] : []), ...(hashtag ? [JSON.stringify([hashtag])] : [])];
+    const parametri = filtro.parametri;
     db.all(sql, parametri, (err, rows) => {
         if (err) return erroreInterno(res, err);
         res.json({ post: rows.map(postPubblico), massimo: MAX_POST_HOME });
@@ -1847,9 +1890,9 @@ app.post('/api/post', verificaUtenteCensito, async (req, res) => {
     }
     try {
         const [copertina, ...altre] = percorsi;
-        const esito = await dbRun(`INSERT INTO post (didascalia, testo, colore, etichetta, foto, altre_foto, video_link,
-                                   rif_autore, in_attesa, hashtag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [dati.didascalia, dati.contenuto, dati.colore, dati.etichetta, copertina,
+        const esito = await dbRun(`INSERT INTO post (didascalia, testo, colore, etichetta, etichette, foto, altre_foto, video_link,
+                                   rif_autore, in_attesa, hashtag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [dati.didascalia, dati.contenuto, dati.colore, dati.etichetta, JSON.stringify(dati.etichette), copertina,
              altre.length ? JSON.stringify(altre) : null,
              dati.videoLink?.length ? JSON.stringify(dati.videoLink) : null, req.user.id, permessi.subito ? 0 : 1,
              dati.hashtag?.length ? JSON.stringify(dati.hashtag) : null]);
@@ -1908,9 +1951,9 @@ app.put('/api/post/:id', verificaUtenteCensito, async (req, res) => {
             : (dati.videoLink.length ? JSON.stringify(dati.videoLink) : null);
         const hashtag = dati.hashtag === undefined ? esistente.hashtag
             : (dati.hashtag.length ? JSON.stringify(dati.hashtag) : null);
-        await dbRun(`UPDATE post SET didascalia = ?, testo = ?, colore = ?, etichetta = ?, foto = ?, altre_foto = ?,
+        await dbRun(`UPDATE post SET didascalia = ?, testo = ?, colore = ?, etichetta = ?, etichette = ?, foto = ?, altre_foto = ?,
                      video_link = ?, hashtag = ? WHERE id = ?`,
-            [dati.didascalia, dati.contenuto, dati.colore, dati.etichetta, copertina,
+            [dati.didascalia, dati.contenuto, dati.colore, dati.etichetta, JSON.stringify(dati.etichette), copertina,
              altre.length ? JSON.stringify(altre) : null, link, hashtag, esistente.id]);
     } catch (err) {
         nuove.forEach(eliminaFotoPost);
@@ -3751,6 +3794,17 @@ async function annoCorrente() {
     return dbGet(`SELECT * FROM anno_scout WHERE corrente = 1`);
 }
 
+// Un'apertura dell'anno si può annullare per 10 minuti (contro i clic sbagliati).
+const MINUTI_ANNULLA_ANNO = 10;
+
+/** L'anno da mandare al sito: senza la fotografia dei ragazzi, con fino a quando si può annullare. */
+function annoPubblico(anno) {
+    if (!anno) return null;
+    const { stato_prima, aperto_alle, ...resto } = anno;
+    const fino = stato_prima && aperto_alle ? Number(aperto_alle) + MINUTI_ANNULLA_ANNO * 60 * 1000 : 0;
+    return { ...resto, annullabile_fino: fino > Date.now() ? new Date(fino).toISOString() : null };
+}
+
 /** L'anno di percorso scritto per esteso, es. "3° anno di branco". */
 function tappaDi(branca, anno) {
     if (!branca || !anno) return null;
@@ -3762,7 +3816,7 @@ app.get('/api/anno-scout', verificaRuolo('capo', 'admin'), async (req, res) => {
     try {
         const anno = await annoCorrente();
         const storico = await dbAll(`SELECT id, etichetta, aperto_il, corrente FROM anno_scout ORDER BY id DESC`);
-        res.json({ anno: anno || null, storico });
+        res.json({ anno: annoPubblico(anno), storico });
     } catch (err) {
         erroreInterno(res, err);
     }
@@ -3788,8 +3842,13 @@ app.post('/api/anno-scout/apri', verificaRuolo('admin'), async (req, res) => {
         await dbRun('BEGIN');
         try {
             await dbRun(`UPDATE anno_scout SET corrente = 0 WHERE corrente = 1`);
-            const esito = await dbRun(`INSERT INTO anno_scout (etichetta, rif_capogruppo) VALUES (?, ?)`,
-                [etichetta, req.user.id]);
+            // La fotografia di com'erano i ragazzi: serve per annullare (vedi /api/anno-scout/annulla).
+            const statoPrima = JSON.stringify({
+                precedente: vecchio?.id ?? null,
+                ragazzi: ragazzi.map(r => ({ id: r.id, branca: r.branca, anno_branca: r.anno_branca })),
+            });
+            const esito = await dbRun(`INSERT INTO anno_scout (etichetta, rif_capogruppo, aperto_alle, stato_prima)
+                                       VALUES (?, ?, ?, ?)`, [etichetta, req.user.id, Date.now(), statoPrima]);
             const nuovoAnno = esito.lastID;
 
             for (const r of ragazzi) {
@@ -3836,9 +3895,38 @@ app.post('/api/anno-scout/apri', verificaRuolo('admin'), async (req, res) => {
         }
 
         res.status(201).json({
-            anno: await annoCorrente(),
+            anno: annoPubblico(await annoCorrente()),
             avanzati, cambi, finitoClan, senzaAnno,
         });
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+// Annulla l'apertura dell'anno, entro 10 minuti: i ragazzi tornano dov'erano, l'anno nuovo sparisce
+// (con le attività ricopiate, i pagamenti e il riporto in cassa) e torna in corso quello di prima.
+app.post('/api/anno-scout/annulla', verificaRuolo('admin'), async (req, res) => {
+    try {
+        const anno = await annoCorrente();
+        const fino = anno?.stato_prima && anno.aperto_alle ? Number(anno.aperto_alle) + MINUTI_ANNULLA_ANNO * 60 * 1000 : 0;
+        if (!anno || fino <= Date.now())
+            return res.status(409).json({ error: `L'apertura si può annullare solo entro ${MINUTI_ANNULLA_ANNO} minuti.` });
+        const prima = JSON.parse(anno.stato_prima);
+
+        await dbRun('BEGIN');
+        try {
+            for (const r of prima.ragazzi ?? [])
+                await dbRun(`UPDATE utenti SET branca = ?, anno_branca = ? WHERE id = ? AND ruolo = 'ragazzo'`,
+                    [r.branca, r.anno_branca, r.id]);
+            // Con l'anno se ne vanno anche le sue attività, i pagamenti e i movimenti (ON DELETE CASCADE).
+            await dbRun(`DELETE FROM anno_scout WHERE id = ?`, [anno.id]);
+            if (prima.precedente) await dbRun(`UPDATE anno_scout SET corrente = 1 WHERE id = ?`, [prima.precedente]);
+            await dbRun('COMMIT');
+        } catch (errDentro) {
+            await dbRun('ROLLBACK').catch(() => {});
+            throw errDentro;
+        }
+        res.json({ anno: annoPubblico(await annoCorrente()), ragazzi: (prima.ragazzi ?? []).length });
     } catch (err) {
         erroreInterno(res, err);
     }
@@ -3876,7 +3964,7 @@ async function elencoRagazzi(branca) {
         : [];
 
     return {
-        anno: anno || null,
+        anno: annoPubblico(anno),
         attivita: attivita.map(a => ({ id: a.id, branca: a.branca, nome: a.nome, importo: a.importo })),
         ragazzi: ragazzi.map(r => ({
             id: r.id,
@@ -4582,7 +4670,7 @@ app.get('/api/cassa/:cassa', verificaUtenteCensito, async (req, res) => {
         const entrate = movimenti.filter(m => m.importo > 0).reduce((s, m) => s + m.importo, 0);
         const uscite = movimenti.filter(m => m.importo < 0).reduce((s, m) => s + m.importo, 0);
         res.json({
-            cassa, anno,
+            cassa, anno: annoPubblico(anno),
             // Il clan lo guardano tutti, ma lo muovono solo capi clan e tesoriere.
             puoModificare: permessi.modifica,
             anni: anni.map(a => ({

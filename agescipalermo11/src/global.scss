@@ -741,6 +741,13 @@ ion-alert .alert-message {
   white-space: pre-line;
 }
 
+// I pulsanti dei pop-up: quando il testo è lungo e va a capo (da telefono) resta centrato,
+// invece di finire tutto da una parte.
+ion-alert .alert-button-inner {
+  justify-content: center;
+  text-align: center;
+}
+
 // Pop-up larghi (l'anteprima del libretto: modulo e PDF uno accanto all'altro).
 @media (min-width: 768px) {
   ion-modal.modale-grande {

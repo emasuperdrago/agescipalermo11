@@ -6,7 +6,7 @@ import {
   IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonRouterLink, IonRouterLinkWithHref, IonContent
 } from '@ionic/angular/standalone';
 import { arrowBackOutline, calendarOutline, chevronBackOutline, chevronForwardOutline, flag } from 'ionicons/icons';
-import { PostService, nomeEtichetta, videoIncorporato } from '../services/post';
+import { PostService, videoIncorporato, etichetteDi, nomiEtichette } from '../services/post';
 import { Post } from '../../types/models';
 
 @Component({
@@ -125,8 +125,10 @@ export class DettaglioPostPage implements OnInit {
     return this.fotoTutte[this.fotoAttuale] ?? (this.post ? this.posts.urlFoto(this.post) : '');
   }
 
+  readonly etichetteDi = etichetteDi;
+
   get etichetta(): string {
-    return this.post ? nomeEtichetta(this.post.etichetta) : '';
+    return this.post ? nomiEtichette(this.post) : '';
   }
 
   /** Data di caricamento, es. "16 settembre 2026". */

@@ -123,6 +123,7 @@
   border: 1.5px solid $slate-200;
   border-radius: 999px;
   background: $white;
+  font-family: inherit;
   font-size: .88rem;
   font-weight: 700;
   color: $slate-600;
@@ -141,7 +142,8 @@
     height: 1px;
   }
 
-  &:focus-within { box-shadow: 0 0 0 3px rgba($viola-l, .35); }
+  &:focus-within,
+  &:focus-visible { box-shadow: 0 0 0 3px rgba($viola-l, .35); }
 
   &--scelta {
     border-color: var(--colore-etichetta);
@@ -151,6 +153,12 @@
 }
 
 // ---------- Colori ----------
+
+.aiuto-etichette {
+  margin: 6px 0 0;
+  font-size: .76rem;
+  color: $slate;
+}
 
 .colori {
   display: grid;

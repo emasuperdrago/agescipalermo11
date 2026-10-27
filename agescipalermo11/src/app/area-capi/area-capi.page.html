@@ -129,6 +129,13 @@
           </a>
         </div>
 
+        <!-- Aperto per sbaglio? Per 10 minuti si torna indietro. -->
+        @if (restaPerAnnullare) {
+          <button type="button" class="annulla-anno" (click)="confermaAnnullaAnno()" [disabled]="annullando">
+            ↶ {{ annullando ? 'Annullamento in corso…' : "Annulla l'apertura dell'anno" }}
+            <small>ancora {{ restaPerAnnullare }}</small>
+          </button>
+        }
         <button type="button" class="apri-anno" (click)="confermaApriAnno()" [disabled]="apertura">
           <ion-icon [icon]="icone.anno" aria-hidden="true"></ion-icon>
           {{ apertura ? 'Apertura in corso…' : "Apri l'anno scout" }}

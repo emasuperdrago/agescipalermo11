@@ -103,7 +103,10 @@ export interface Post {
   video_link: string[];
   /** I video corti caricati sul sito. */
   video: VideoPost[];
+  /** La prima etichetta (quella dei post di prima, che ne avevano una sola). */
   etichetta: EtichettaPost;
+  /** Tutte le etichette del post (una o più branche, oppure "gruppo"). */
+  etichette: EtichettaPost[];
   /** Gli hashtag, senza "#" e in minuscolo (es. "campoestivo"). */
   hashtag: string[];
   /** I post in evidenza compaiono sopra tutti gli altri. */
@@ -123,7 +126,8 @@ export interface DatiPost {
   didascalia: string;
   testo: string | null;
   colore: string;
-  etichetta: EtichettaPost;
+  /** Una o più etichette: tutte e tre le branche insieme diventano "gruppo". */
+  etichette: EtichettaPost[];
   /** Foto come data URL (già rimpicciolita nel browser): obbligatoria solo in creazione. */
   foto?: string;
   /**
@@ -474,6 +478,8 @@ export interface AnnoScout {
   etichetta: string;
   aperto_il: string;
   corrente: number;
+  /** Fino a quando si può annullare l'apertura (10 minuti); null = non più. */
+  annullabile_fino?: string | null;
 }
 
 /** Cosa è successo aprendo l'anno: chi è avanzato, chi ha cambiato branca, chi è rimasto indietro. */

@@ -27,6 +27,16 @@ export function nomeEtichetta(etichetta: EtichettaPost): string {
   return ETICHETTE_POST.find(e => e.valore === etichetta)?.nome ?? etichetta;
 }
 
+/** Le etichette di un post (i post di prima ne hanno una sola). */
+export function etichetteDi(post: Pick<Post, 'etichetta' | 'etichette'>): EtichettaPost[] {
+  return post.etichette?.length ? post.etichette : [post.etichetta];
+}
+
+/** "Branco · Reparto": i nomi delle etichette di un post, in fila. */
+export function nomiEtichette(post: Pick<Post, 'etichetta' | 'etichette'>): string {
+  return etichetteDi(post).map(nomeEtichetta).join(' · ');
+}
+
 /** Quanti post si caricano alla volta (anche con "Vedi altro"). */
 export const POST_PER_PAGINA = 12;
 
@@ -85,10 +95,11 @@ export class PostService {
 
   /** Una pagina di post (in evidenza per primi), saltando i primi `offset` e filtrando per etichetta. */
   /** `quanti` serve per chiederne uno solo, quando si richiude il buco lasciato da un post tolto. */
-  elenco(offset = 0, etichetta: EtichettaPost | null = null, quanti = POST_PER_PAGINA, hashtag: string | null = null) {
+  elenco(offset = 0, etichetta: EtichettaPost | null = null, quanti = POST_PER_PAGINA, hashtag: string[] = []) {
     const parametri: Record<string, string> = { offset: String(offset), limite: String(quanti) };
     if (etichetta) parametri['etichetta'] = etichetta;
-    if (hashtag) parametri['hashtag'] = hashtag;
+    // Più hashtag insieme: si vedono i post che li hanno tutti.
+    if (hashtag.length) parametri['hashtag'] = hashtag.join(',');
     return this.http.get<PaginaPost>(`${apiUrl()}/post`, { params: parametri });
   }
 

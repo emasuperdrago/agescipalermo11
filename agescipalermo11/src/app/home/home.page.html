@@ -126,8 +126,10 @@
               <span class="proposta__testo">
                 <strong>{{ p.didascalia }}</strong>
                 <small>
-                  <span class="pallino pallino--{{ p.etichetta }}" aria-hidden="true"></span>
-                  {{ nomeEtichetta(p.etichetta) }}
+                  @for (e of etichetteDi(p); track e) {
+                    <span class="pallino pallino--{{ e }}" aria-hidden="true"></span>
+                  }
+                  {{ nomiEtichette(p) }}
                   @if (p.autore) { · {{ p.autore }} }
                 </small>
               </span>
@@ -190,19 +192,22 @@
       </div>
     </div>
 
-    <!-- Gli hashtag più usati: toccandone uno si vedono solo i suoi post. -->
-    @if (hashtagPopolari.length || filtroHashtag) {
+    <!-- Gli hashtag più usati: se ne possono scegliere più d'uno, si vedono i post che li hanno tutti. -->
+    @if (hashtagPopolari.length || filtriHashtag.length) {
       <div class="filtro-hashtag" role="group" aria-label="Filtra per hashtag">
-        @if (hashtagFuoriElenco) {
-          <button type="button" class="tag tag--scelto" (click)="scegliHashtag(filtroHashtag)" aria-pressed="true">
-            #{{ filtroHashtag }} ✕
+        @if (filtriHashtag.length > 1) {
+          <button type="button" class="tag tag--togli" (click)="togliFiltriHashtag()">✕ Togli tutti</button>
+        }
+        @for (h of hashtagFuoriElenco; track h) {
+          <button type="button" class="tag tag--scelto" (click)="scegliHashtag(h)" aria-pressed="true">
+            #{{ h }} ✕
           </button>
         }
         @for (h of hashtagPopolari; track h.hashtag) {
-          <button type="button" class="tag" [class.tag--scelto]="filtroHashtag === h.hashtag"
-                  [attr.aria-pressed]="filtroHashtag === h.hashtag" (click)="scegliHashtag(h.hashtag)">
+          <button type="button" class="tag" [class.tag--scelto]="hashtagScelto(h.hashtag)"
+                  [attr.aria-pressed]="hashtagScelto(h.hashtag)" (click)="scegliHashtag(h.hashtag)">
             #{{ h.hashtag }}
-            @if (filtroHashtag === h.hashtag) { ✕ } @else { <small>{{ h.quanti }}</small> }
+            @if (hashtagScelto(h.hashtag)) { ✕ } @else { <small>{{ h.quanti }}</small> }
           </button>
         }
       </div>
@@ -236,8 +241,10 @@
                     </span>
                   }
                   <span class="badge-etichetta">
-                    <span class="pallino pallino--{{ p.etichetta }}" aria-hidden="true"></span>
-                    {{ nomeEtichetta(p.etichetta) }}
+                    @for (e of etichetteDi(p); track e) {
+                      <span class="pallino pallino--{{ e }}" aria-hidden="true"></span>
+                    }
+                    {{ nomiEtichette(p) }}
                   </span>
                 </div>
               </div>
@@ -250,7 +257,7 @@
             @if (p.hashtag.length) {
               <div class="storia__hashtag">
                 @for (h of p.hashtag; track h) {
-                  <button type="button" class="tag tag--piccolo" [class.tag--scelto]="filtroHashtag === h"
+                  <button type="button" class="tag tag--piccolo" [class.tag--scelto]="hashtagScelto(h)"
                           (click)="scegliHashtag(h)">#{{ h }}</button>
                 }
               </div>
@@ -288,8 +295,9 @@
       }
     } @else if (!caricamentoPost) {
       <p class="vuoto">
-        @if (filtroHashtag) {
-          Nessun post con #{{ filtroHashtag }}.
+        @if (filtriHashtag.length) {
+          Nessun post con {{ filtriHashtag.length > 1 ? 'tutti questi hashtag' : '#' + filtriHashtag[0] }}.
+          @if (filtriHashtag.length > 1) { (#{{ filtriHashtag.join(' #') }}) }
         } @else if (filtroEtichetta) {
           Nessun post con l'etichetta {{ nomeEtichetta(filtroEtichetta) }}.
         } @else {

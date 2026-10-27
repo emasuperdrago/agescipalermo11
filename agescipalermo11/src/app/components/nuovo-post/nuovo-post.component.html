@@ -64,16 +64,17 @@
     </label>
 
     <fieldset class="campo">
-      <legend class="etichetta">Etichetta *</legend>
+      <legend class="etichetta">Etichette *</legend>
       <div class="etichette">
         @for (e of etichette; track e.valore) {
-          <label class="scelta-etichetta" [class]="'scelta-etichetta--' + e.valore"
-                 [class.scelta-etichetta--scelta]="etichetta === e.valore">
-            <input type="radio" name="etichetta" [value]="e.valore" [(ngModel)]="etichetta" />
+          <button type="button" class="scelta-etichetta" [class]="'scelta-etichetta--' + e.valore"
+                  [class.scelta-etichetta--scelta]="etichettaScelta(e.valore)"
+                  [attr.aria-pressed]="etichettaScelta(e.valore)" (click)="alternaEtichetta(e.valore)">
             {{ e.nome }}
-          </label>
+          </button>
         }
       </div>
+      <p class="aiuto-etichette">Puoi sceglierne più di una: Branco, Reparto e Clan insieme diventano Gruppo.</p>
     </fieldset>
 
     <fieldset class="campo">

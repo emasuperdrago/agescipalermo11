@@ -29,7 +29,9 @@
               {{ data }}
             </time>
             <span class="badge">
-              <span class="pallino pallino--{{ post.etichetta }}" aria-hidden="true"></span>
+              @for (e of etichetteDi(post); track e) {
+                <span class="pallino pallino--{{ e }}" aria-hidden="true"></span>
+              }
               {{ etichetta }}
             </span>
             @if (post.in_evidenza) {

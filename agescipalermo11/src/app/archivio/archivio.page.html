@@ -101,8 +101,10 @@
                         </span>
                       }
                       <span class="badge-etichetta">
-                        <span class="pallino pallino--{{ p.etichetta }}" aria-hidden="true"></span>
-                        {{ nomeEtichetta(p.etichetta) }}
+                        @for (e of etichetteDi(p); track e) {
+                          <span class="pallino pallino--{{ e }}" aria-hidden="true"></span>
+                        }
+                        {{ nomiEtichette(p) }}
                       </span>
                     </div>
                   </div>

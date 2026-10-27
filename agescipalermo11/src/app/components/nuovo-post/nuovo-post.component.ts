@@ -27,6 +27,9 @@ export const MAX_DIDASCALIA = 160;
  * Pop-up per creare un post (role "pubblicato") o, se riceve `post`, modificarlo (role "modificato").
  * In entrambi i casi si chiude restituendo il post salvato.
  */
+/** Le tre branche: insieme diventano "gruppo". */
+const BRANCHE_POST: EtichettaPost[] = ['branco', 'reparto', 'clan'];
+
 @Component({
   selector: 'app-nuovo-post',
   templateUrl: './nuovo-post.component.html',
@@ -69,7 +72,8 @@ export class NuovoPostComponent implements OnInit {
   fotoElenco: FotoNelModulo[] = [];
   didascalia = '';
   colore = '';
-  etichetta: EtichettaPost | '' = '';
+  /** Le etichette scelte: una o più branche, oppure "gruppo" (tutte e tre insieme lo diventano). */
+  etichetteScelte = new Set<EtichettaPost>();
   testo = '';
 
   preparandoFoto = false;
@@ -87,7 +91,7 @@ export class NuovoPostComponent implements OnInit {
     this.videoEsistenti = [...(this.post.video ?? [])];
     this.didascalia = this.post.didascalia;
     this.colore = this.post.colore;
-    this.etichetta = this.post.etichetta;
+    this.etichetteScelte = new Set(this.post.etichette?.length ? this.post.etichette : [this.post.etichetta]);
     this.testo = this.post.testo ?? '';
   }
 
@@ -101,7 +105,30 @@ export class NuovoPostComponent implements OnInit {
   }
 
   get valido(): boolean {
-    return !!this.anteprimaFoto && !!this.didascalia.trim() && !!this.colore && !!this.etichetta;
+    return !!this.anteprimaFoto && !!this.didascalia.trim() && !!this.colore && this.etichetteScelte.size > 0;
+  }
+
+  etichettaScelta(etichetta: EtichettaPost): boolean {
+    return this.etichetteScelte.has(etichetta);
+  }
+
+  /** Tocca un'etichetta: si aggiunge o si toglie. "Gruppo" sta da solo; le tre branche diventano "Gruppo". */
+  alternaEtichetta(etichetta: EtichettaPost) {
+    if (etichetta === 'gruppo') {
+      this.etichetteScelte = this.etichetteScelte.has('gruppo') ? new Set() : new Set(['gruppo']);
+      return;
+    }
+    // Con "Gruppo" sono scelte tutte le branche: toccarne una la toglie e restano le altre due.
+    const branche = new Set<EtichettaPost>(this.etichetteScelte.has('gruppo') ? BRANCHE_POST : [...this.etichetteScelte]);
+    if (branche.has(etichetta)) branche.delete(etichetta);
+    else branche.add(etichetta);
+    this.etichetteScelte = BRANCHE_POST.every(b => branche.has(b)) ? new Set(['gruppo']) : branche;
+  }
+
+  /** Le etichette da salvare, nello stesso ordine del sito (Branco, Reparto, Clan). */
+  private get etichetteDaSalvare(): EtichettaPost[] {
+    if (this.etichetteScelte.has('gruppo')) return ['gruppo'];
+    return BRANCHE_POST.filter(b => this.etichetteScelte.has(b));
   }
 
   /** Si possono scegliere più foto insieme: si aggiungono in fondo, fino al massimo. */
@@ -253,7 +280,7 @@ export class NuovoPostComponent implements OnInit {
   }
 
   pubblica() {
-    if (!this.valido || !this.etichetta) {
+    if (!this.valido) {
       this.errore = 'Compila i campi obbligatori: foto, didascalia, etichetta e colore.';
       return;
     }
@@ -263,7 +290,7 @@ export class NuovoPostComponent implements OnInit {
     const dati = {
       didascalia: this.didascalia.trim(),
       colore: this.colore,
-      etichetta: this.etichetta,
+      etichette: this.etichetteDaSalvare,
       testo: this.testo.trim() || null,
     };
     // Un link o un hashtag scritti ma non ancora aggiunti si aggiungono da soli.

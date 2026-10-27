@@ -1382,6 +1382,12 @@ $colori-etichetta: (
 
   &:hover { border-color: $viola-m; }
 
+  // "Togli tutti", quando si sono scelti più hashtag.
+  &--togli {
+    border-style: dashed;
+    color: $slate-600;
+  }
+
   &--scelto {
     border-color: $viola-m;
     background: $viola-m;

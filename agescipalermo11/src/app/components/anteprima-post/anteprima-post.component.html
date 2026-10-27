@@ -16,8 +16,10 @@
     <div class="post__corpo">
       <div class="post__segni">
         <span class="etichetta">
-          <span class="pallino pallino--{{ post.etichetta }}" aria-hidden="true"></span>
-          {{ nomeEtichetta(post.etichetta) }}
+          @for (e of etichetteDi(post); track e) {
+            <span class="pallino pallino--{{ e }}" aria-hidden="true"></span>
+          }
+          {{ nomiEtichette(post) }}
         </span>
         <span class="attesa">In attesa del sì</span>
       </div>

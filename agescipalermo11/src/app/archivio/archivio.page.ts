@@ -8,7 +8,7 @@ import {
 import { archiveOutline, arrowBackOutline, arrowUndoOutline, chevronForwardOutline, flag } from 'ionicons/icons';
 import { BarraInferioreComponent } from '../components/barra-inferiore/barra-inferiore.component';
 import { AuthService } from '../services/auth';
-import { ETICHETTE_POST, PostService, nomeEtichetta } from '../services/post';
+import { ETICHETTE_POST, PostService, etichetteDi, nomeEtichetta, nomiEtichette } from '../services/post';
 import { EtichettaPost, Post } from '../../types/models';
 
 /** I post di un anno, già in ordine dal più recente. */
@@ -37,6 +37,8 @@ export class ArchivioPage implements OnInit {
     apri: chevronForwardOutline, evidenza: flag,
   };
   readonly nomeEtichetta = nomeEtichetta;
+  readonly nomiEtichette = nomiEtichette;
+  readonly etichetteDi = etichetteDi;
   readonly etichette = ETICHETTE_POST;
 
   private auth = inject(AuthService);
@@ -127,7 +129,7 @@ export class ArchivioPage implements OnInit {
 
   /** Rifà i gruppi per anno tenendo conto dei filtri. */
   private mostra() {
-    const scelti = this.tutti.filter(p => (!this.etichetta || p.etichetta === this.etichetta)
+    const scelti = this.tutti.filter(p => (!this.etichetta || etichetteDi(p).includes(this.etichetta))
       && (!this.hashtag || (p.hashtag ?? []).includes(this.hashtag)));
     this.quanti = scelti.length;
     this.anni = this.dividiPerAnno(scelti);

@@ -57,6 +57,10 @@ const TABELLE = [
     )`,
     // Uno solo è l'anno in corso.
     `CREATE UNIQUE INDEX IF NOT EXISTS anno_scout_corrente ON anno_scout (corrente) WHERE corrente = 1`,
+    // Per annullare un'apertura fatta per sbaglio (entro 10 minuti): quando è stato aperto, al
+    // millisecondo, e com'erano i ragazzi prima (JSON: anno precedente, branca e anno di ognuno).
+    `ALTER TABLE anno_scout ADD COLUMN IF NOT EXISTS aperto_alle BIGINT`,
+    `ALTER TABLE anno_scout ADD COLUMN IF NOT EXISTS stato_prima TEXT`,
 
     `CREATE TABLE IF NOT EXISTS attivita_quota (
         id SERIAL PRIMARY KEY,
@@ -245,6 +249,9 @@ const TABELLE = [
 
     // Gli hashtag del post: elenco JSON, già puliti (minuscoli, senza "#").
     `ALTER TABLE post ADD COLUMN IF NOT EXISTS hashtag TEXT`,
+    // Più etichette per post (JSON, come gli hashtag): la prima resta anche in "etichetta".
+    `ALTER TABLE post ADD COLUMN IF NOT EXISTS etichette TEXT`,
+    `UPDATE post SET etichette = json_build_array(etichetta)::text WHERE etichette IS NULL AND etichetta IS NOT NULL`,
 
     `CREATE TABLE IF NOT EXISTS post_video (
         id SERIAL PRIMARY KEY,

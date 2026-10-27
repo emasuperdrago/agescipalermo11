@@ -122,8 +122,64 @@ export class AreaCapiPage implements OnInit {
 
   private caricaAnno() {
     this.zona.annoScout().subscribe({
-      next: dati => this.anno = dati.anno,
-      error: () => this.anno = null,
+      next: dati => this.impostaAnno(dati.anno),
+      error: () => this.impostaAnno(null),
+    });
+  }
+
+  // ---------- Annullare l'apertura (10 minuti) ----------
+
+  /** Quanto manca per annullare l'apertura, es. "9:41" (vuoto = non si può più). */
+  restaPerAnnullare = '';
+  annullando = false;
+  private orologioAnnulla?: ReturnType<typeof setInterval>;
+
+  private impostaAnno(anno: AnnoScout | null) {
+    this.anno = anno;
+    clearInterval(this.orologioAnnulla);
+    this.restaPerAnnullare = '';
+    const fino = anno?.annullabile_fino ? Date.parse(anno.annullabile_fino) : 0;
+    if (!fino) return;
+    const aggiorna = () => {
+      const secondi = Math.max(0, Math.round((fino - Date.now()) / 1000));
+      this.restaPerAnnullare = secondi ? `${Math.floor(secondi / 60)}:${String(secondi % 60).padStart(2, '0')}` : '';
+      if (!secondi) clearInterval(this.orologioAnnulla);
+    };
+    aggiorna();
+    this.orologioAnnulla = setInterval(aggiorna, 1000);
+  }
+
+  ionViewDidLeave() {
+    clearInterval(this.orologioAnnulla);
+  }
+
+  async confermaAnnullaAnno() {
+    const anno = this.anno;
+    if (!anno) return;
+    const alert = await this.alertCtrl.create({
+      header: "Annullare l'apertura?",
+      message: `I ragazzi tornano all'anno e alla branca di prima. L'anno ${anno.etichetta} viene tolto, `
+        + "con le attività ricopiate e il riporto in cassa, e torna in corso l'anno precedente.",
+      buttons: [
+        { text: 'No, lascia così', role: 'cancel' },
+        { text: "Sì, annulla l'apertura", role: 'confirm' },
+      ],
+    });
+    await alert.present();
+    const { role } = await alert.onDidDismiss();
+    if (role !== 'confirm') return;
+    this.annullando = true;
+    this.zona.annullaAnno().subscribe({
+      next: esito => {
+        this.annullando = false;
+        this.impostaAnno(esito.anno);
+        this.avvisa(`Apertura annullata: ${esito.ragazzi} ragazzi sono tornati com'erano.`);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.annullando = false;
+        this.avvisa(err.error?.error ?? "Non sono riuscito ad annullare l'apertura.");
+        this.caricaAnno();
+      },
     });
   }
 
@@ -169,7 +225,7 @@ export class AreaCapiPage implements OnInit {
     this.zona.apriAnno(etichetta || undefined).subscribe({
       next: async esito => {
         this.apertura = false;
-        this.anno = esito.anno;
+        this.impostaAnno(esito.anno);
         const righe = [
           `${esito.avanzati} ${esito.avanzati === 1 ? 'ragazzo è avanzato' : 'ragazzi sono avanzati'} di un anno.`,
           esito.cambi.length
