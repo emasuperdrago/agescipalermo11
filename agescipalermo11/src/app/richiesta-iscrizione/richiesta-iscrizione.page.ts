@@ -39,7 +39,7 @@ export class RichiestaIscrizionePage {
   readonly anniCatechismo = [1, 2, 3, 4, 5];
 
   dati: DatiRichiestaIscrizione = {
-    nome: '', cognome: '', data_nascita: '', anno_scolastico: '', telefono: '', email: '', note: '',
+    nome: '', cognome: '', data_nascita: '', comune_nascita: '', anno_scolastico: '', telefono: '', email: '', note: '',
     genitore1_nome: '', genitore1_cognome: '', genitore2_nome: '', genitore2_cognome: '',
     catechismo: null, indirizzo: '',
   };
@@ -140,6 +140,10 @@ export class RichiestaIscrizionePage {
       this.errore = 'Scrivi la data di nascita.';
       return;
     }
+    if (!this.dati.comune_nascita.trim()) {
+      this.errore = 'Scrivi il comune di nascita.';
+      return;
+    }
     if (!this.dati.anno_scolastico) {
       this.errore = "Scegli l'anno scolastico che si sta facendo adesso.";
       return;
@@ -184,7 +188,7 @@ export class RichiestaIscrizionePage {
   /** Per mandare una seconda richiesta, es. un altro figlio. */
   nuovaRichiesta() {
     this.dati = {
-      nome: '', cognome: '', data_nascita: '', anno_scolastico: '', telefono: '', email: '', note: '',
+      nome: '', cognome: '', data_nascita: '', comune_nascita: '', anno_scolastico: '', telefono: '', email: '', note: '',
       genitore1_nome: '', genitore1_cognome: '', genitore2_nome: '', genitore2_cognome: '',
       catechismo: null, indirizzo: '',
     };

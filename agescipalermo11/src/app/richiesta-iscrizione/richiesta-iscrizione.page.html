@@ -90,6 +90,12 @@
           </div>
         </fieldset>
 
+        <label class="campo">
+          <span class="etichetta">Comune di nascita *</span>
+          <input name="comune_nascita" [(ngModel)]="dati.comune_nascita" maxlength="80"
+                 placeholder="Es. Palermo" />
+        </label>
+
         <fieldset class="campo">
           <legend class="etichetta">Anno scolastico che sta facendo adesso *</legend>
           <p class="aiuto">Serve per capire la branca: accogliamo dalla 3ª elementare alla 5ª superiore.</p>

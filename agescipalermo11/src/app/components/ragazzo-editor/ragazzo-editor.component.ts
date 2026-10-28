@@ -41,7 +41,7 @@ export class RagazzoEditorComponent implements OnInit {
   readonly tappaDi = tappaDi;
 
   dati: DatiRagazzo = {
-    codice_censimento: '', nome: '', cognome: '', data_nascita: null, branca: null,
+    codice_censimento: '', nome: '', cognome: '', data_nascita: null, comune_nascita: null, branca: null,
     anno_branca: null, telefono: null, email: null, tesoriere: false,
   };
   salvando = false;
@@ -61,7 +61,8 @@ export class RagazzoEditorComponent implements OnInit {
     }
     this.dati = {
       codice_censimento: r.codice_censimento ? String(r.codice_censimento) : '',
-      nome: r.nome, cognome: r.cognome, data_nascita: r.data_nascita, branca: r.branca,
+      nome: r.nome, cognome: r.cognome, data_nascita: r.data_nascita, comune_nascita: r.comune_nascita,
+      branca: r.branca,
       anno_branca: r.anno_branca, telefono: r.telefono, email: r.email, tesoriere: r.tesoriere,
     };
   }

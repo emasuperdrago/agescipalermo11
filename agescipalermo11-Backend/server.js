@@ -1355,6 +1355,8 @@ app.post('/api/utenti/importa', verificaRuolo('capo', 'admin'), async (req, res)
         const eta = leggiEta(r?.eta);
         // Con la data di nascita l'età non va più aggiornata a mano: si ricalcola da sola.
         const dataNascita = /^\d{4}-\d{2}-\d{2}$/.test(String(r?.data_nascita ?? '')) ? r.data_nascita : null;
+        // Il comune di nascita si tiene solo per i ragazzi; se nel file manca resta quello che c'era.
+        const comuneNascita = ruolo === 'ragazzo' ? testo(r?.comune_nascita, MAX_COMUNE) || null : null;
         // Anno di percorso nella branca (1, 2, 3…): serve solo ai ragazzi e riempie solo i vuoti.
         const annoScritto = Number(r?.anno_branca);
         // I ragazzi vanno nella branca di chi li carica: la colonna del file non conta.
@@ -1425,7 +1427,7 @@ app.post('/api/utenti/importa', verificaRuolo('capo', 'admin'), async (req, res)
                 emailViste.add(email);
             }
         }
-        valide.push({ codice, nome, cognome, eta, dataNascita, annoBranca, branca,
+        valide.push({ codice, nome, cognome, eta, dataNascita, comuneNascita, annoBranca, branca,
                       livelloFoca, email: emailScelta, gia: !!gia, inAttesa, daAggiornare });
     });
 
@@ -1439,8 +1441,10 @@ app.post('/api/utenti/importa', verificaRuolo('capo', 'admin'), async (req, res)
                 const codice = codiceDaSalvare(v.codice);
                 await dbRun(`UPDATE utenti SET codice_censimento = ?, codice_impronta = ?, nome = ?, cognome = ?,
                              eta = COALESCE(?, eta), data_nascita = COALESCE(?, data_nascita),
+                             comune_nascita = COALESCE(?, comune_nascita),
                              anno_branca = COALESCE(anno_branca, ?) WHERE id = ?`,
-                    [codice.codice, codice.impronta, v.nome, v.cognome, v.eta, cripta(v.dataNascita), v.annoBranca, v.inAttesa.id]);
+                    [codice.codice, codice.impronta, v.nome, v.cognome, v.eta, cripta(v.dataNascita),
+                     cripta(v.comuneNascita), v.annoBranca, v.inAttesa.id]);
                 abbinati++;
                 continue;
             }
@@ -1448,30 +1452,33 @@ app.post('/api/utenti/importa', verificaRuolo('capo', 'admin'), async (req, res)
                 // Riga del file senza codice di una persona che c'è già: si aggiornano i dati,
                 // il codice che ha resta com'è.
                 await dbRun(`UPDATE utenti SET nome = ?, cognome = ?, eta = COALESCE(?, eta),
-                             data_nascita = COALESCE(?, data_nascita),
+                             data_nascita = COALESCE(?, data_nascita), comune_nascita = COALESCE(?, comune_nascita),
                              anno_branca = COALESCE(anno_branca, ?) WHERE id = ?`,
-                    [v.nome, v.cognome, v.eta, cripta(v.dataNascita), v.annoBranca, v.daAggiornare.id]);
+                    [v.nome, v.cognome, v.eta, cripta(v.dataNascita), cripta(v.comuneNascita), v.annoBranca,
+                     v.daAggiornare.id]);
                 giaAggiornati++;
                 continue;
             }
             if (!v.codice) {
                 // Nuovo e senza codice: entra lo stesso, il codice glielo si mette più avanti.
-                await dbRun(`INSERT INTO utenti (codice_censimento, nome, cognome, eta, data_nascita,
-                             ruolo, branca, anno_branca) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)`,
-                    [v.nome, v.cognome, v.eta, cripta(v.dataNascita), ruolo, v.branca, v.annoBranca]);
+                await dbRun(`INSERT INTO utenti (codice_censimento, nome, cognome, eta, data_nascita, comune_nascita,
+                             ruolo, branca, anno_branca) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [v.nome, v.cognome, v.eta, cripta(v.dataNascita), cripta(v.comuneNascita), ruolo, v.branca,
+                     v.annoBranca]);
                 continue;
             }
-            // Codice, email e data di nascita si salvano cifrati (codice ed email con la loro
+            // Codice, email, data e comune di nascita si salvano cifrati (codice ed email con la loro
             // impronta: è l'impronta del codice a dire se la persona c'è già).
             const salvata = emailDaSalvare(v.email);
             const codice = codiceDaSalvare(v.codice);
             await dbRun(`INSERT INTO utenti (codice_censimento, codice_impronta, nome, cognome, eta, data_nascita,
-                         ruolo, branca, anno_branca, livello_foca, email, email_impronta)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         comune_nascita, ruolo, branca, anno_branca, livello_foca, email, email_impronta)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                          ON CONFLICT (codice_impronta) DO UPDATE SET
                            nome = EXCLUDED.nome, cognome = EXCLUDED.cognome,
                            eta = COALESCE(EXCLUDED.eta, utenti.eta),
                            data_nascita = COALESCE(EXCLUDED.data_nascita, utenti.data_nascita),
+                           comune_nascita = COALESCE(EXCLUDED.comune_nascita, utenti.comune_nascita),
                            branca = COALESCE(EXCLUDED.branca, utenti.branca),
                            -- L'anno di percorso lo comanda l'apertura dell'anno: il file riempie solo i vuoti.
                            anno_branca = COALESCE(utenti.anno_branca, EXCLUDED.anno_branca),
@@ -1482,8 +1489,8 @@ app.post('/api/utenti/importa', verificaRuolo('capo', 'admin'), async (req, res)
                                         ELSE COALESCE(EXCLUDED.email, utenti.email) END,
                            email_impronta = CASE WHEN utenti.email_a_mano = 1 THEN utenti.email_impronta
                                                  ELSE COALESCE(EXCLUDED.email_impronta, utenti.email_impronta) END`,
-                [codice.codice, codice.impronta, v.nome, v.cognome, v.eta, cripta(v.dataNascita), ruolo,
-                 v.branca, v.annoBranca, v.livelloFoca, salvata.email, salvata.impronta]);
+                [codice.codice, codice.impronta, v.nome, v.cognome, v.eta, cripta(v.dataNascita),
+                 cripta(v.comuneNascita), ruolo, v.branca, v.annoBranca, v.livelloFoca, salvata.email, salvata.impronta]);
         }
         await dbRun('COMMIT');
         const aggiornati = valide.filter(v => v.gia).length + giaAggiornati;
@@ -3446,6 +3453,7 @@ const STATI_RICHIESTA = ['nuova', 'letta', 'archiviata'];
 const MAX_NOTE_RICHIESTA = 1000;
 const MAX_NOME_RICHIESTA = 60;
 const MAX_INDIRIZZO = 200;
+const MAX_COMUNE = 80;
 
 // Il modulo è aperto a tutti: si accettano al massimo 5 richieste all'ora dallo stesso indirizzo,
 // così una pagina pubblica non può riempire il database.
@@ -3479,6 +3487,9 @@ function validaRichiestaIscrizione(body) {
     if (giorno.getFullYear() !== anno4 || giorno.getMonth() !== mese - 1 || giorno.getDate() !== giornoMese)
         return { errore: "La data di nascita non esiste." };
     if (giorno.getTime() > Date.now()) return { errore: "La data di nascita non può essere nel futuro." };
+
+    const comuneNascita = testo(body.comune_nascita, MAX_COMUNE);
+    if (!comuneNascita) return { errore: "Scrivi il comune di nascita." };
 
     const anno = ANNI_PER_VALORE.get(testo(body.anno_scolastico, 30));
     if (!anno) return { errore: "Scegli l'anno scolastico che stai facendo." };
@@ -3514,7 +3525,7 @@ function validaRichiestaIscrizione(body) {
         dati: {
             genitore1_nome: genitore1Nome, genitore1_cognome: genitore1Cognome,
             genitore2_nome: genitore2Nome || null, genitore2_cognome: genitore2Cognome || null,
-            nome, cognome, data_nascita: dataNascita, anno_scolastico: anno.valore, branca: anno.branca,
+            nome, cognome, data_nascita: dataNascita, comune_nascita: comuneNascita, anno_scolastico: anno.valore, branca: anno.branca,
             telefono: telefono || null, email: email || null, note: testo(body.note, MAX_NOTE_RICHIESTA) || null,
             catechismo, indirizzo,
         }
@@ -3527,6 +3538,8 @@ function richiestaPubblica(r) {
         nome: r.nome,
         cognome: r.cognome,
         data_nascita: r.data_nascita,
+        // null per le richieste arrivate prima che il modulo lo chiedesse.
+        comune_nascita: r.comune_nascita || null,
         anno_scolastico: r.anno_scolastico,
         branca: r.branca,
         telefono: r.telefono,
@@ -3595,13 +3608,14 @@ app.post('/api/richieste-iscrizione', async (req, res) => {
     try {
         await dbRun(`INSERT INTO richiesta_iscrizione (nome, cognome, data_nascita, anno_scolastico, branca,
                      telefono, email, note, genitore1_nome, genitore1_cognome, genitore2_nome, genitore2_cognome,
-                     catechismo, indirizzo)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            // Data di nascita, contatti, note, genitori, catechismo e indirizzo si salvano cifrati.
+                     catechismo, indirizzo, comune_nascita)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            // Data e comune di nascita, contatti, note, genitori, catechismo e indirizzo si salvano cifrati.
             [dati.nome, dati.cognome, cripta(dati.data_nascita), dati.anno_scolastico, dati.branca,
              cripta(dati.telefono), cripta(dati.email), cripta(dati.note), cripta(dati.genitore1_nome),
              cripta(dati.genitore1_cognome), cripta(dati.genitore2_nome), cripta(dati.genitore2_cognome),
-             cripta(dati.catechismo === null ? null : String(dati.catechismo)), cripta(dati.indirizzo)]);
+             cripta(dati.catechismo === null ? null : String(dati.catechismo)), cripta(dati.indirizzo),
+             cripta(dati.comune_nascita)]);
         res.status(201).json({ message: "Richiesta inviata! I capi ti ricontattano presto.", branca: dati.branca });
         // Le email ai capi partono dopo aver risposto: chi compila il modulo non aspetta Gmail.
         avvisaCapiNuovaRichiesta(dati.branca).catch(err => console.error('❌ Avviso ai capi:', err.message));
@@ -3947,7 +3961,8 @@ async function brancaDiLavoro(req, richiesta) {
 async function elencoRagazzi(branca) {
     const anno = await annoCorrente();
     const dove = branca ? 'AND branca = ?' : '';
-    const ragazzi = await dbAll(`SELECT id, codice_censimento, nome, cognome, eta, data_nascita, branca, anno_branca,
+    const ragazzi = await dbAll(`SELECT id, codice_censimento, nome, cognome, eta, data_nascita, comune_nascita,
+                                        branca, anno_branca,
                                         telefono, email, tesoriere, (password IS NOT NULL)::int AS attivato,
                                         (SELECT COUNT(*) FROM scheda_allegato a WHERE a.rif_utente = utenti.id)::int
                                           AS allegati_scheda
@@ -3973,6 +3988,7 @@ async function elencoRagazzi(branca) {
             cognome: r.cognome,
             eta: etaDiOggi(r),
             data_nascita: r.data_nascita || null,
+            comune_nascita: r.comune_nascita || null,
             branca: r.branca,
             anno_branca: r.anno_branca,
             tappa: tappaDi(r.branca, r.anno_branca),
@@ -4038,6 +4054,8 @@ app.post('/api/ragazzi', verificaRuolo('capo', 'admin'), async (req, res) => {
         if (dataNascita && !/^\d{4}-\d{2}-\d{2}$/.test(dataNascita))
             return res.status(400).json({ error: "La data di nascita va scritta come AAAA-MM-GG." });
 
+        const comuneNascita = testo(body.comune_nascita, MAX_COMUNE) || null;
+
         const { errore, codice } = await leggiCodiceLibero(body.codice_censimento);
         if (errore) return res.status(400).json({ error: errore });
 
@@ -4045,18 +4063,21 @@ app.post('/api/ragazzi', verificaRuolo('capo', 'admin'), async (req, res) => {
         const anno = Number.isInteger(annoBranca) && annoBranca >= 1 && annoBranca <= (ANNI_DI_BRANCA[branca] || 5)
             ? annoBranca : null;
 
-        // Codice, data di nascita, telefono ed email si salvano cifrati (codice ed email con la
-        // loro impronta).
+        // Codice, data e comune di nascita, telefono ed email si salvano cifrati (codice ed email
+        // con la loro impronta).
         const email = emailDaSalvare(testo(body.email, 120).toLowerCase() || null);
         const salvato = codiceDaSalvare(codice);
         const esito = await dbRun(`INSERT INTO utenti (codice_censimento, codice_impronta, nome, cognome,
-                                   data_nascita, ruolo, branca, anno_branca, telefono, email, email_impronta)
-                                   VALUES (?, ?, ?, ?, ?, 'ragazzo', ?, ?, ?, ?, ?)`,
-            [salvato.codice, salvato.impronta, nome, cognome, cripta(dataNascita || null), branca, anno,
+                                   data_nascita, comune_nascita, ruolo, branca, anno_branca, telefono, email,
+                                   email_impronta)
+                                   VALUES (?, ?, ?, ?, ?, ?, 'ragazzo', ?, ?, ?, ?, ?)`,
+            [salvato.codice, salvato.impronta, nome, cognome, cripta(dataNascita || null), cripta(comuneNascita),
+             branca, anno,
              cripta(testo(body.telefono, 20) || null), email.email, email.impronta]);
         const nuovo = await dbGet(`SELECT * FROM utenti WHERE id = ?`, [esito.lastID]);
         await riempiSchedaDaRichiesta(nuovo).catch(err => console.error('❌ Scheda dalla richiesta:', err.message));
-        res.status(201).json({ ragazzo: { ...utentePubblico(nuovo), anno_branca: nuovo.anno_branca,
+        res.status(201).json({ ragazzo: { ...utentePubblico(nuovo), comune_nascita: nuovo.comune_nascita || null,
+                                          anno_branca: nuovo.anno_branca,
                                           tappa: tappaDi(nuovo.branca, nuovo.anno_branca), quote: [] } });
     } catch (err) {
         erroreInterno(res, err);
@@ -4110,6 +4131,8 @@ app.put('/api/ragazzi/:id', verificaRuolo('capo', 'admin'), async (req, res) => 
         if (dataNascita && !/^\d{4}-\d{2}-\d{2}$/.test(dataNascita))
             return res.status(400).json({ error: "La data di nascita va scritta come AAAA-MM-GG." });
 
+        const comuneNascita = testo(body.comune_nascita, MAX_COMUNE) || null;
+
         // Il capo muove i ragazzi solo dentro la sua branca; il capogruppo può spostarli.
         const branca = BRANCHE.includes(body.branca) ? body.branca : ragazzo.branca;
         if (req.user.ruolo !== 'admin' && branca !== ragazzo.branca)
@@ -4131,13 +4154,15 @@ app.put('/api/ragazzi/:id', verificaRuolo('capo', 'admin'), async (req, res) => 
         const email = emailDaSalvare(testo(body.email, 120).toLowerCase() || null);
         const salvato = codiceDaSalvare(codice);
         await dbRun(`UPDATE utenti SET codice_censimento = ?, codice_impronta = ?, nome = ?, cognome = ?,
-                     data_nascita = ?, branca = ?, anno_branca = ?, telefono = ?, email = ?, email_impronta = ?,
-                     tesoriere = ? WHERE id = ?`,
-            [salvato.codice, salvato.impronta, nome, cognome, cripta(dataNascita || null), branca, anno,
+                     data_nascita = ?, comune_nascita = ?, branca = ?, anno_branca = ?, telefono = ?, email = ?,
+                     email_impronta = ?, tesoriere = ? WHERE id = ?`,
+            [salvato.codice, salvato.impronta, nome, cognome, cripta(dataNascita || null), cripta(comuneNascita),
+             branca, anno,
              cripta(testo(body.telefono, 20) || null), email.email, email.impronta,
              tesoriere, ragazzo.id]);
         const aggiornato = await dbGet(`SELECT * FROM utenti WHERE id = ?`, [ragazzo.id]);
-        res.json({ ragazzo: { ...utentePubblico(aggiornato), anno_branca: aggiornato.anno_branca,
+        res.json({ ragazzo: { ...utentePubblico(aggiornato), comune_nascita: aggiornato.comune_nascita || null,
+                              anno_branca: aggiornato.anno_branca,
                               tappa: tappaDi(aggiornato.branca, aggiornato.anno_branca) } });
     } catch (err) {
         erroreInterno(res, err);
@@ -4207,6 +4232,11 @@ async function riempiSchedaDaRichiesta(ragazzo, richieste = null) {
     const richiesta = tutte.find(r => r.data_nascita === ragazzo.data_nascita
         && chiaveNome(r.nome, r.cognome) === chiaveNome(ragazzo.nome, ragazzo.cognome));
     if (!richiesta) return false;
+
+    // Il comune di nascita sta col ragazzo, non nella scheda: si mette solo se manca.
+    if (richiesta.comune_nascita && !ragazzo.comune_nascita)
+        await dbRun(`UPDATE utenti SET comune_nascita = ? WHERE id = ? AND comune_nascita IS NULL`,
+            [cripta(richiesta.comune_nascita), ragazzo.id]);
 
     // Il contatto lasciato nel modulo è quasi sempre quello di un genitore.
     const daRichiesta = {
@@ -4284,6 +4314,7 @@ app.get('/api/ragazzi/:id/scheda', verificaRuolo('capo', 'admin'), async (req, r
             ragazzo: {
                 id: ragazzo.id, nome: ragazzo.nome, cognome: ragazzo.cognome,
                 codice_censimento: ragazzo.codice_censimento, data_nascita: ragazzo.data_nascita || null,
+                comune_nascita: ragazzo.comune_nascita || null,
                 eta: etaDiOggi(ragazzo), branca: ragazzo.branca, tappa: tappaDi(ragazzo.branca, ragazzo.anno_branca),
                 telefono: ragazzo.telefono, email: ragazzo.email,
             },
@@ -4444,7 +4475,7 @@ app.get('/api/ragazzi/csv', verificaRuolo('capo', 'admin'), async (req, res) => 
             return /[";\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
         };
         const euro = (n) => Number(n || 0).toFixed(2).replace('.', ',');
-        const intestazioni = ['Codice', 'Cognome', 'Nome', 'Data di nascita', 'Età', 'Branca', 'Anno',
+        const intestazioni = ['Codice', 'Cognome', 'Nome', 'Data di nascita', 'Comune di nascita', 'Età', 'Branca', 'Anno',
             'Telefono', 'Email', 'Genitore', 'Telefono genitore', 'Indirizzo', ...attivita.map(a => `${a.nome} (${euro(a.importo)} a testa)`),
             'Totale dovuto', 'Totale versato', 'Resta da dare'];
 
@@ -4464,7 +4495,7 @@ app.get('/api/ragazzi/csv', verificaRuolo('capo', 'admin'), async (req, res) => 
             // Due genitori: "Mario Rossi / Anna Bianchi", coi telefoni nello stesso ordine.
             const scheda = schede.get(r.id);
             const genitori = genitoriDi(scheda);
-            return [r.codice_censimento, r.cognome, r.nome, r.data_nascita || '', r.eta ?? '',
+            return [r.codice_censimento, r.cognome, r.nome, r.data_nascita || '', r.comune_nascita || '', r.eta ?? '',
                 r.branca || '', r.tappa || '', r.telefono || '', r.email || '',
                 genitori.map(g => g.nome || '?').join(' / '),
                 genitori.some(g => g.telefono) ? genitori.map(g => g.telefono || '-').join(' / ') : '',

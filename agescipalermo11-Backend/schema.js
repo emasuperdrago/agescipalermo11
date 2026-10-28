@@ -47,6 +47,8 @@ const TABELLE = [
     // Il titolo di admin (lo vede solo chi gestisce il sito), indipendente da capogruppo: chi ha
     // almeno uno dei due ha i permessi del capogruppo (ruolo = 'admin' nel database).
     `ALTER TABLE utenti ADD COLUMN IF NOT EXISTS titolo_admin SMALLINT NOT NULL DEFAULT 0`,
+    // Comune di nascita dei ragazzi (cifrato): dal modulo di iscrizione, a mano o dal censimento.
+    `ALTER TABLE utenti ADD COLUMN IF NOT EXISTS comune_nascita TEXT`,
 
     `CREATE TABLE IF NOT EXISTS anno_scout (
         id SERIAL PRIMARY KEY,
@@ -320,6 +322,8 @@ const TABELLE = [
     `ALTER TABLE richiesta_iscrizione ADD COLUMN IF NOT EXISTS catechismo TEXT`,
     // L'indirizzo di casa (cifrato), chiesto dal modulo da ottobre 2026.
     `ALTER TABLE richiesta_iscrizione ADD COLUMN IF NOT EXISTS indirizzo TEXT`,
+    // Il comune di nascita (cifrato), chiesto dal modulo da ottobre 2026.
+    `ALTER TABLE richiesta_iscrizione ADD COLUMN IF NOT EXISTS comune_nascita TEXT`,
 
     // Scheda personale di un ragazzo: la vedono e la cambiano i capi della sua branca e i
     // capigruppo. Tutti i campi sono cifrati (indirizzo, genitori, note sanitarie).

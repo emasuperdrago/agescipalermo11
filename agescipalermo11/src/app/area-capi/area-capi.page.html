@@ -273,6 +273,7 @@
                   <strong>{{ r.nome }} {{ r.cognome }}</strong>
                   <small>
                     {{ dataPerEsteso(r.data_nascita) }}
+                    @if (r.comune_nascita) { a {{ r.comune_nascita }} }
                     @if (etaDa(r.data_nascita) !== null) { · {{ etaDa(r.data_nascita) }} anni }
                   </small>
                 </div>

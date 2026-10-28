@@ -18,7 +18,7 @@ export interface LetturaExcel {
   ignorate: number;
 }
 
-type Campo = 'codice' | 'nome' | 'cognome' | 'eta' | 'nascita' | 'branca' | 'unita' | 'anno' | 'foca' | 'email';
+type Campo = 'codice' | 'nome' | 'cognome' | 'eta' | 'nascita' | 'comune' | 'branca' | 'unita' | 'anno' | 'foca' | 'email';
 
 /** Chi si sta caricando e, per i ragazzi, di quale branca. */
 export interface OpzioniLettura {
@@ -38,8 +38,8 @@ function normalizza(valore: unknown): string {
 
 /**
  * Riconosce le intestazioni delle colonne che il sito legge: quelle dell'elenco soci del
- * censimento AGESCI (CodiceSocio, Nome, Cognome, DataNascita, TipoUnita, Branca, LivelloFoCa,
- * Email) e quelle più comuni dei file fatti a mano. Tutte le altre colonne (codice fiscale,
+ * censimento AGESCI (CodiceSocio, Nome, Cognome, DataNascita, ComuneNascita, TipoUnita, Branca,
+ * LivelloFoCa, Email) e quelle più comuni dei file fatti a mano. Tutte le altre colonne (codice fiscale,
  * indirizzo, cellulare, informative…) non si leggono proprio.
  */
 function campoDaIntestazione(cella: unknown): Campo | null {
@@ -51,8 +51,10 @@ function campoDaIntestazione(cella: unknown): Campo | null {
   if (t === 'cognome') return 'cognome';
   if (t === 'nome') return 'nome';
   if (t === 'eta' || t === 'anni' || t.startsWith('eta')) return 'eta';
-  // "DataNascita" sì, "ComuneNascita" no.
+  // "DataNascita" è la data, "ComuneNascita" il comune (gli altri "…Nascita", tipo la provincia, no).
   if (t === 'nascita' || t === 'datanascita' || t === 'datadinascita' || t === 'nascitadata') return 'nascita';
+  if (t === 'comunenascita' || t === 'comunedinascita' || t === 'luogonascita' || t === 'luogodinascita'
+      || t === 'natoa') return 'comune';
   if (t === 'branca') return 'branca';
   if (t === 'tipounita' || t === 'unita') return 'unita';
   if (t.includes('foca')) return 'foca';
@@ -256,6 +258,8 @@ export class CensitiService {
       const dataNascita = colonne.has('nascita') ? dataDaCella(cella(valori, 'nascita')) : null;
       const eta = etaLetta === null ? etaDaNascita(dataNascita) : etaLetta;
       const annoBranca = colonne.has('anno') ? leggiAnnoBranca(cella(valori, 'anno')) : null;
+      // Il comune di nascita si tiene solo per i ragazzi.
+      const comune = !perCapi && colonne.has('comune') ? sistemaMaiuscole(testoCella(cella(valori, 'comune'))) : '';
 
       let motivo: string | null = null;
       if (codice === undefined) motivo = 'Codice censimento non numerico';
@@ -274,7 +278,7 @@ export class CensitiService {
       if (codice) visti.add(codice);
       righe.push({
         riga, codice_censimento: codice ?? null, nome, cognome,
-        eta: eta ?? null, data_nascita: dataNascita, anno_branca: annoBranca ?? null,
+        eta: eta ?? null, data_nascita: dataNascita, comune_nascita: comune || null, anno_branca: annoBranca ?? null,
         // Nell'elenco del censimento i capi sono "Adulti": la loro branca si mette a mano o con
         // il secondo file, e qui resta vuota (quella che hanno già non si tocca).
         branca: capo || (!perCapi && !brancaFile) ? null : brancaFile,

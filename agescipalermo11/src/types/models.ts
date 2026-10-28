@@ -172,6 +172,8 @@ export interface RigaImport {
   eta: number | null;
   /** "AAAA-MM-GG": se c'è, l'età la ricalcola il server a ogni compleanno. */
   data_nascita: string | null;
+  /** Solo per i ragazzi (colonna ComuneNascita del censimento); null se nel file manca. */
+  comune_nascita: string | null;
   /** Anno di percorso nella branca (1, 2, 3…): riempie solo chi non ce l'ha ancora. */
   anno_branca: number | null;
   branca: Branca | null;
@@ -429,6 +431,8 @@ export interface RichiestaIscrizione {
   cognome: string;
   /** "AAAA-MM-GG" (giorno locale). */
   data_nascita: string;
+  /** null per le richieste arrivate prima che il modulo lo chiedesse. */
+  comune_nascita: string | null;
   anno_scolastico: AnnoScolastico;
   /** Calcolata dal server sull'anno scolastico: decide a quali capi arriva. */
   branca: Branca;
@@ -460,6 +464,7 @@ export interface DatiRichiestaIscrizione {
   genitore2_nome: string;
   genitore2_cognome: string;
   data_nascita: string;
+  comune_nascita: string;
   anno_scolastico: AnnoScolastico | '';
   telefono: string;
   email: string;
@@ -521,6 +526,7 @@ export interface RagazzoElenco {
   cognome: string;
   eta: number | null;
   data_nascita: string | null;
+  comune_nascita: string | null;
   branca: Branca | null;
   /** 1, 2, 3…: l'anno dentro la branca. */
   anno_branca: number | null;
@@ -570,6 +576,7 @@ export interface SchedaRagazzo {
     cognome: string;
     codice_censimento: number | null;
     data_nascita: string | null;
+    comune_nascita: string | null;
     eta: number | null;
     branca: Branca | null;
     tappa: string | null;
@@ -601,6 +608,7 @@ export interface DatiRagazzo {
   nome: string;
   cognome: string;
   data_nascita: string | null;
+  comune_nascita: string | null;
   branca: Branca | null;
   anno_branca: number | null;
   telefono: string | null;

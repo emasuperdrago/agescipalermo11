@@ -45,6 +45,11 @@
       </p>
     </fieldset>
 
+    <label class="campo">
+      <span class="etichetta">Comune di nascita</span>
+      <input name="comune_nascita" [(ngModel)]="dati.comune_nascita" maxlength="80" placeholder="Es. Palermo" />
+    </label>
+
     @if (puoSpostare) {
       <fieldset class="campo">
         <legend class="etichetta">Branca</legend>

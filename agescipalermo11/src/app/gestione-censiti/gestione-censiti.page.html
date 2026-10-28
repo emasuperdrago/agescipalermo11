@@ -65,7 +65,8 @@
         <p class="descrizione">
           Va bene l'elenco soci del censimento così com'è. Dal file (.xlsx) si leggono solo
           <strong>codice socio, nome, cognome, data di nascita, tipo unità e branca</strong>@if (tipo === 'capi') {,
-          e per i capi anche <strong>livello Fo.Ca. ed email</strong>}: tutte le altre colonne
+          e per i capi anche <strong>livello Fo.Ca. ed email</strong>}@else {,
+          e per i ragazzi anche il <strong>comune di nascita</strong>}: tutte le altre colonne
           (codice fiscale, indirizzo, cellulare…) non vengono nemmeno lette. I codici già presenti
           vengono aggiornati, non duplicati.
           @if (tipo === 'ragazzi') {
@@ -152,7 +153,7 @@
                 <table>
                   <thead>
                     <tr><th>Riga</th><th>Codice</th><th>Cognome</th><th>Nome</th><th>Nascita</th><th>Età</th>
-                        @if (tipo === 'ragazzi') { <th>Anno</th><th>Branca</th> }
+                        @if (tipo === 'ragazzi') { <th>Nato a</th><th>Anno</th><th>Branca</th> }
                         @else { <th>Fo.Ca.</th><th>Email</th> }</tr>
                   </thead>
                   <tbody>
@@ -168,6 +169,7 @@
                         <td>{{ dataItaliana(r.data_nascita) }}</td>
                         <td>{{ r.eta ?? '—' }}</td>
                         @if (tipo === 'ragazzi') {
+                          <td>{{ r.comune_nascita || '—' }}</td>
                           <td>{{ r.anno_branca ?? '—' }}</td>
                           <td>{{ brancaScritta(branca) }}</td>
                         } @else {
