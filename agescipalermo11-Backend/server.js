@@ -4423,13 +4423,29 @@ app.get('/api/ragazzi/csv', verificaRuolo('capo', 'admin'), async (req, res) => 
         if (!branca) return res.status(403).json({ error: "Non risulti in nessuna branca." });
 
         const { anno, attivita, ragazzi } = await elencoRagazzi(branca);
+        // Genitori e indirizzo stanno nella scheda del ragazzo, cifrati: si decifrano solo per il file.
+        const richieste = await dbAll(`SELECT * FROM richiesta_iscrizione WHERE esito = 'accettata'`);
+        for (const r of ragazzi)
+            await riempiSchedaDaRichiesta(r, richieste).catch(err => console.error('❌ Scheda dalla richiesta:', err.message));
+        const schede = new Map();
+        if (ragazzi.length) {
+            const segnaposti = ragazzi.map(() => '?').join(', ');
+            for (const s of await dbAll(`SELECT * FROM scheda_ragazzo WHERE rif_utente IN (${segnaposti})`, ragazzi.map(r => r.id)))
+                schede.set(s.rif_utente, s);
+        }
+        const genitoriDi = (s) => [1, 2]
+            .map(n => ({
+                nome: [s?.[`genitore${n}_nome`], s?.[`genitore${n}_cognome`]].filter(Boolean).join(' '),
+                telefono: s?.[`genitore${n}_telefono`] || '',
+            }))
+            .filter(g => g.nome || g.telefono);
         const campo = (valore) => {
             const t = String(valore ?? '');
             return /[";\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
         };
         const euro = (n) => Number(n || 0).toFixed(2).replace('.', ',');
         const intestazioni = ['Codice', 'Cognome', 'Nome', 'Data di nascita', 'Età', 'Branca', 'Anno',
-            'Telefono', 'Email', ...attivita.map(a => `${a.nome} (${euro(a.importo)} a testa)`),
+            'Telefono', 'Email', 'Genitore', 'Telefono genitore', 'Indirizzo', ...attivita.map(a => `${a.nome} (${euro(a.importo)} a testa)`),
             'Totale dovuto', 'Totale versato', 'Resta da dare'];
 
         const righe = ragazzi.map(r => {
@@ -4445,8 +4461,14 @@ app.get('/api/ragazzi/csv', verificaRuolo('capo', 'admin'), async (req, res) => 
                 return somma + Number(q?.quota ?? a.importo ?? 0);
             }, 0);
             const versato = r.quote.reduce((somma, q) => somma + Number(q.versato || 0), 0);
+            // Due genitori: "Mario Rossi / Anna Bianchi", coi telefoni nello stesso ordine.
+            const scheda = schede.get(r.id);
+            const genitori = genitoriDi(scheda);
             return [r.codice_censimento, r.cognome, r.nome, r.data_nascita || '', r.eta ?? '',
                 r.branca || '', r.tappa || '', r.telefono || '', r.email || '',
+                genitori.map(g => g.nome || '?').join(' / '),
+                genitori.some(g => g.telefono) ? genitori.map(g => g.telefono || '-').join(' / ') : '',
+                scheda?.indirizzo || '',
                 ...versati, euro(dovuto), euro(versato), euro(Math.max(0, dovuto - versato))]
                 .map(campo).join(';');
         });
@@ -4455,6 +4477,7 @@ app.get('/api/ragazzi/csv', verificaRuolo('capo', 'admin'), async (req, res) => 
         // Il segno iniziale dice a Excel che il file è in UTF-8: così le accentate si vedono giuste.
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', `attachment; filename="${nomeFile}"`);
+        res.setHeader('Cache-Control', 'no-store');
         res.send('﻿' + [intestazioni.map(campo).join(';'), ...righe].join('\r\n'));
     } catch (err) {
         erroreInterno(res, err);
