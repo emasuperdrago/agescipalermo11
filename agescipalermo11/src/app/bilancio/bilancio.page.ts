@@ -7,15 +7,16 @@ import {
   IonRouterLinkWithHref, IonContent, ToastController
 } from '@ionic/angular/standalone';
 import {
-  addOutline, arrowBackOutline, arrowDownCircleOutline, arrowUpCircleOutline, cameraOutline,
-  closeOutline, downloadOutline, imageOutline, pencilOutline, trashOutline, walletOutline
+  addOutline, arrowBackOutline, arrowDownCircleOutline, arrowUpCircleOutline, cameraOutline, cardOutline,
+  cashOutline, closeOutline, downloadOutline, imageOutline, pencilOutline, swapHorizontalOutline, trashOutline,
+  walletOutline, warningOutline
 } from 'ionicons/icons';
 import { preparaImmagine } from '../services/immagini';
 import { BarraInferioreComponent } from '../components/barra-inferiore/barra-inferiore.component';
 import { ZonaCapiService, euro } from '../services/zona-capi';
 import { backendUrl } from '../services/api';
 import { nomeBranca } from '../services/posti';
-import { AnnoDiCassa, AnnoScout, DatiMovimento, Movimento, NomeCassa } from '../../types/models';
+import { AnnoDiCassa, AnnoScout, DatiMovimento, Movimento, NomeCassa, RiepilogoCassa } from '../../types/models';
 import { SelettoreDataComponent } from '../components/selettore-data/selettore-data.component';
 
 /**
@@ -37,8 +38,10 @@ export class BilancioPage implements OnInit {
     indietro: arrowBackOutline, cassa: walletOutline, aggiungi: addOutline, modifica: pencilOutline,
     elimina: trashOutline, entrata: arrowDownCircleOutline, uscita: arrowUpCircleOutline,
     scontrino: cameraOutline, foto: imageOutline, chiudi: closeOutline, scarica: downloadOutline,
+    contanti: cashOutline, carta: cardOutline, cambio: swapHorizontalOutline, attenzione: warningOutline,
   };
   readonly euro = euro;
+  readonly nomeBranca = nomeBranca;
 
   private rotta = inject(ActivatedRoute);
   private zona = inject(ZonaCapiService);
@@ -55,6 +58,16 @@ export class BilancioPage implements OnInit {
   entrate = 0;
   uscite = 0;
   saldo = 0;
+  /**
+   * Branco e reparto: ogni movimento è in contanti o sulla carta di gruppo, e si possono fare
+   * i cambi (prelievo dalla carta, versamento sulla carta) che non toccano il saldo.
+   */
+  conMetodo = false;
+  contanti = 0;
+  carta = 0;
+  daSpecificare = { numero: 0, importo: 0 };
+  /** Solo nella cassa di gruppo, che è la carta di gruppo: di chi sono i soldi. */
+  divisione: RiepilogoCassa['divisione'] | null = null;
   caricamento = true;
   errore = '';
   /** Chi non può modificare (un rover che non è tesoriere) la cassa la guarda e basta. */
@@ -63,7 +76,7 @@ export class BilancioPage implements OnInit {
   anni: AnnoDiCassa[] = [];
 
   /** Modulo per un movimento nuovo. */
-  nuovo: DatiMovimento = { data: '', descrizione: '', importo: 0, tipo: 'uscita' };
+  nuovo: DatiMovimento = this.moduloVuoto('');
   /** Quando si sta correggendo un movimento già scritto. */
   inModifica: Movimento | null = null;
   /** Foto dello scontrino scelta adesso (già rimpicciolita), da mandare al salvataggio. */
@@ -96,8 +109,13 @@ export class BilancioPage implements OnInit {
       ?? (this.rotta.snapshot.url.some(p => p.path === 'cassa') ? 'clan' : null);
     this.cassa = chiesta === 'branco' || chiesta === 'reparto' || chiesta === 'clan' ? chiesta : 'gruppo';
     this.daAreaCapi = this.rotta.snapshot.queryParamMap.get('da') === 'area-capi';
-    this.nuovo = { data: this.oggi, descrizione: '', importo: 0, tipo: 'uscita' };
+    this.nuovo = this.moduloVuoto(this.oggi);
     this.carica();
+  }
+
+  /** Contanti o carta non si scelgono da soli: meglio chiederlo ogni volta che sbagliarlo. */
+  private moduloVuoto(data: string): DatiMovimento {
+    return { data, descrizione: '', importo: 0, tipo: 'uscita', metodo: null, cambio: 'prelievo' };
   }
 
   /** Oggi come "AAAA-MM-GG", giorno locale (mai quello UTC). */
@@ -134,6 +152,11 @@ export class BilancioPage implements OnInit {
         this.entrate = dati.entrate;
         this.uscite = dati.uscite;
         this.saldo = dati.saldo;
+        this.conMetodo = !!dati.conMetodo;
+        this.contanti = dati.contanti ?? 0;
+        this.carta = dati.carta ?? 0;
+        this.daSpecificare = dati.daSpecificare ?? { numero: 0, importo: 0 };
+        this.divisione = dati.divisione ?? null;
         this.caricamento = false;
         this.errore = '';
       },
@@ -250,16 +273,27 @@ export class BilancioPage implements OnInit {
   }
 
   salva() {
+    const cambio = this.nuovo.tipo === 'cambio';
     const dati: DatiMovimento = {
       data: this.nuovo.data || this.oggi,
       descrizione: this.nuovo.descrizione.trim(),
       importo: Number(this.nuovo.importo),
       tipo: this.nuovo.tipo,
+      ...(cambio ? { cambio: this.nuovo.cambio } : this.conMetodo ? { metodo: this.nuovo.metodo } : {}),
       ...(this.scontrinoNuovo ? { scontrino: this.scontrinoNuovo } : {}),
       ...(this.scontrinoDaRimuovere && !this.scontrinoNuovo ? { rimuovi_scontrino: true } : {}),
     };
-    if (!dati.descrizione || !Number.isFinite(dati.importo) || dati.importo <= 0) {
-      this.avvisa('Scrivi a cosa si riferisce e un importo maggiore di zero.');
+    if (!Number.isFinite(dati.importo) || dati.importo <= 0) {
+      this.avvisa('Scrivi un importo maggiore di zero.');
+      return;
+    }
+    // Il cambio ha già il suo nome ("Prelievo dalla carta di gruppo"): la descrizione è facoltativa.
+    if (!cambio && !dati.descrizione) {
+      this.avvisa('Scrivi a cosa si riferisce.');
+      return;
+    }
+    if (!cambio && this.conMetodo && !dati.metodo) {
+      this.avvisa('Scegli se sono contanti o soldi sulla carta.');
       return;
     }
 
@@ -276,6 +310,10 @@ export class BilancioPage implements OnInit {
   }
 
   modifica(movimento: Movimento) {
+    if (movimento.di) {
+      this.avvisa(`Questo movimento è del ${movimento.di}: lo correggono i suoi capi.`);
+      return;
+    }
     if (movimento.automatico) {
       this.avvisa('Questo movimento arriva da una quota: si cambia dalla tabella dei ragazzi.');
       return;
@@ -287,15 +325,30 @@ export class BilancioPage implements OnInit {
       data: movimento.data,
       descrizione: movimento.descrizione,
       importo: Math.abs(movimento.importo),
-      tipo: movimento.importo < 0 ? 'uscita' : 'entrata',
+      tipo: movimento.cambio ? 'cambio' : movimento.importo < 0 ? 'uscita' : 'entrata',
+      metodo: movimento.metodo ?? null,
+      cambio: movimento.cambio ?? 'prelievo',
     };
+  }
+
+  /** Nella cassa di branco o reparto un cambio non è un'entrata né un'uscita. */
+  eCambio(m: Movimento): boolean {
+    return !!m.cambio && !m.di;
+  }
+
+  /** Per la riga del movimento: dove stanno i soldi. */
+  dove(m: Movimento): string {
+    if (m.cambio) return m.cambio === 'prelievo' ? 'carta → contanti' : 'contanti → carta';
+    if (m.metodo === 'contanti') return 'contanti';
+    if (m.metodo === 'carta') return 'carta';
+    return '';
   }
 
   annullaModifica() {
     this.inModifica = null;
     this.scontrinoNuovo = null;
     this.scontrinoDaRimuovere = false;
-    this.nuovo = { data: this.oggi, descrizione: '', importo: 0, tipo: 'uscita' };
+    this.nuovo = this.moduloVuoto(this.oggi);
   }
 
   async confermaElimina(movimento: Movimento) {

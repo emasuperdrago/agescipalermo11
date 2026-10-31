@@ -3892,14 +3892,22 @@ app.post('/api/anno-scout/apri', verificaRuolo('admin'), async (req, res) => {
                              SELECT ?, branca, nome, importo, ordine FROM attivita_quota WHERE rif_anno = ?`,
                     [nuovoAnno, vecchio.id]);
 
-                // In cassa resta il riporto: i soldi non spariscono col cambio d'anno.
+                // In cassa resta il riporto: i soldi non spariscono col cambio d'anno. Branco e
+                // reparto ne hanno uno per i contanti e uno per la carta (più quello da specificare).
                 for (const cassa of CASSE) {
-                    const saldo = await dbGet(`SELECT COALESCE(SUM(importo), 0) AS totale FROM movimento_cassa
-                                               WHERE rif_anno = ? AND cassa = ?`, [vecchio.id, cassa]);
-                    if (!saldo || Math.abs(saldo.totale) < 0.005) continue;
-                    await dbRun(`INSERT INTO movimento_cassa (rif_anno, cassa, data, descrizione, importo, rif_autore)
-                                 VALUES (?, ?, to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD'), ?, ?, ?)`,
-                        [nuovoAnno, cassa, `Riporto dall'anno ${vecchio.etichetta}`, saldo.totale, req.user.id]);
+                    const movimenti = await dbAll(`SELECT importo, metodo, cambio FROM movimento_cassa
+                                                   WHERE rif_anno = ? AND cassa = ?`, [vecchio.id, cassa]);
+                    const conti = contiCassa(movimenti, cassa);
+                    const riporti = CASSE_CON_METODO.includes(cassa)
+                        ? [[' (contanti)', conti.contanti, 'contanti'], [' (carta)', conti.carta, 'carta'],
+                           [' (da specificare)', conti.daSpecificare.importo, null]]
+                        : [['', conti.saldo, null]];
+                    for (const [quale, totale, metodo] of riporti) {
+                        if (Math.abs(totale) < 0.005) continue;
+                        await dbRun(`INSERT INTO movimento_cassa (rif_anno, cassa, data, descrizione, importo, metodo, rif_autore)
+                                     VALUES (?, ?, to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD'), ?, ?, ?, ?)`,
+                            [nuovoAnno, cassa, `Riporto dall'anno ${vecchio.etichetta}${quale}`, totale, metodo, req.user.id]);
+                    }
                 }
             }
             await dbRun('COMMIT');
@@ -4626,17 +4634,23 @@ app.put('/api/quote/pagamenti', verificaRuolo('capo', 'admin'), async (req, res)
             [attivita.id, ragazzo.id]);
 
         // Il movimento in cassa segue il versamento: si crea, si aggiorna o sparisce.
+        // Branco e reparto ricevono le quote sulla carta di gruppo; il clan in contanti, tranne
+        // il censimento, che va direttamente al gruppo.
         if (CASSE.includes(attivita.branca)) {
-            const descrizione = `${attivita.nome} — ${ragazzo.nome} ${ragazzo.cognome}`;
+            const alGruppo = attivita.branca === 'clan' && eCensimento(attivita.nome);
+            const cassa = alGruppo ? 'gruppo' : attivita.branca;
+            const metodo = CASSE_CON_METODO.includes(cassa) ? 'carta' : null;
+            const descrizione = `${attivita.nome} — ${ragazzo.nome} ${ragazzo.cognome}${alGruppo ? ' (clan)' : ''}`;
             if (versato > 0) {
                 const esistente = await dbGet(`SELECT id FROM movimento_cassa WHERE rif_pagamento = ?`, [pagamento.id]);
                 if (esistente) {
-                    await dbRun(`UPDATE movimento_cassa SET importo = ?, descrizione = ?, data = to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD') WHERE id = ?`,
-                        [versato, descrizione, esistente.id]);
+                    await dbRun(`UPDATE movimento_cassa SET cassa = ?, metodo = ?, importo = ?, descrizione = ?,
+                                 data = to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD') WHERE id = ?`,
+                        [cassa, metodo, versato, descrizione, esistente.id]);
                 } else {
-                    await dbRun(`INSERT INTO movimento_cassa (rif_anno, cassa, data, descrizione, importo,
-                                 rif_pagamento, rif_autore) VALUES (?, ?, to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD'), ?, ?, ?, ?)`,
-                        [anno.id, attivita.branca, descrizione, versato, pagamento.id, req.user.id]);
+                    await dbRun(`INSERT INTO movimento_cassa (rif_anno, cassa, data, descrizione, importo, metodo,
+                                 rif_pagamento, rif_autore) VALUES (?, ?, to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD'), ?, ?, ?, ?, ?)`,
+                        [anno.id, cassa, descrizione, versato, metodo, pagamento.id, req.user.id]);
                 }
             } else {
                 await dbRun(`DELETE FROM movimento_cassa WHERE rif_pagamento = ?`, [pagamento.id]);
@@ -4701,28 +4715,89 @@ async function permessiCassa(req, cassa) {
     return { vede: capo, modifica: capo };
 }
 
+// Branco e reparto hanno contanti e soldi sulla carta di gruppo, che è una sola per tutto il
+// gruppo; il clan ha solo contanti, il gruppo solo la carta.
+const CASSE_CON_METODO = ['branco', 'reparto'];
+
+/** L'attività "Censimento": nel clan quella quota non va in cassa di clan ma al gruppo. */
+const eCensimento = (nome) => /^censiment/i.test(String(nome ?? '').trim());
+
+/**
+ * I movimenti da mostrare in una cassa, dal più recente. Quella di gruppo è la carta di
+ * gruppo: i movimenti del gruppo più quelli su carta di branco e reparto (soldi loro, ma sulla
+ * stessa carta), che lì si guardano e basta. Lì un prelievo del branco è un'uscita e un
+ * versamento un'entrata; nella cassa del branco invece non cambiano il saldo.
+ */
+async function movimentiDellaCassa(idAnno, cassa) {
+    const anchePerBranche = cassa === 'gruppo'
+        ? ` OR (m.cassa IN ('branco', 'reparto') AND (m.metodo = 'carta' OR m.cambio IS NOT NULL))` : '';
+    const righe = await dbAll(`SELECT m.*, u.nome AS autore_nome, u.cognome AS autore_cognome
+                               FROM movimento_cassa m LEFT JOIN utenti u ON u.id = m.rif_autore
+                               WHERE m.rif_anno = ? AND (m.cassa = ?${anchePerBranche})
+                               ORDER BY m.data DESC, m.id DESC`, [idAnno, cassa]);
+    if (cassa !== 'gruppo') return righe;
+    return righe.map(m => m.cassa === 'gruppo' ? m
+        : { ...m, di: m.cassa, importo: m.cambio === 'prelievo' ? -m.importo : m.importo });
+}
+
+/**
+ * Entrate, uscite e saldo, e quanto sta in contanti e quanto sulla carta. Nelle casse di branco
+ * e reparto i cambi spostano soldi fra contanti e carta senza essere entrate né uscite; i
+ * movimenti senza metodo (scritti prima) restano da specificare.
+ */
+function contiCassa(movimenti, cassa) {
+    const conti = { entrate: 0, uscite: 0, saldo: 0, contanti: 0, carta: 0, daSpecificare: { numero: 0, importo: 0 } };
+    for (const m of movimenti) {
+        if (m.cambio && CASSE_CON_METODO.includes(cassa)) {
+            const verso = m.cambio === 'prelievo' ? 1 : -1;
+            conti.contanti += verso * m.importo;
+            conti.carta -= verso * m.importo;
+            continue;
+        }
+        if (m.importo > 0) conti.entrate += m.importo; else conti.uscite -= m.importo;
+        conti.saldo += m.importo;
+        const metodo = cassa === 'gruppo' ? 'carta' : cassa === 'clan' ? 'contanti' : m.metodo;
+        if (metodo === 'contanti') conti.contanti += m.importo;
+        else if (metodo === 'carta') conti.carta += m.importo;
+        else {
+            conti.daSpecificare.numero++;
+            conti.daSpecificare.importo += m.importo;
+        }
+    }
+    return conti;
+}
+
+/** Sulla carta di gruppo, di chi sono i soldi: gruppo (con il censimento del clan), branco, reparto. */
+function divisioneCarta(movimenti) {
+    const somma = (filtro) => movimenti.filter(filtro).reduce((s, m) => s + m.importo, 0);
+    return {
+        gruppo: somma(m => !m.di),
+        // Le uniche quote che arrivano al gruppo sono quelle di censimento del clan.
+        censimentoClan: somma(m => !m.di && m.rif_pagamento !== null),
+        branco: somma(m => m.di === 'branco'),
+        reparto: somma(m => m.di === 'reparto'),
+    };
+}
+
 app.get('/api/cassa/:cassa', verificaUtenteCensito, async (req, res) => {
     try {
         const cassa = req.params.cassa;
         const permessi = await permessiCassa(req, cassa);
         if (!permessi.vede) return res.status(403).json({ error: "Questa cassa non è tua." });
+        const conMetodo = CASSE_CON_METODO.includes(cassa);
         const anno = await annoCorrente();
         if (!anno) return res.json({
             cassa, anno: null, movimenti: [], entrate: 0, uscite: 0, saldo: 0,
-            puoModificare: permessi.modifica,
+            puoModificare: permessi.modifica, conMetodo,
         });
 
-        const movimenti = await dbAll(`SELECT m.*, u.nome AS autore_nome, u.cognome AS autore_cognome
-                                       FROM movimento_cassa m LEFT JOIN utenti u ON u.id = m.rif_autore
-                                       WHERE m.rif_anno = ? AND m.cassa = ?
-                                       ORDER BY m.data DESC, m.id DESC`, [anno.id, cassa]);
+        const movimenti = await movimentiDellaCassa(anno.id, cassa);
         // Gli anni che questa cassa ha alle spalle: servono per scaricarne il bilancio.
         const anni = await dbAll(`SELECT a.id, a.etichetta, a.corrente,
                                          (SELECT COUNT(*) FROM movimento_cassa m
                                           WHERE m.rif_anno = a.id AND m.cassa = ?) AS movimenti
                                   FROM anno_scout a ORDER BY a.id DESC`, [cassa]);
-        const entrate = movimenti.filter(m => m.importo > 0).reduce((s, m) => s + m.importo, 0);
-        const uscite = movimenti.filter(m => m.importo < 0).reduce((s, m) => s + m.importo, 0);
+        const conti = contiCassa(movimenti, cassa);
         res.json({
             cassa, anno: annoPubblico(anno),
             // Il clan lo guardano tutti, ma lo muovono solo capi clan e tesoriere.
@@ -4730,11 +4805,20 @@ app.get('/api/cassa/:cassa', verificaUtenteCensito, async (req, res) => {
             anni: anni.map(a => ({
                 id: a.id, etichetta: a.etichetta, corrente: a.corrente === 1, movimenti: a.movimenti,
             })),
-            entrate, uscite: Math.abs(uscite), saldo: entrate + uscite,
+            entrate: conti.entrate, uscite: conti.uscite, saldo: conti.saldo,
+            // Branco e reparto: quanto in contanti, quanto sulla carta e quanto ancora da specificare.
+            conMetodo,
+            ...(conMetodo ? { contanti: conti.contanti, carta: conti.carta, daSpecificare: conti.daSpecificare } : {}),
+            // Gruppo: di chi sono i soldi sulla carta di gruppo.
+            ...(cassa === 'gruppo' ? { divisione: divisioneCarta(movimenti) } : {}),
             movimenti: movimenti.map(m => ({
                 id: m.id, data: m.data, descrizione: m.descrizione, importo: m.importo,
                 // I movimenti nati da una quota pagata non si modificano a mano.
                 automatico: m.rif_pagamento !== null,
+                metodo: conMetodo ? m.metodo || null : null,
+                cambio: m.cambio || null,
+                // Nella carta di gruppo: i movimenti di branco e reparto, che lì si guardano soltanto.
+                di: m.di || null,
                 // La foto dello scontrino si apre solo col link firmato (vedi soloConFirma).
                 scontrino_url: m.scontrino ? linkFirmato(m.scontrino) : null,
                 autore: m.autore_nome ? `${m.autore_nome} ${m.autore_cognome}` : null,
@@ -4748,7 +4832,8 @@ app.get('/api/cassa/:cassa', verificaUtenteCensito, async (req, res) => {
 /**
  * Il bilancio di una cassa in un file Excel: un anno per volta, dal movimento più vecchio
  * al più recente, con il saldo che si aggiorna riga per riga e i totali in fondo.
- * Si può chiedere l'anno in corso o uno di quelli passati.
+ * Si può chiedere l'anno in corso o uno di quelli passati. Branco e reparto hanno in più la
+ * colonna contanti o carta; il gruppo è la carta di gruppo, con la colonna di chi sono i soldi.
  */
 app.get('/api/cassa/:cassa/excel', verificaUtenteCensito, async (req, res) => {
     try {
@@ -4761,10 +4846,9 @@ app.get('/api/cassa/:cassa/excel', verificaUtenteCensito, async (req, res) => {
             : await annoCorrente();
         if (!anno) return res.status(404).json({ error: "Anno scout non trovato." });
 
-        const movimenti = await dbAll(`SELECT m.*, u.nome AS autore_nome, u.cognome AS autore_cognome
-                                       FROM movimento_cassa m LEFT JOIN utenti u ON u.id = m.rif_autore
-                                       WHERE m.rif_anno = ? AND m.cassa = ?
-                                       ORDER BY m.data ASC, m.id ASC`, [anno.id, cassa]);
+        const movimenti = (await movimentiDellaCassa(anno.id, cassa)).reverse();
+        const conMetodo = CASSE_CON_METODO.includes(cassa);
+        const diGruppo = cassa === 'gruppo';
 
         const euro = (n) => Number(n || 0).toFixed(2).replace('.', ',');
         const italiana = (data) => {
@@ -4772,36 +4856,60 @@ app.get('/api/cassa/:cassa/excel', verificaUtenteCensito, async (req, res) => {
             const [a, m, g] = data.split('-');
             return `${g}/${m}/${a}`;
         };
-        const nomeCassa = cassa === 'gruppo' ? 'gruppo'
-            : cassa === 'clan' ? 'clan' : cassa;
+        const NOMI_DI = { branco: 'Branco', reparto: 'Reparto' };
 
         let saldo = 0;
-        let entrate = 0;
-        let uscite = 0;
         const righe = movimenti.map(m => {
+            const segnatoDa = m.rif_pagamento ? 'da una quota' : (m.autore_nome ? `${m.autore_nome} ${m.autore_cognome}` : '');
+            // Nella cassa di branco o reparto un cambio non è né entrata né uscita.
+            if (m.cambio && conMetodo) {
+                const verso = m.cambio === 'prelievo' ? 'prelievo: carta → contanti' : 'versamento: contanti → carta';
+                return [italiana(m.data), m.descrizione, '', '', euro(saldo), `${verso} (${euro(m.importo)})`,
+                        segnatoDa, m.scontrino ? 'sì' : ''];
+            }
             saldo += m.importo;
-            if (m.importo > 0) entrate += m.importo; else uscite += Math.abs(m.importo);
-            return [
-                italiana(m.data),
-                m.descrizione,
-                m.importo > 0 ? euro(m.importo) : '',
-                m.importo < 0 ? euro(Math.abs(m.importo)) : '',
-                euro(saldo),
-                m.rif_pagamento ? 'da una quota' : (m.autore_nome ? `${m.autore_nome} ${m.autore_cognome}` : ''),
-                m.scontrino ? 'sì' : '',
-            ];
+            const soldi = [m.importo > 0 ? euro(m.importo) : '', m.importo < 0 ? euro(Math.abs(m.importo)) : '', euro(saldo)];
+            if (diGruppo) return [italiana(m.data), m.descrizione, m.di ? NOMI_DI[m.di] : 'Gruppo', ...soldi,
+                                  segnatoDa, m.scontrino ? 'sì' : ''];
+            if (conMetodo) return [italiana(m.data), m.descrizione, ...soldi,
+                                   m.metodo === 'contanti' ? 'contanti' : m.metodo === 'carta' ? 'carta' : 'da specificare',
+                                   segnatoDa, m.scontrino ? 'sì' : ''];
+            return [italiana(m.data), m.descrizione, ...soldi, segnatoDa, m.scontrino ? 'sì' : ''];
         });
 
+        const conti = contiCassa(movimenti, cassa);
+        const intestazioni = diGruppo
+            ? ['Data', 'Descrizione', 'Di chi', 'Entrata', 'Uscita', 'Saldo', 'Segnato da', 'Scontrino']
+            : conMetodo
+                ? ['Data', 'Descrizione', 'Entrata', 'Uscita', 'Saldo', 'Contanti o carta', 'Segnato da', 'Scontrino']
+                : ['Data', 'Descrizione', 'Entrata', 'Uscita', 'Saldo', 'Segnato da', 'Scontrino'];
+        const totali = [
+            ['', 'Totale entrate', euro(conti.entrate)],
+            ['', 'Totale uscite', euro(conti.uscite)],
+            ['', diGruppo ? 'Saldo finale sulla carta di gruppo' : 'Saldo finale', euro(conti.saldo)],
+        ];
+        if (conMetodo) {
+            totali.push(['', 'di cui in contanti', euro(conti.contanti)],
+                        ['', 'di cui sulla carta di gruppo', euro(conti.carta)]);
+            if (conti.daSpecificare.numero)
+                totali.push(['', `da specificare (${conti.daSpecificare.numero} movimenti)`, euro(conti.daSpecificare.importo)]);
+        }
+        if (diGruppo) {
+            const divisione = divisioneCarta(movimenti);
+            totali.push(['', 'del gruppo', euro(divisione.gruppo)]);
+            if (divisione.censimentoClan)
+                totali.push(['', '  (comprese le quote di censimento del clan)', euro(divisione.censimentoClan)]);
+            totali.push(['', 'del branco', euro(divisione.branco)], ['', 'del reparto', euro(divisione.reparto)]);
+        }
+
         const contenuto = [
-            [`Cassa ${cassa === 'gruppo' || cassa === 'clan' ? 'di ' + nomeCassa : 'del ' + nomeCassa}`,
+            [diGruppo ? 'Cassa di gruppo (carta di gruppo)' : `Cassa ${cassa === 'clan' ? 'di clan' : 'del ' + cassa}`,
              `Anno scout ${anno.etichetta}`],
             [],
-            ['Data', 'Descrizione', 'Entrata', 'Uscita', 'Saldo', 'Segnato da', 'Scontrino'],
+            intestazioni,
             ...righe,
             [],
-            ['', 'Totale entrate', euro(entrate)],
-            ['', 'Totale uscite', euro(uscite)],
-            ['', 'Saldo finale', euro(entrate - uscite)],
+            ...totali,
         ];
 
         const file = creaXlsx(contenuto, `Cassa ${anno.etichetta.replace('/', '-')}`);
@@ -4814,17 +4922,44 @@ app.get('/api/cassa/:cassa/excel', verificaUtenteCensito, async (req, res) => {
     }
 });
 
-function validaMovimento(body) {
+const DESCRIZIONE_CAMBIO = {
+    prelievo: 'Prelievo dalla carta di gruppo',
+    versamento: 'Versamento sulla carta di gruppo',
+};
+
+function validaMovimento(body, cassa) {
     const data = testo(body?.data, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { errore: "Scegli la data del movimento." };
-    const descrizione = testo(body?.descrizione, 120);
-    if (!descrizione) return { errore: "Scrivi a cosa si riferisce." };
     const importo = Number(body?.importo);
     if (!Number.isFinite(importo) || importo === 0 || Math.abs(importo) > 1000000)
         return { errore: "L'importo non è valido." };
+    const conMetodo = CASSE_CON_METODO.includes(cassa);
+
+    // Un cambio fra carta e contanti (solo branco e reparto): l'importo resta positivo.
+    if (body?.tipo === 'cambio') {
+        if (!conMetodo) return { errore: "In questa cassa non ci sono cambi fra carta e contanti." };
+        const cambio = body?.cambio === 'versamento' ? 'versamento' : body?.cambio === 'prelievo' ? 'prelievo' : null;
+        if (!cambio) return { errore: "Scegli se è un prelievo dalla carta o un versamento sulla carta." };
+        const descrizione = testo(body?.descrizione, 120) || DESCRIZIONE_CAMBIO[cambio];
+        return { dati: { data, descrizione, importo: Math.abs(importo), metodo: null, cambio } };
+    }
+
+    const descrizione = testo(body?.descrizione, 120);
+    if (!descrizione) return { errore: "Scrivi a cosa si riferisce." };
+    // Branco e reparto dicono sempre se sono contanti o soldi sulla carta di gruppo.
+    const metodo = body?.metodo === 'contanti' || body?.metodo === 'carta' ? body.metodo : null;
+    if (conMetodo && !metodo) return { errore: "Scegli se sono contanti o soldi sulla carta." };
     // "uscita" rende l'importo negativo: in cassa i segni bastano da soli.
     const segno = body?.tipo === 'uscita' ? -1 : 1;
-    return { dati: { data, descrizione, importo: Math.abs(importo) * segno } };
+    return { dati: { data, descrizione, importo: Math.abs(importo) * segno, metodo: conMetodo ? metodo : null, cambio: null } };
+}
+
+/** Il movimento come lo riceve il sito, appena scritto o corretto. */
+function movimentoScritto(id, dati, scontrino) {
+    return {
+        id, ...dati, automatico: false, di: null,
+        scontrino_url: scontrino ? linkFirmato(scontrino) : null,
+    };
 }
 
 app.post('/api/cassa/:cassa', verificaUtenteCensito, async (req, res) => {
@@ -4834,7 +4969,7 @@ app.post('/api/cassa/:cassa', verificaUtenteCensito, async (req, res) => {
             return res.status(403).json({ error: "Questa cassa puoi solo guardarla." });
         const anno = await annoCorrente();
         if (!anno) return res.status(409).json({ error: "Nessun anno scout aperto." });
-        const { errore, dati } = validaMovimento(req.body);
+        const { errore, dati } = validaMovimento(req.body, cassa);
         if (errore) return res.status(400).json({ error: errore });
 
         let scontrino = null;
@@ -4845,14 +4980,9 @@ app.post('/api/cassa/:cassa', verificaUtenteCensito, async (req, res) => {
         }
 
         const esito = await dbRun(`INSERT INTO movimento_cassa (rif_anno, cassa, data, descrizione, importo,
-                                   rif_autore, scontrino) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [anno.id, cassa, dati.data, dati.descrizione, dati.importo, req.user.id, scontrino]);
-        res.status(201).json({
-            movimento: {
-                id: esito.lastID, ...dati, automatico: false,
-                scontrino_url: scontrino ? linkFirmato(scontrino) : null,
-            },
-        });
+                                   metodo, cambio, rif_autore, scontrino) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [anno.id, cassa, dati.data, dati.descrizione, dati.importo, dati.metodo, dati.cambio, req.user.id, scontrino]);
+        res.status(201).json({ movimento: movimentoScritto(esito.lastID, dati, scontrino) });
     } catch (err) {
         erroreInterno(res, err);
     }
@@ -4881,7 +5011,7 @@ app.put('/api/cassa/movimenti/:id', verificaUtenteCensito, async (req, res) => {
     try {
         const movimento = await movimentoGestibile(req, res);
         if (!movimento) return;
-        const { errore, dati } = validaMovimento(req.body);
+        const { errore, dati } = validaMovimento(req.body, movimento.cassa);
         if (errore) return res.status(400).json({ error: errore });
 
         let scontrino = movimento.scontrino;
@@ -4895,14 +5025,10 @@ app.put('/api/cassa/movimenti/:id', verificaUtenteCensito, async (req, res) => {
             scontrino = null;
         }
 
-        await dbRun(`UPDATE movimento_cassa SET data = ?, descrizione = ?, importo = ?, scontrino = ? WHERE id = ?`,
-            [dati.data, dati.descrizione, dati.importo, scontrino, movimento.id]);
-        res.json({
-            movimento: {
-                id: movimento.id, ...dati, automatico: false,
-                scontrino_url: scontrino ? linkFirmato(scontrino) : null,
-            },
-        });
+        await dbRun(`UPDATE movimento_cassa SET data = ?, descrizione = ?, importo = ?, metodo = ?, cambio = ?,
+                     scontrino = ? WHERE id = ?`,
+            [dati.data, dati.descrizione, dati.importo, dati.metodo, dati.cambio, scontrino, movimento.id]);
+        res.json({ movimento: movimentoScritto(movimento.id, dati, scontrino) });
     } catch (err) {
         erroreInterno(res, err);
     }

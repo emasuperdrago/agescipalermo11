@@ -98,6 +98,21 @@ const TABELLE = [
         scontrino TEXT,
         data_creazione TEXT NOT NULL DEFAULT ${ADESSO}
     )`,
+    // Branco e reparto hanno contanti e soldi sulla carta di gruppo (una sola carta per tutto il
+    // gruppo): metodo dice dove stanno; vuoto per i movimenti scritti prima, da specificare.
+    `ALTER TABLE movimento_cassa ADD COLUMN IF NOT EXISTS metodo TEXT CHECK (metodo IN ('contanti', 'carta'))`,
+    // Un cambio sposta soldi della cassa fra carta e contanti senza essere un'entrata o un'uscita:
+    // 'prelievo' dalla carta ai contanti, 'versamento' dai contanti alla carta (importo positivo).
+    `ALTER TABLE movimento_cassa ADD COLUMN IF NOT EXISTS cambio TEXT CHECK (cambio IN ('prelievo', 'versamento'))`,
+    // Le quote dei ragazzi di branco e reparto arrivano sulla carta, anche quelle entrate prima.
+    `UPDATE movimento_cassa SET metodo = 'carta'
+     WHERE cassa IN ('branco', 'reparto') AND rif_pagamento IS NOT NULL AND metodo IS NULL`,
+    // Le quote di censimento del clan vanno al gruppo (sulla carta): quelle già entrate
+    // quest'anno nella cassa di clan si spostano lì.
+    `UPDATE movimento_cassa m SET cassa = 'gruppo', descrizione = m.descrizione || ' (clan)'
+     WHERE m.cassa = 'clan' AND m.rif_anno = (SELECT id FROM anno_scout WHERE corrente = 1)
+       AND m.rif_pagamento IN (SELECT p.id FROM pagamento_quota p JOIN attivita_quota a ON a.id = p.rif_attivita
+                               WHERE a.branca = 'clan' AND lower(trim(a.nome)) LIKE 'censiment%')`,
 
     `CREATE TABLE IF NOT EXISTS canto (
         id SERIAL PRIMARY KEY,

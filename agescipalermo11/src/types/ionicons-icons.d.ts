@@ -23,6 +23,7 @@ declare module 'ionicons/icons' {
   export const cameraOutline: string;
   export const cameraReverseOutline: string;
   export const chatbubblesOutline: string;
+  export const cardOutline: string;
   export const cashOutline: string;
   export const checkmarkCircleOutline: string;
   export const checkmarkDoneOutline: string;

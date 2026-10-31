@@ -34,7 +34,7 @@
       <!-- Il saldo di oggi, con entrate e uscite dell'anno. -->
       <section class="riepilogo">
         <div class="riepilogo__saldo" [class.riepilogo__saldo--rosso]="saldo < 0">
-          <span>Saldo</span>
+          <span>{{ cassa === 'gruppo' ? 'Sulla carta di gruppo' : 'Saldo' }}</span>
           <strong>{{ euro(saldo) }}</strong>
         </div>
         <div class="riepilogo__voce riepilogo__voce--entrate">
@@ -48,6 +48,52 @@
           <strong>{{ euro(uscite) }}</strong>
         </div>
       </section>
+
+      <!-- Branco e reparto: quanti soldi in contanti e quanti sulla carta di gruppo. -->
+      @if (conMetodo) {
+        <section class="dove" aria-label="Dove stanno i soldi">
+          <div class="dove__voce">
+            <ion-icon [icon]="icone.contanti" aria-hidden="true"></ion-icon>
+            <span>In contanti</span>
+            <strong>{{ euro(contanti) }}</strong>
+          </div>
+          <div class="dove__voce">
+            <ion-icon [icon]="icone.carta" aria-hidden="true"></ion-icon>
+            <span>Sulla carta di gruppo</span>
+            <strong>{{ euro(carta) }}</strong>
+          </div>
+        </section>
+        @if (daSpecificare.numero) {
+          <p class="da-specificare" role="status">
+            <ion-icon [icon]="icone.attenzione" aria-hidden="true"></ion-icon>
+            <span>
+              {{ daSpecificare.numero === 1 ? '1 movimento non dice' : daSpecificare.numero + ' movimenti non dicono' }}
+              se sono contanti o carta ({{ euro(daSpecificare.importo) }}): correggili con la matita ✏️.
+            </span>
+          </p>
+        }
+      }
+
+      <!-- Cassa di gruppo: sulla carta ci sono anche i soldi di branco e reparto. -->
+      @if (divisione) {
+        <section class="dove dove--gruppo" aria-label="Di chi sono i soldi sulla carta">
+          <div class="dove__voce">
+            <span>Del gruppo</span>
+            <strong>{{ euro(divisione.gruppo) }}</strong>
+            @if (divisione.censimentoClan) {
+              <small>di cui {{ euro(divisione.censimentoClan) }} dal censimento del clan</small>
+            }
+          </div>
+          <div class="dove__voce">
+            <span>Del branco</span>
+            <strong>{{ euro(divisione.branco) }}</strong>
+          </div>
+          <div class="dove__voce">
+            <span>Del reparto</span>
+            <strong>{{ euro(divisione.reparto) }}</strong>
+          </div>
+        </section>
+      }
 
       @if (!puoModificare) {
         <p class="sola-lettura">
@@ -64,7 +110,7 @@
         </h2>
 
         <form class="modulo" (ngSubmit)="salva()">
-          <div class="tipi" role="group" aria-label="Entrata o uscita">
+          <div class="tipi" role="group" [attr.aria-label]="conMetodo ? 'Entrata, uscita o cambio' : 'Entrata o uscita'">
             <button type="button" class="tipo tipo--entrata" [class.tipo--scelto]="nuovo.tipo === 'entrata'"
                     [attr.aria-pressed]="nuovo.tipo === 'entrata'" (click)="nuovo.tipo = 'entrata'">
               <ion-icon [icon]="icone.entrata" aria-hidden="true"></ion-icon>
@@ -75,7 +121,46 @@
               <ion-icon [icon]="icone.uscita" aria-hidden="true"></ion-icon>
               Uscita
             </button>
+            @if (conMetodo) {
+              <button type="button" class="tipo tipo--cambio" [class.tipo--scelto]="nuovo.tipo === 'cambio'"
+                      [attr.aria-pressed]="nuovo.tipo === 'cambio'" (click)="nuovo.tipo = 'cambio'">
+                <ion-icon [icon]="icone.cambio" aria-hidden="true"></ion-icon>
+                Cambio
+              </button>
+            }
           </div>
+
+          @if (conMetodo) {
+            @if (nuovo.tipo === 'cambio') {
+              <div class="tipi" role="group" aria-label="Verso del cambio">
+                <button type="button" class="tipo tipo--metodo" [class.tipo--scelto]="nuovo.cambio === 'prelievo'"
+                        [attr.aria-pressed]="nuovo.cambio === 'prelievo'" (click)="nuovo.cambio = 'prelievo'">
+                  Prelievo <small>carta → contanti</small>
+                </button>
+                <button type="button" class="tipo tipo--metodo" [class.tipo--scelto]="nuovo.cambio === 'versamento'"
+                        [attr.aria-pressed]="nuovo.cambio === 'versamento'" (click)="nuovo.cambio = 'versamento'">
+                  Versamento <small>contanti → carta</small>
+                </button>
+              </div>
+              <p class="aiuto">
+                Il saldo non cambia: sono sempre soldi vostri, solo spostati. Nella cassa di gruppo
+                risulta @if (nuovo.cambio === 'prelievo') { un'uscita } @else { un'entrata } della carta di gruppo.
+              </p>
+            } @else {
+              <div class="tipi" role="group" aria-label="Contanti o carta">
+                <button type="button" class="tipo tipo--metodo" [class.tipo--scelto]="nuovo.metodo === 'contanti'"
+                        [attr.aria-pressed]="nuovo.metodo === 'contanti'" (click)="nuovo.metodo = 'contanti'">
+                  <ion-icon [icon]="icone.contanti" aria-hidden="true"></ion-icon>
+                  Contanti
+                </button>
+                <button type="button" class="tipo tipo--metodo" [class.tipo--scelto]="nuovo.metodo === 'carta'"
+                        [attr.aria-pressed]="nuovo.metodo === 'carta'" (click)="nuovo.metodo = 'carta'">
+                  <ion-icon [icon]="icone.carta" aria-hidden="true"></ion-icon>
+                  Carta di gruppo
+                </button>
+              </div>
+            }
+          }
 
           <div class="campi">
             <!-- La data in tre tendine (giorno, mese, anno): il calendario del telefono sull'anno si inceppa. -->
@@ -87,7 +172,7 @@
             <label class="campo campo--descrizione">
               <span class="etichetta">A cosa si riferisce</span>
               <input name="descrizione" [(ngModel)]="nuovo.descrizione" maxlength="120"
-                     placeholder="Es. Spesa per il campo" />
+                     [placeholder]="nuovo.tipo === 'cambio' ? 'Facoltativo, es. Bancomat per il campo' : 'Es. Spesa per il campo'" />
             </label>
             <label class="campo campo--importo">
               <span class="etichetta">Euro</span>
@@ -144,11 +229,17 @@
         } @else {
           <ul class="movimenti">
             @for (m of movimentiVisibili; track m.id) {
-              <li class="movimento" [class.movimento--uscita]="m.importo < 0">
+              <li class="movimento" [class.movimento--uscita]="m.importo < 0 && !eCambio(m)"
+                  [class.movimento--cambio]="eCambio(m)">
                 <div class="movimento__testo">
                   <strong>{{ m.descrizione }}</strong>
                   <small>
                     {{ dataItaliana(m.data) }}
+                    @if (m.di) { · {{ nomeBranca(m.di) }}@if (m.cambio) { ({{ m.cambio }}) } }
+                    @else if (conMetodo) {
+                      @if (dove(m)) { · {{ dove(m) }} }
+                      @else { · <span class="da-fare">contanti o carta?</span> }
+                    }
                     @if (m.automatico) { · da una quota }
                     @else if (m.autore) { · {{ m.autore }} }
                   </small>
@@ -160,9 +251,10 @@
                   </button>
                 }
                 <span class="movimento__importo">
-                  {{ m.importo > 0 ? '+' : '−' }}{{ euro(m.importo < 0 ? -m.importo : m.importo) }}
+                  @if (eCambio(m)) { ⇄ {{ euro(m.importo) }} }
+                  @else { {{ m.importo > 0 ? '+' : '−' }}{{ euro(m.importo < 0 ? -m.importo : m.importo) }} }
                 </span>
-                @if (!m.automatico && puoModificare) {
+                @if (!m.automatico && !m.di && puoModificare) {
                   <div class="movimento__azioni">
                     <button type="button" class="icona" (click)="modifica(m)" aria-label="Correggi" title="Correggi">
                       <ion-icon [icon]="icone.modifica"></ion-icon>
@@ -172,6 +264,10 @@
                       <ion-icon [icon]="icone.elimina"></ion-icon>
                     </button>
                   </div>
+                } @else if (m.di) {
+                  <span class="segno-automatico" [title]="'Soldi del ' + m.di + ' sulla carta di gruppo: li segnano i suoi capi'">
+                    {{ m.di }}
+                  </span>
                 } @else {
                   <span class="segno-automatico" title="Nato da una quota segnata pagata">auto</span>
                 }

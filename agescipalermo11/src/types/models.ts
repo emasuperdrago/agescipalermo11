@@ -629,16 +629,30 @@ export interface Movimento {
   importo: number;
   /** Nato da una quota segnata pagata: non si modifica a mano. */
   automatico: boolean;
+  /** Branco e reparto: contanti o soldi sulla carta di gruppo; null = da specificare (o altre casse). */
+  metodo?: MetodoCassa | null;
+  /** Cambio fra carta e contanti: nella cassa della branca non è né entrata né uscita. */
+  cambio?: CambioCassa | null;
+  /** Nella cassa di gruppo: il movimento è di branco o reparto (sulla carta), lì si guarda e basta. */
+  di?: 'branco' | 'reparto' | null;
   /** Foto dello scontrino, con il link firmato che la apre (null se non c'è). */
   scontrino_url?: string | null;
   autore?: string | null;
 }
 
+export type MetodoCassa = 'contanti' | 'carta';
+/** Prelievo: dalla carta di gruppo ai contanti. Versamento: dai contanti alla carta. */
+export type CambioCassa = 'prelievo' | 'versamento';
+
 export interface DatiMovimento {
   data: string;
   descrizione: string;
   importo: number;
-  tipo: 'entrata' | 'uscita';
+  tipo: 'entrata' | 'uscita' | 'cambio';
+  /** Per entrate e uscite di branco e reparto. */
+  metodo?: MetodoCassa | null;
+  /** Per i cambi. */
+  cambio?: CambioCassa | null;
   /** Foto dello scontrino come data URL, già rimpicciolita nel browser. */
   scontrino?: string;
   /** true per togliere lo scontrino che c'era. */
@@ -665,6 +679,14 @@ export interface RiepilogoCassa {
   uscite: number;
   saldo: number;
   movimenti: Movimento[];
+  /** true per branco e reparto: ogni movimento è in contanti o sulla carta di gruppo. */
+  conMetodo?: boolean;
+  contanti?: number;
+  carta?: number;
+  /** I movimenti scritti prima che si dicesse contanti o carta. */
+  daSpecificare?: { numero: number; importo: number };
+  /** Solo nella cassa di gruppo (la carta di gruppo): di chi sono i soldi. */
+  divisione?: { gruppo: number; censimentoClan: number; branco: number; reparto: number };
 }
 
 /** Avviso per i capi: un ragazzo della branca ha aggiunto o cambiato qualcosa. */
