@@ -74,23 +74,39 @@
         }
       }
 
-      <!-- Cassa di gruppo: sulla carta ci sono anche i soldi di branco e reparto. -->
+      <!-- Cassa di gruppo: sulla carta ci sono anche i soldi delle branche. La torta dice di chi sono. -->
       @if (divisione) {
-        <section class="dove dove--gruppo" aria-label="Di chi sono i soldi sulla carta">
-          <div class="dove__voce">
-            <span>Del gruppo</span>
-            <strong>{{ euro(divisione.gruppo) }}</strong>
-            @if (divisione.censimentoClan) {
-              <small>di cui {{ euro(divisione.censimentoClan) }} dal censimento del clan</small>
-            }
-          </div>
-          <div class="dove__voce">
-            <span>Del branco</span>
-            <strong>{{ euro(divisione.branco) }}</strong>
-          </div>
-          <div class="dove__voce">
-            <span>Del reparto</span>
-            <strong>{{ euro(divisione.reparto) }}</strong>
+        <section class="scheda torta" aria-labelledby="titolo-torta">
+          <h2 id="titolo-torta">Di chi sono i soldi sulla carta</h2>
+          <div class="torta__corpo">
+            <figure class="torta__disegno">
+              <svg viewBox="0 0 42 42" role="img" [attr.aria-label]="descrizioneTorta">
+                <circle class="torta__fondo" cx="21" cy="21" r="15.9155" />
+                @for (f of fette; track f.nome) {
+                  @if (f.lunghezza > 0) {
+                    <!-- Spostate di un quarto di giro (25): la prima fetta parte da mezzogiorno, in senso orario. -->
+                    <circle class="torta__fetta" cx="21" cy="21" r="15.9155" [attr.stroke]="f.colore"
+                            [attr.stroke-dasharray]="(f.lunghezza - staccoFette) + ' ' + (100 - f.lunghezza + staccoFette)"
+                            [attr.stroke-dashoffset]="25 - f.inizio" />
+                  }
+                }
+              </svg>
+              <figcaption class="torta__centro">
+                <small>In tutto</small>
+                <strong>{{ euro(totaleTorta) }}</strong>
+              </figcaption>
+            </figure>
+
+            <ul class="torta__legenda">
+              @for (f of fette; track f.nome) {
+                <li [class.torta__voce--sotto]="f.importo < 0">
+                  <span class="torta__pallino" [style.background]="f.colore" aria-hidden="true"></span>
+                  <span class="torta__nome">{{ f.nome }}</span>
+                  <strong class="torta__euro">{{ euro(f.importo) }}</strong>
+                  <span class="torta__percento">{{ f.importo < 0 ? 'sotto zero' : percentuale(f) }}</span>
+                </li>
+              }
+            </ul>
           </div>
         </section>
       }

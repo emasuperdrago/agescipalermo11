@@ -15,9 +15,15 @@ import { preparaImmagine } from '../services/immagini';
 import { BarraInferioreComponent } from '../components/barra-inferiore/barra-inferiore.component';
 import { ZonaCapiService, euro } from '../services/zona-capi';
 import { backendUrl } from '../services/api';
-import { nomeBranca } from '../services/posti';
+import { BRANCHE_POSTO, nomeBranca } from '../services/posti';
 import { AnnoDiCassa, AnnoScout, DatiMovimento, Movimento, NomeCassa, RiepilogoCassa } from '../../types/models';
 import { SelettoreDataComponent } from '../components/selettore-data/selettore-data.component';
+
+/** Una fetta della torta della carta di gruppo: inizio e lunghezza sono in centesimi del giro. */
+interface Fetta { nome: string; importo: number; colore: string; percentuale: number; inizio: number; lunghezza: number }
+
+/** I colori delle branche, e per il gruppo il viola del sito. */
+const COLORE_FETTA = Object.fromEntries(BRANCHE_POSTO.map(b => [b.valore, b.valore === 'gruppo' ? b.forte : b.colore]));
 
 /**
  * Cassa di una branca o del gruppo: entrate, uscite e saldo dell'anno scout in corso.
@@ -167,6 +173,52 @@ export class BilancioPage implements OnInit {
             : 'Impossibile caricare la cassa. Riprova tra poco.';
       },
     });
+  }
+
+  /**
+   * La torta della carta di gruppo: di chi sono i soldi. Il clan sulla carta ha solo le quote di
+   * censimento (arrivano al gruppo), quindi la sua fetta è quella e il gruppo è il resto. Le
+   * fette sotto zero (es. il branco ha prelevato più di quanto aveva sulla carta) non si possono
+   * disegnare: restano nella legenda, in rosso.
+   */
+  get fette(): Fetta[] {
+    const d = this.divisione;
+    if (!d) return [];
+    const voci = [
+      { nome: 'Gruppo', importo: d.gruppo - d.censimentoClan, colore: COLORE_FETTA['gruppo'] },
+      { nome: 'Branco', importo: d.branco, colore: COLORE_FETTA['branco'] },
+      { nome: 'Reparto', importo: d.reparto, colore: COLORE_FETTA['reparto'] },
+      { nome: 'Clan (censimento)', importo: d.censimentoClan, colore: COLORE_FETTA['clan'] },
+    ];
+    const totale = voci.reduce((s, v) => s + Math.max(0, v.importo), 0);
+    let inizio = 0;
+    return voci.map(v => {
+      const percentuale = totale > 0 ? Math.max(0, v.importo) / totale * 100 : 0;
+      const fetta = { ...v, percentuale, inizio, lunghezza: percentuale };
+      inizio += percentuale;
+      return fetta;
+    });
+  }
+
+  /** Il totale disegnato nella torta (solo le parti sopra zero). */
+  get totaleTorta(): number {
+    return this.fette.reduce((s, f) => s + Math.max(0, f.importo), 0);
+  }
+
+  /** Tra una fetta e l'altra resta un filo bianco, se le fette sono più d'una. */
+  get staccoFette(): number {
+    return this.fette.filter(f => f.lunghezza > 0).length > 1 ? 0.8 : 0;
+  }
+
+  /** "42 %", oppure "0,4 %" per le fette piccolissime. */
+  percentuale(f: Fetta): string {
+    const p = f.percentuale;
+    return `${p > 0 && p < 1 ? p.toFixed(1).replace('.', ',') : Math.round(p)} %`;
+  }
+
+  /** Per chi non vede la torta: tutte le fette in una frase. */
+  get descrizioneTorta(): string {
+    return 'Soldi sulla carta di gruppo: ' + this.fette.map(f => `${f.nome} ${euro(f.importo)} (${this.percentuale(f)})`).join(', ');
   }
 
   /** Solo i primi movimenti: il resto si apre con "Vedi altro". */

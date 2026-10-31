@@ -738,3 +738,155 @@
 
   .da-specificare { font-size: .78rem; }
 }
+
+// ---------- Torta della carta di gruppo ----------
+
+.torta {
+  h2 { margin-bottom: 14px; }
+
+  &__corpo {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+
+  &__disegno {
+    position: relative;
+    flex-shrink: 0;
+    width: 190px;
+    margin: 0;
+
+    svg {
+      display: block;
+      width: 100%;
+    }
+  }
+
+  &__fondo {
+    fill: none;
+    stroke: $slate-100;
+    stroke-width: 6.5;
+  }
+
+  &__fetta {
+    fill: none;
+    stroke-width: 6.5;
+    transition: stroke-dasharray .6s ease, stroke-dashoffset .6s ease;
+    animation: torta-entra .8s ease-out;
+  }
+
+  &__centro {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+
+    small {
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: $slate;
+    }
+
+    strong {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: $dark;
+    }
+  }
+
+  &__legenda {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      grid-template-areas: "pallino nome euro" "pallino percento percento";
+      align-items: center;
+      column-gap: 10px;
+      padding: 8px 12px;
+      border-radius: 14px;
+      background: $slate-100;
+    }
+  }
+
+  &__pallino {
+    grid-area: pallino;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+  }
+
+  &__nome {
+    grid-area: nome;
+    font-size: .88rem;
+    font-weight: 700;
+    color: $dark;
+  }
+
+  &__euro {
+    grid-area: euro;
+    font-size: .92rem;
+    font-weight: 800;
+    color: $dark;
+  }
+
+  &__percento {
+    grid-area: percento;
+    font-size: .74rem;
+    font-weight: 700;
+    color: $slate;
+  }
+
+  &__voce--sotto {
+    .torta__euro, .torta__percento { color: $red; }
+  }
+}
+
+@keyframes torta-entra {
+  from { opacity: 0; stroke-width: 2; }
+  to { opacity: 1; stroke-width: 6.5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .torta__fetta { animation: none; transition: none; }
+}
+
+@media (max-width: 599px) {
+  .torta {
+    &__corpo {
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    &__disegno { width: 170px; }
+
+    &__legenda {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: 100%;
+
+      li {
+        grid-template-columns: auto 1fr;
+        grid-template-areas: "pallino nome" "euro euro" "percento percento";
+        row-gap: 2px;
+        padding: 8px 10px;
+      }
+    }
+
+    &__nome { font-size: .78rem; }
+    &__euro { font-size: .86rem; }
+  }
+}
