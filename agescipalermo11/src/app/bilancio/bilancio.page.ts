@@ -188,7 +188,7 @@ export class BilancioPage implements OnInit {
       { nome: 'Gruppo', importo: d.gruppo - d.censimentoClan, colore: COLORE_FETTA['gruppo'] },
       { nome: 'Branco', importo: d.branco, colore: COLORE_FETTA['branco'] },
       { nome: 'Reparto', importo: d.reparto, colore: COLORE_FETTA['reparto'] },
-      { nome: 'Clan (censimento)', importo: d.censimentoClan, colore: COLORE_FETTA['clan'] },
+      { nome: 'Clan', importo: d.censimentoClan, colore: COLORE_FETTA['clan'] },
     ];
     const totale = voci.reduce((s, v) => s + Math.max(0, v.importo), 0);
     let inizio = 0;
