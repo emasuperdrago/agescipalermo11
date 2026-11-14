@@ -2850,16 +2850,40 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, tonalita =
     const cima = MARGINE + ALTEZZA_TESTATA;
 
     // Il libretto parte subito coi canti: in cima una riga con evento · data · luogo.
+    // `sottoEvento`: dove cominciano i canti nella prima pagina, sotto quella riga.
+    let sottoEvento = null;
     if (libretto) {
         const resto = [dataLunga(libretto.data), libretto.luogo].filter(Boolean).join(' · ');
         if (evento || resto) {
-            doc.font('Helvetica-Bold').fontSize(grande ? 17 : 15).fillColor(coloreUnico ?? VIOLA)
-                .text(evento || resto, MARGINE, doc.y + 2, { width: larghezza, continued: !!(evento && resto) });
-            if (evento && resto) doc.font('Helvetica').fontSize(grande ? 12 : 11).fillColor(GRIGIO).text(`  ·  ${resto}`);
-            const sotto = doc.y + 6;
+            const grandeTitolo = grande ? 17 : 15;
+            const grandeResto = grande ? 12 : 11;
+            const titolo = evento || resto;
+            const yTitolo = doc.y + 2;
+            doc.font('Helvetica-Bold').fontSize(grandeTitolo);
+            const altoTitolo = doc.heightOfString(titolo, { width: larghezza });
+            const suUnaRiga = altoTitolo <= doc.currentLineHeight(true) + 1;
+            const largoTitolo = doc.widthOfString(titolo);
+            doc.fillColor(coloreUnico ?? VIOLA).text(titolo, MARGINE, yTitolo, { width: larghezza });
+            let sotto = yTitolo + altoTitolo;
+            if (evento && resto) {
+                doc.font('Helvetica').fontSize(grandeResto).fillColor(GRIGIO);
+                const accanto = `·  ${resto}`;
+                if (suUnaRiga && largoTitolo + 10 + doc.widthOfString(accanto) <= larghezza) {
+                    // Sulla stessa riga dell'evento, appoggiato alla stessa linea di base
+                    // (0.718: quanto sale l'Helvetica sopra la linea, rispetto alla sua grandezza).
+                    doc.text(accanto, MARGINE + largoTitolo + 10, yTitolo + 0.718 * (grandeTitolo - grandeResto),
+                        { lineBreak: false });
+                } else {
+                    // Non ci sta accanto: data e luogo vanno sotto l'evento.
+                    doc.text(resto, MARGINE, sotto + 1, { width: larghezza });
+                    sotto = doc.y;
+                }
+            }
+            sotto += 6;
             doc.save().moveTo(MARGINE, sotto).lineTo(MARGINE + larghezza, sotto)
                 .lineWidth(1).strokeColor(coloreUnico ?? VIOLA).strokeOpacity(.35).stroke().restore();
             doc.y = sotto + 16;
+            sottoEvento = doc.y;
         }
     }
 
@@ -3045,8 +3069,9 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, tonalita =
     // ---------- Due colonne: i testi scorrono da una colonna all'altra ----------
     // Ogni canto diventa una fila di "pezzi" che non si spezzano: la testa insieme alla prima riga
     // (il titolo non resta mai solo in fondo a una colonna), una riga di accordi insieme al suo
-    // verso, ogni altra riga da sola. I pezzi riempiono la colonna sinistra, poi la destra, poi la
-    // pagina dopo; nell'ultima pagina (o prima di un canto a tutta larghezza) le colonne si pareggiano.
+    // verso, ogni altra riga da sola. I pezzi riempiono la colonna sinistra fino in fondo, poi la
+    // destra, poi la pagina dopo. Solo prima di un canto a tutta larghezza le due colonne si
+    // pareggiano, così quel canto comincia subito sotto e non resta mezza pagina vuota.
     const SPAZIO_CANTI = 22;
     let pezziInFila = [];
 
@@ -3096,16 +3121,19 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, tonalita =
         return { i, y };
     };
 
-    /** Scrive i pezzi in fila nelle due colonne, pagina dopo pagina; dopo, si continua sotto. */
-    const scriviInFila = () => {
+    /**
+     * Scrive i pezzi in fila nelle due colonne, pagina dopo pagina; dopo, si continua sotto.
+     * Con `pareggia` (sotto arriva un canto a tutta larghezza) l'ultimo tratto si divide pari.
+     */
+    const scriviInFila = ({ pareggia = false } = {}) => {
         let i = 0;
         while (i < pezziInFila.length) {
             const cima = stato.cimaFascia;
             const fine = fondo();
-            // Le due colonne arrivano fin dove serve: tutto quello che resta, se ci sta, diviso pari.
             const finisceCon = (limite) => riempiColonna(riempiColonna(i, cima, limite).i, cima, limite).i >= pezziInFila.length;
             let limite = fine;
-            if (finisceCon(fine)) {
+            // Pareggiando, le due colonne arrivano fin dove serve: quello che resta, diviso pari.
+            if (pareggia && finisceCon(fine)) {
                 let basso = cima;
                 for (let giri = 0; giri < 16 && limite - basso > 1; giri++) {
                     const mezzo = (basso + limite) / 2;
@@ -3141,13 +3169,14 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, tonalita =
             }
             // Righe troppo lunghe per mezza pagina: prima si scrive quello che è in fila, poi lui
             // a tutta larghezza, sotto.
-            const cerano = pezziInFila.length > 0;
-            scriviInFila();
-            if (cerano || doc.y > cima + 1) doc.y = Math.min(stato.cimaFascia - SPAZIO_CANTI, fondo());
+            // (scriviInFila lascia doc.y sotto la colonna più lunga: da lì si continua.)
+            scriviInFila({ pareggia: true });
         }
 
         const intera = preparaCanto(c, titoletto, tono, larghezza, altezzaPagina);
-        const inCima = doc.y <= cima + 1;
+        // In cima alla pagina, o subito sotto la riga dell'evento: lì il canto comincia comunque
+        // (un canto lungo non lascia la prima pagina con la sola riga dell'evento).
+        const inCima = doc.y <= cima + 1 || (pagina === 1 && sottoEvento !== null && doc.y <= sottoEvento + 1);
         // Non sta nello spazio che resta: pagina nuova. Un canto più lungo di una pagina intera
         // comincia comunque su una pagina nuova, e lì va avanti dove serve.
         if (!inCima && doc.y + spazio + intera.altezza > fondo()) paginaNuova();
