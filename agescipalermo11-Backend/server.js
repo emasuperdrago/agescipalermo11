@@ -110,12 +110,23 @@ function connessioneProtetta(req) {
     return req.secure;
 }
 
+// Non serve dire a chi chiama con cosa è fatto il backend.
+app.disable('x-powered-by');
+
+// Le risposte con dati di persone (ragazzi, capi, richieste, casse, contatti dei posti) il
+// browser non le tiene: su un computer condiviso non restano nella sua memoria dopo l'uscita.
+const ROTTE_RISERVATE = ['/api/ragazzi', '/api/utenti', '/api/richieste-iscrizione', '/api/cassa', '/api/capi',
+    '/api/posti', '/api/compleanni-oggi', '/api/notifiche-contenuti', '/api/anno-scout', '/api/quote'];
+
 // Intestazioni di sicurezza di base, più HSTS quando si viaggia in HTTPS
 // (dice al browser di non riprovare mai in chiaro su questo indirizzo).
 app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Content-Security-Policy', "frame-ancestors 'none'");
     res.setHeader('Referrer-Policy', 'no-referrer');
+    if (ROTTE_RISERVATE.some(r => req.path === r || req.path.startsWith(`${r}/`)))
+        res.setHeader('Cache-Control', 'private, no-store');
     if (connessioneProtetta(req))
         res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     next();
@@ -1270,10 +1281,11 @@ app.get('/api/utenti', verificaRuolo('capo', 'admin'), async (req, res) => {
         const righe = await dbAll(sql, valori);
         res.json({
             // L'età si ricalcola qui a ogni richiesta: al compleanno cambia da sola.
-            utenti: righe.map(u => ({
+            // titolo_admin non esce mai così com'è: chi è admin lo sa solo chi gestisce il sito.
+            utenti: righe.map(({ titolo_admin, ...u }) => ({
                 ...u, eta: etaDiOggi(u), attivato: u.attivato === 1,
-                ruolo: ruoloMostrato(u, eGestore(req)), capogruppo: u.capogruppo === 1,
-                admin: eGestore(req) ? u.titolo_admin === 1 : undefined,
+                ruolo: ruoloMostrato({ ...u, titolo_admin }, eGestore(req)), capogruppo: u.capogruppo === 1,
+                admin: eGestore(req) ? titolo_admin === 1 : undefined,
                 // Il livello Fo.Ca. è dei capi: per i ragazzi non c'è.
                 livello_foca: u.ruolo === 'ragazzo' ? null : (u.livello_foca || null),
             })),
@@ -5658,7 +5670,8 @@ function datiStoria(tipo, body) {
 
 /** Il tipo dall'indirizzo (tappe o parti); se non esiste risponde 404 e torna null. */
 function tipoStoria(req, res) {
-    const tipo = TIPI_STORIA[req.params.tipo];
+    // Solo i due nomi previsti: "constructor" e simili non sono tipi.
+    const tipo = Object.hasOwn(TIPI_STORIA, req.params.tipo) ? TIPI_STORIA[req.params.tipo] : null;
     if (!tipo) res.status(404).json({ error: 'Parte della storia non trovata.' });
     return tipo ?? null;
 }

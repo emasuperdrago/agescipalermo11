@@ -543,7 +543,8 @@ async function popolaMarco() {
 // Un admin di prova solo per un database nuovo, vuoto (per entrare la prima volta sul Mac):
 // se ci sono già utenti non si crea, così una volta tolto non torna.
 async function popolaDatiEsempio() {
-  if (process.env.NODE_ENV === 'production') return;
+  // Mai online: né in produzione né su Vercel (anche nelle versioni di prova).
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL) return;
   if ((await righe('SELECT id FROM utenti LIMIT 1')).length) return;
   const impronta = await bcrypt.hash('password123', 12);
   const { email, impronta: improntaEmail } = emailDaSalvare(null);

@@ -19,24 +19,43 @@ const CHIAVE_IMPRONTE = ricava('impronte-email');
 const CHIAVE_CODICI = ricava('impronte-codici');
 const CHIAVE_FILE = ricava('file-cifrati');
 
+/**
+ * Prova a decifrare un valore scritto da cripta(): { ok, testo }. Non riesce se il valore non è
+ * davvero nostro, per esempio un testo scritto da qualcuno che comincia per "cif1:".
+ */
+function provaADecifrare(valore) {
+    try {
+        const tutto = Buffer.from(valore.slice(PREFISSO.length), 'base64');
+        const decifrario = crypto.createDecipheriv('aes-256-gcm', CHIAVE_CIFRA, tutto.subarray(0, 12));
+        decifrario.setAuthTag(tutto.subarray(12, 28));
+        return { ok: true, testo: Buffer.concat([decifrario.update(tutto.subarray(28)), decifrario.final()]).toString('utf8') };
+    } catch {
+        return { ok: false };
+    }
+}
+
 /** Cifra un testo; null e stringhe vuote restano come sono (non c'è niente da proteggere). */
 function cripta(valore) {
     if (valore === null || valore === undefined || valore === '') return valore ?? null;
     const testo = String(valore);
-    if (testo.startsWith(PREFISSO)) return testo;
+    // Già cifrato (da noi: si decifra davvero) resta com'è. Un testo qualunque che comincia per
+    // "cif1:" invece si cifra come tutti gli altri: non basta il prefisso per saltare la cifratura.
+    if (testo.startsWith(PREFISSO) && provaADecifrare(testo).ok) return testo;
     const iv = crypto.randomBytes(12);
     const cifrario = crypto.createCipheriv('aes-256-gcm', CHIAVE_CIFRA, iv);
     const dati = Buffer.concat([cifrario.update(testo, 'utf8'), cifrario.final()]);
     return PREFISSO + Buffer.concat([iv, cifrario.getAuthTag(), dati]).toString('base64');
 }
 
-/** Decifra un valore scritto da cripta(); quello che non è cifrato torna così com'è. */
+/**
+ * Decifra un valore scritto da cripta(); quello che non è cifrato torna così com'è. Anche un
+ * testo che comincia per "cif1:" senza essere nostro (in un campo non cifrato, come un nome)
+ * torna com'è: non deve far cadere chi legge quella riga.
+ */
 function decripta(valore) {
     if (typeof valore !== 'string' || !valore.startsWith(PREFISSO)) return valore;
-    const tutto = Buffer.from(valore.slice(PREFISSO.length), 'base64');
-    const decifrario = crypto.createDecipheriv('aes-256-gcm', CHIAVE_CIFRA, tutto.subarray(0, 12));
-    decifrario.setAuthTag(tutto.subarray(12, 28));
-    return Buffer.concat([decifrario.update(tutto.subarray(28)), decifrario.final()]).toString('utf8');
+    const esito = provaADecifrare(valore);
+    return esito.ok ? esito.testo : valore;
 }
 
 /** L'impronta di un'email (minuscola, senza spazi): uguale per la stessa email, illeggibile. */
