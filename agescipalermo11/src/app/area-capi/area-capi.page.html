@@ -172,12 +172,10 @@
               </div>
               @if (eProposta(n)) {
                 <!-- Una proposta dei ragazzi del clan: si decide direttamente da qui. -->
+                <!-- Il titolo apre la proposta per guardarla prima di decidere. -->
                 <div class="avviso-riga__azioni">
-                  @if (linkContenuto(n); as link) {
-                    <a class="azione" [routerLink]="link">Guarda</a>
-                  }
                   <button type="button" class="azione azione--accetta azione--scelta" (click)="decidiProposta(n, true)"
-                          [disabled]="decidendo !== null">Approva</button>
+                          [disabled]="decidendo !== null">Accetta</button>
                   <button type="button" class="azione azione--rifiuta" (click)="decidiProposta(n, false)"
                           [disabled]="decidendo !== null">Rifiuta</button>
                 </div>
