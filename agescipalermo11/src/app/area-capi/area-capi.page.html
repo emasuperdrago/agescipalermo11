@@ -170,7 +170,20 @@
                 }
                 <small>{{ n.autore }} ha {{ n.azione === 'creato' ? 'proposto un ' + n.tipo : 'proposto una modifica a un ' + n.tipo }}</small>
               </div>
-              <button type="button" class="azione" (click)="segnaContenutoLetto(n)">Visto</button>
+              @if (eProposta(n)) {
+                <!-- Una proposta dei ragazzi del clan: si decide direttamente da qui. -->
+                <div class="avviso-riga__azioni">
+                  @if (linkContenuto(n); as link) {
+                    <a class="azione" [routerLink]="link">Guarda</a>
+                  }
+                  <button type="button" class="azione azione--accetta azione--scelta" (click)="decidiProposta(n, true)"
+                          [disabled]="decidendo !== null">Approva</button>
+                  <button type="button" class="azione azione--rifiuta" (click)="decidiProposta(n, false)"
+                          [disabled]="decidendo !== null">Rifiuta</button>
+                </div>
+              } @else {
+                <button type="button" class="azione" (click)="segnaContenutoLetto(n)">Visto</button>
+              }
             </li>
           }
         </ul>

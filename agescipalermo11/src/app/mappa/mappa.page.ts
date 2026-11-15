@@ -243,8 +243,10 @@ export class MappaPage implements AfterViewInit, OnDestroy, OnInit {
       // La sede ha la bandierina più grande e sta sopra le altre.
       const marcatore = L.marker([p.latitudine, p.longitudine], {
         icon: iconaBandierina(p.branca, p.sede),
-        title: p.sede ? `${p.nome} (sede)` : p.nome,
+        title: p.sede ? `${p.nome} (sede)` : p.in_attesa ? `${p.nome} (in attesa di approvazione)` : p.nome,
         alt: `${p.nome} (${p.sede ? 'sede del gruppo' : nomeBranca(p.branca)})`,
+        // Un posto proposto dai ragazzi, ancora da approvare, ha la bandierina più chiara.
+        opacity: p.in_attesa ? .55 : 1,
         riseOnHover: true,
         zIndexOffset: p.sede ? 1000 : 0,
       })

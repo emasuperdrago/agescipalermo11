@@ -782,3 +782,17 @@
     &__torta { font-size: 1.4rem; }
   }
 }
+
+// Una proposta dei ragazzi: i pulsanti vanno sotto il testo, su tutta la riga.
+.avviso-riga {
+  flex-wrap: wrap;
+
+  &__azioni {
+    display: flex;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  a.azione { text-decoration: none; }
+}

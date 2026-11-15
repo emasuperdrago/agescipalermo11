@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import {
   AlertController, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonRouterLink,
   IonRouterLinkWithHref, IonContent, ToastController
@@ -17,7 +18,8 @@ import { BarraInferioreComponent } from '../components/barra-inferiore/barra-inf
 import { AuthService } from '../services/auth';
 import { IscrizioniService, dataPerEsteso, etaDa, nomeAnnoScolastico } from '../services/iscrizioni';
 import { ZonaCapiService } from '../services/zona-capi';
-import { nomeBranca, stiliBranca } from '../services/posti';
+import { PostiService, nomeBranca, stiliBranca } from '../services/posti';
+import { PostService } from '../services/post';
 import {
   AnnoScout, Branca, CompleannoOggi, NotificaContenuto, RichiestaIscrizione, StatoRichiesta
 } from '../../types/models';
@@ -59,6 +61,8 @@ export class AreaCapiPage implements OnInit {
   private auth = inject(AuthService);
   private iscrizioni = inject(IscrizioniService);
   private zona = inject(ZonaCapiService);
+  private posti = inject(PostiService);
+  private postService = inject(PostService);
   private alertCtrl = inject(AlertController);
   private toastCtrl = inject(ToastController);
 
@@ -194,6 +198,51 @@ export class AreaCapiPage implements OnInit {
     this.zona.segnaNotificaLetta(notifica.id).subscribe({
       next: () => this.contenuti = this.contenuti.filter(n => n.id !== notifica.id),
       error: () => this.avvisa("Non sono riuscito a rimuovere l'avviso."),
+    });
+  }
+
+  /** Post e posti proposti dai ragazzi del clan: si approvano o si rifiutano da qui. */
+  eProposta(n: NotificaContenuto): boolean {
+    return !!n.rif_oggetto && (n.tipo === 'post' || n.tipo === 'posto');
+  }
+
+  /** L'avviso su cui si sta decidendo (i suoi pulsanti si fermano finché non risponde il server). */
+  decidendo: number | null = null;
+
+  /** Il sì o il no direttamente dall'avviso, senza aprire la proposta. */
+  async decidiProposta(n: NotificaContenuto, approva: boolean) {
+    if (!n.rif_oggetto || this.decidendo !== null) return;
+    if (!approva) {
+      const alert = await this.alertCtrl.create({
+        header: n.tipo === 'post' ? 'Rifiutare il post?' : 'Rifiutare la proposta?',
+        message: `"${n.titolo}" non verrà pubblicato e sparisce, insieme alle sue foto e ai suoi file.`,
+        buttons: [{ text: 'Annulla', role: 'cancel' }, { text: 'Rifiuta', role: 'destructive' }],
+      });
+      await alert.present();
+      if ((await alert.onDidDismiss()).role !== 'destructive') return;
+    }
+    this.decidendo = n.id;
+    const richiesta: Observable<unknown> = n.tipo === 'post'
+      ? this.postService.decidiPubblicazione(n.rif_oggetto, approva)
+      : this.posti.pubblica(n.rif_oggetto, approva);
+    richiesta.subscribe({
+      next: () => {
+        this.decidendo = null;
+        this.contenuti = this.contenuti.filter(x => x.id !== n.id);
+        this.avvisa(approva
+          ? (n.tipo === 'post' ? 'Post pubblicato.' : n.azione === 'creato' ? 'Posto aggiunto alla mappa.' : 'Modifica approvata.')
+          : 'Proposta rifiutata.');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.decidendo = null;
+        // Già deciso da un altro capo (o ritirato dal ragazzo): l'avviso non serve più.
+        if (err.status === 404 || err.status === 409) {
+          this.contenuti = this.contenuti.filter(x => x.id !== n.id);
+          this.avvisa('Questa proposta è già stata decisa o ritirata.');
+          return;
+        }
+        this.avvisa(err.error?.error ?? 'Non sono riuscito a salvare la decisione.');
+      },
     });
   }
 
