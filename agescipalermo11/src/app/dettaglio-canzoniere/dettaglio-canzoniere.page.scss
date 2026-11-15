@@ -45,6 +45,8 @@
 }
 
 .badge {
+  line-height: 1;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   padding: 5px 14px;

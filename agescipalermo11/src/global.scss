@@ -16,7 +16,8 @@
 @import "@ionic/angular/css/flex-utils.css";
 
 
-@import 'bootstrap/dist/css/bootstrap.min.css';
+// Di Bootstrap si tengono solo le regole di base (reboot): componenti e classi pronte il sito non le usa.
+@import 'bootstrap/dist/css/bootstrap-reboot.min.css';
 
 // Colore primario di Ionic = viola del logo (pulsanti, back button, link nelle toolbar).
 :root {

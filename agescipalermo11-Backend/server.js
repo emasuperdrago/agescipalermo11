@@ -2895,8 +2895,6 @@ const MARGINE = 42;
 // Stesso carattere e stessa dimensione per tutti i canti, così due canti stampati insieme
 // si leggono uguali. Courier: ogni lettera è larga 0,6 volte la dimensione.
 const DIMENSIONE_TESTO = 9;
-const INTERLINEA = DIMENSIONE_TESTO * 1.32;
-const LARGHEZZA_LETTERA = DIMENSIONE_TESTO * 0.602;
 const ALTEZZA_TESTATA = 54;
 
 /** Barra viola in cima a ogni pagina, come quella del sito. A destra l'evento e, sotto, la data. */

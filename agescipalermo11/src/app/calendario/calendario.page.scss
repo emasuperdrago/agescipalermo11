@@ -640,6 +640,8 @@ $forti-branca: (
 }
 
 .badge {
+  line-height: 1;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: 5px;

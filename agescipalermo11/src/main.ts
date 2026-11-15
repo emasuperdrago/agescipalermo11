@@ -10,9 +10,6 @@ import { AppComponent } from './app/app.component';
 import { authInterceptor } from './app/interceptors/auth.interceptor';
 import { caricamentiGrandiInterceptor } from './app/interceptors/caricamenti-grandi.interceptor';
 import { riprovaLettureInterceptor } from './app/interceptors/riprova-letture.interceptor';
-import { defineCustomElements as pwaElements } from '@ionic/pwa-elements/loader';
-
-pwaElements();
 
 bootstrapApplication(AppComponent, {
   providers: [
