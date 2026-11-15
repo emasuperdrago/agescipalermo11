@@ -1,6 +1,6 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>{{ proposta ? (modifica ? 'Correggi la proposta' : 'Proponi un posto') : (modifica ? 'Modifica posto' : 'Nuovo posto') }}</ion-title>
+    <ion-title>{{ proposta ? (modifica ? (posto?.in_attesa ? 'Correggi la proposta' : 'Proponi una modifica') : 'Proponi un posto') : (modifica ? 'Modifica posto' : 'Nuovo posto') }}</ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="chiudi()" aria-label="Chiudi" [disabled]="salvando">
         <ion-icon slot="icon-only" [icon]="icone.chiudi"></ion-icon>
@@ -12,7 +12,12 @@
 <ion-content class="posto-editor">
   <form class="modulo" (ngSubmit)="salva()">
     <p class="obbligatori">I campi con <strong>*</strong> sono obbligatori.</p>
-    @if (proposta) {
+    @if (proposta && modifica && (posto?.modifica_di || !posto?.in_attesa)) {
+      <p class="suggerimento">
+        Le modifiche vanno ai capi clan: il posto cambia quando le approvano. La proposta è una sola per tutto
+        il clan: chi la corregge dopo di te riparte da qui.
+      </p>
+    } @else if (proposta) {
       <p class="suggerimento">
         Proponi un posto per il <strong>clan</strong>: i capi clan lo guardano e, se va bene, lo mettono sulla mappa.
         Finché aspetta lo vedi solo tu e puoi ancora correggerlo.
@@ -208,7 +213,7 @@
       @if (salvando) {
         {{ avanzamento || 'Salvataggio in corso…' }}
       } @else {
-        {{ modifica ? 'Salva modifiche' : (proposta ? 'Manda la proposta ai capi' : 'Aggiungi alla mappa') }}
+        {{ proposta ? (modifica && !posto?.in_attesa ? 'Manda la modifica ai capi' : modifica ? 'Salva la proposta' : 'Manda la proposta ai capi') : (modifica ? 'Salva modifiche' : 'Aggiungi alla mappa') }}
       }
     </button>
   </form>

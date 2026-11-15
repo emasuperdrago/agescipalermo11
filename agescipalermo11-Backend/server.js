@@ -2270,8 +2270,8 @@ function leggiElenco(testoJson) {
 
 /**
  * Chi può fare cosa sulla mappa. Capi e capigruppo aggiungono e cambiano i posti direttamente.
- * Rover e scolte possono proporre un posto del clan: resta in attesa finché un capo clan o un
- * capogruppo non lo approva (come per i post).
+ * Rover e scolte propongono: un posto nuovo del clan, o una modifica a un posto del clan già
+ * sulla mappa. Tutto resta in attesa finché un capo clan o un capogruppo non lo approva.
  */
 async function permessiPosto(req) {
     const utente = await dbGet('SELECT ruolo, branca FROM utenti WHERE id = ?', [req.user.id]);
@@ -2284,28 +2284,55 @@ async function permessiPosto(req) {
     };
 }
 
-/** Un posto in attesa lo vedono solo chi l'ha proposto e chi lo deve approvare. */
+// Una modifica proposta a un posto già sulla mappa è una sua copia in attesa (rif_originale):
+// il posto vero non cambia finché un capo non approva. Ce n'è al massimo una per posto, e la
+// correggono tutti i ragazzi del clan: al capo arriva una richiesta sola, l'ultima.
+
+/**
+ * Un posto in attesa lo vedono chi lo deve approvare e chi l'ha proposto; una modifica proposta
+ * la vedono anche gli altri ragazzi del clan (che possono correggerla).
+ */
 function postoVisibile(p, permessi) {
-    return p.in_attesa !== 1 || permessi.approva || p.rif_autore === permessi.id;
+    if (p.in_attesa !== 1 || permessi.approva || p.rif_autore === permessi.id) return true;
+    return !!p.rif_originale && permessi.propone;
 }
 
-/** Il posto è una proposta ancora in attesa di chi sta chiedendo (un ragazzo del clan)? */
+/** Un ragazzo del clan può proporre modifiche a questo posto (del clan, già sulla mappa)? */
+function modificabileDalClan(p, permessi) {
+    return permessi.propone && p.branca === 'clan' && p.sede !== 1;
+}
+
+/** Il posto è una proposta in attesa che chi chiede (un ragazzo del clan) può ancora correggere? */
 function propostaMia(p, permessi) {
-    return permessi.propone && p.in_attesa === 1 && p.rif_autore === permessi.id;
+    if (!permessi.propone || p.in_attesa !== 1) return false;
+    return p.rif_autore === permessi.id || (!!p.rif_originale && modificabileDalClan(p, permessi));
 }
 
 const SELEZIONE_POSTO = `SELECT p.*, u.nome AS autore_nome, u.cognome AS autore_cognome
                          FROM posto p LEFT JOIN utenti u ON u.id = p.rif_autore`;
 
-function postoPubblico(p, allegati = [], permessi = null) {
+/**
+ * extra: per una modifica proposta, il posto originale (`originale`) e cosa cambia (`cambiamenti`);
+ * per un posto sulla mappa, la sua modifica in attesa (`modificaInAttesa`).
+ */
+function postoPubblico(p, allegati = [], permessi = null, extra = {}) {
     const contatti = leggiElenco(p.contatti);
     const inAttesa = p.in_attesa === 1;
+    const ragazzo = !!permessi && !permessi.capo;
     return {
-        // In attesa del sì di un capo clan o di un capogruppo, e chi l'ha proposto.
+        // In attesa del sì di un capo clan o di un capogruppo, e chi l'ha proposto (o corretto per ultimo).
         in_attesa: inAttesa,
         proposto_da: inAttesa && p.autore_nome ? `${p.autore_nome} ${p.autore_cognome}` : null,
-        // Cosa può farci chi sta chiedendo.
-        puo_modificare: !!permessi && (permessi.capo || propostaMia(p, permessi)),
+        // Una modifica proposta a un posto già sulla mappa: quale, e cosa cambia.
+        modifica_di: extra.originale ? { id: extra.originale.id, nome: extra.originale.nome } : null,
+        cambiamenti: extra.cambiamenti ?? null,
+        // Un posto sulla mappa con una modifica proposta che aspetta (solo per chi la può vedere).
+        modifica_in_attesa: extra.modificaInAttesa ?? null,
+        // Cosa può farci chi sta chiedendo. Un ragazzo del clan, su un posto del clan già sulla
+        // mappa, "modifica" proponendo; eliminare può solo una sua proposta.
+        puo_modificare: !!permessi && (permessi.capo || propostaMia(p, permessi)
+            || (!inAttesa && modificabileDalClan(p, permessi))),
+        puo_eliminare: !!permessi && p.sede !== 1 && (permessi.capo || (ragazzo && propostaMia(p, permessi))),
         puo_approvare: !!permessi && inAttesa && permessi.approva,
         id: p.id,
         nome: p.nome,
@@ -2321,6 +2348,22 @@ function postoPubblico(p, allegati = [], permessi = null) {
         data_creazione: p.data_creazione,
         data_modifica: p.data_modifica,
     };
+}
+
+/** Cosa cambia una modifica proposta rispetto al posto vero, in parole. */
+function cambiamentiDi(modifica, originale, allegatiModifica, allegatiOriginale) {
+    const diversi = (campo) => String(modifica[campo] ?? '') !== String(originale[campo] ?? '');
+    const cambiamenti = [];
+    if (diversi('nome')) cambiamenti.push('nome');
+    if (diversi('latitudine') || diversi('longitudine')) cambiamenti.push('posizione sulla mappa');
+    if (diversi('indirizzo')) cambiamenti.push('indirizzo');
+    if (diversi('descrizione')) cambiamenti.push('descrizione');
+    if (JSON.stringify(leggiElenco(modifica.contatti)) !== JSON.stringify(leggiElenco(originale.contatti)))
+        cambiamenti.push('contatti');
+    if (diversi('campi')) cambiamenti.push('campi fatti');
+    const percorsi = (elenco) => elenco.map(a => a.percorso).sort().join('|');
+    if (percorsi(allegatiModifica) !== percorsi(allegatiOriginale)) cambiamenti.push('foto e file');
+    return cambiamenti;
 }
 
 // Restituisce { errore } oppure { dati } con i campi già puliti.
@@ -2392,7 +2435,19 @@ async function inviaPosto(req, res, id, stato = 200) {
         // Una proposta di un altro, per chi non la deve approvare, è come se non ci fosse.
         if (!posto || !postoVisibile(posto, permessi)) return res.status(404).json({ error: "Posto non trovato." });
         const allegati = await dbAll('SELECT * FROM posto_allegato WHERE rif_posto = ? ORDER BY id', [posto.id]);
-        res.status(stato).json({ posto: postoPubblico(posto, allegati, permessi) });
+        const extra = {};
+        if (posto.rif_originale) {
+            const originale = await dbGet('SELECT * FROM posto WHERE id = ?', [posto.rif_originale]);
+            const allegatiOriginale = await dbAll('SELECT percorso FROM posto_allegato WHERE rif_posto = ?', [posto.rif_originale]);
+            if (originale) {
+                extra.originale = originale;
+                extra.cambiamenti = cambiamentiDi(posto, originale, allegati, allegatiOriginale);
+            }
+        } else if (permessi.approva || permessi.propone) {
+            const modifica = await dbGet('SELECT id FROM posto WHERE rif_originale = ?', [posto.id]);
+            extra.modificaInAttesa = modifica?.id ?? null;
+        }
+        res.status(stato).json({ posto: postoPubblico(posto, allegati, permessi, extra) });
     } catch (err) {
         erroreInterno(res, err);
     }
@@ -2413,12 +2468,17 @@ app.get('/api/sede', async (req, res) => {
 app.get('/api/posti', verificaUtenteMappa, async (req, res) => {
     try {
         const permessi = await permessiPosto(req);
-        const posti = (await dbAll(`${SELEZIONE_POSTO} ORDER BY lower(p.nome), p.id`)).filter(p => postoVisibile(p, permessi));
+        const tutti = await dbAll(`${SELEZIONE_POSTO} ORDER BY lower(p.nome), p.id`);
+        // Le modifiche proposte non sono posti a sé: si raggiungono dal posto che cambiano.
+        const modifiche = new Map(tutti.filter(p => p.rif_originale).map(p => [p.rif_originale, p.id]));
+        const vedeModifiche = permessi.approva || permessi.propone;
+        const posti = tutti.filter(p => !p.rif_originale && postoVisibile(p, permessi));
         const allegati = await dbAll('SELECT * FROM posto_allegato ORDER BY id');
         const perPosto = new Map();
         for (const a of allegati) perPosto.set(a.rif_posto, [...(perPosto.get(a.rif_posto) ?? []), a]);
         res.json({
-            posti: posti.map(p => postoPubblico(p, perPosto.get(p.id), permessi)),
+            posti: posti.map(p => postoPubblico(p, perPosto.get(p.id), permessi,
+                { modificaInAttesa: vedeModifiche ? modifiche.get(p.id) ?? null : null })),
             // Per la pagina: chi aggiunge direttamente e chi può solo proporre (un posto del clan).
             puoAggiungere: permessi.capo, puoProporre: permessi.propone,
         });
@@ -2453,10 +2513,35 @@ app.post('/api/posti', verificaUtenteMappa, async (req, res) => {
 });
 
 /**
- * Il posto, se chi chiede può metterci le mani: i capi sempre, un ragazzo del clan solo sulla
- * propria proposta finché è in attesa. Risponde già lei in caso di no.
+ * La modifica proposta a un posto già sulla mappa: quella che c'è (la stessa per tutto il clan)
+ * o una nuova, copia del posto con le sue foto e i suoi file (le righe, non i file: sono gli stessi).
  */
-async function postoModificabile(req, res) {
+async function modificaProposta(originale, req) {
+    const gia = await dbGet('SELECT * FROM posto WHERE rif_originale = ?', [originale.id]);
+    if (gia) return gia;
+    try {
+        const esito = await dbRun(`INSERT INTO posto (nome, branca, latitudine, longitudine, indirizzo, descrizione, contatti,
+                                   campi, rif_autore, in_attesa, rif_originale)
+                                   SELECT nome, branca, latitudine, longitudine, indirizzo, descrizione, contatti, campi,
+                                          ?, 1, id FROM posto WHERE id = ?`, [req.user.id, originale.id]);
+        await dbRun(`INSERT INTO posto_allegato (rif_posto, tipo, nome_originale, percorso, dimensione)
+                     SELECT ?, tipo, nome_originale, percorso, dimensione FROM posto_allegato
+                     WHERE rif_posto = ? ORDER BY id`, [esito.lastID, originale.id]);
+        return dbGet('SELECT * FROM posto WHERE id = ?', [esito.lastID]);
+    } catch (err) {
+        // Un altro ragazzo l'ha appena aperta: si usa la sua.
+        if (err?.code === '23505') return dbGet('SELECT * FROM posto WHERE rif_originale = ?', [originale.id]);
+        throw err;
+    }
+}
+
+/**
+ * Il posto su cui lavorare, se chi chiede può metterci le mani: i capi sempre (il posto stesso).
+ * Un ragazzo del clan: una proposta ancora in attesa, o un posto del clan già sulla mappa, e
+ * allora si lavora sulla sua modifica proposta (con `crea`, la si apre se non c'è ancora).
+ * Risponde già lei in caso di no.
+ */
+async function postoModificabile(req, res, { crea = false } = {}) {
     const posto = await dbGet('SELECT * FROM posto WHERE id = ?', [req.params.id]);
     const permessi = await permessiPosto(req);
     if (!posto || !postoVisibile(posto, permessi)) {
@@ -2464,32 +2549,82 @@ async function postoModificabile(req, res) {
         return null;
     }
     if (permessi.capo || propostaMia(posto, permessi)) return { posto, permessi };
-    res.status(403).json({ error: "I posti li cambiano i capi; tu puoi cambiare solo una tua proposta ancora in attesa." });
+    if (posto.in_attesa !== 1 && modificabileDalClan(posto, permessi)) {
+        const modifica = crea ? await modificaProposta(posto, req)
+            : await dbGet('SELECT * FROM posto WHERE rif_originale = ?', [posto.id]);
+        if (modifica) return { posto: modifica, permessi };
+    }
+    res.status(403).json({ error: "I posti li cambiano i capi; tu puoi proporre modifiche solo ai posti del clan." });
     return null;
 }
 
+/**
+ * Toglie un file dei posti solo se nessun'altra riga lo usa: una modifica proposta condivide le
+ * foto e i file del posto vero finché non viene decisa.
+ */
+async function eliminaFilePostoSeLibero(percorso) {
+    const usato = await dbGet('SELECT 1 FROM posto_allegato WHERE percorso = ? LIMIT 1', [percorso]);
+    if (!usato) eliminaFile(CARTELLA_POSTI, percorso);
+}
+
+/** Toglie un posto (e le sue modifiche proposte) con i file che restano senza nessuno. */
+async function eliminaPosto(id) {
+    const allegati = await dbAll(`SELECT DISTINCT percorso FROM posto_allegato
+                                  WHERE rif_posto = ? OR rif_posto IN (SELECT id FROM posto WHERE rif_originale = ?)`, [id, id]);
+    // Gli allegati spariscono dal database insieme al posto (ON DELETE CASCADE), poi dal disco.
+    await dbRun('DELETE FROM posto WHERE rif_originale = ?', [id]);
+    const esito = await dbRun('DELETE FROM posto WHERE id = ? AND sede = 0', [id]);
+    for (const a of allegati) await eliminaFilePostoSeLibero(a.percorso);
+    return esito.changes > 0;
+}
+
 // La sede resta sempre del gruppo: della sede si cambiano posizione e dati, non la bandierina.
+// Un ragazzo del clan che modifica un posto già sulla mappa scrive nella sua modifica proposta:
+// la risposta è quella, non il posto vero.
 app.put('/api/posti/:id', verificaUtenteMappa, async (req, res) => {
     try {
-        const trovato = await postoModificabile(req, res);
+        const trovato = await postoModificabile(req, res, { crea: true });
         if (!trovato) return;
-        const { errore, dati } = validaPosto({ ...(req.body || {}), ...(trovato.permessi.capo ? {} : { branca: 'clan' }) });
+        const { posto, permessi } = trovato;
+        const { errore, dati } = validaPosto({ ...(req.body || {}), ...(permessi.capo ? {} : { branca: 'clan' }) });
         if (errore) return res.status(400).json({ error: errore });
+        // Chi corregge per ultimo una proposta diventa quello che l'ha proposta.
         await dbRun(`UPDATE posto SET nome = ?, branca = CASE WHEN sede = 1 THEN 'gruppo' ELSE ? END,
                      latitudine = ?, longitudine = ?, indirizzo = ?, descrizione = ?, contatti = ?,
-                     campi = ?,
+                     campi = ?, rif_autore = CASE WHEN in_attesa = 1 THEN ? ELSE rif_autore END,
                      data_modifica = to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
                      WHERE id = ?`,
             [dati.nome, dati.branca, dati.latitudine, dati.longitudine, dati.indirizzo, dati.descrizione, cripta(dati.contatti),
-             dati.campi, trovato.posto.id]);
-        if (!trovato.permessi.capo) await segnalaContenuto(req, 'posto', 'modificato', dati.nome, trovato.posto.id);
-        inviaPosto(req, res, trovato.posto.id);
+             dati.campi, req.user.id, posto.id]);
+        if (!permessi.capo) await segnalaContenuto(req, 'posto', posto.rif_originale ? 'modificato' : 'creato', dati.nome, posto.id);
+        inviaPosto(req, res, posto.id);
     } catch (err) {
         erroreInterno(res, err);
     }
 });
 
-// Il sì (o il no) di un capo clan o di un capogruppo a un posto proposto da un ragazzo.
+/** Il sì a una modifica proposta: il posto vero prende i suoi dati, le sue foto e i suoi file. */
+async function applicaModifica(modifica) {
+    const id = modifica.rif_originale;
+    await dbRun(`UPDATE posto SET nome = ?, latitudine = ?, longitudine = ?, indirizzo = ?, descrizione = ?, contatti = ?,
+                 campi = ?, data_modifica = to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+                 WHERE id = ?`,
+        [modifica.nome, modifica.latitudine, modifica.longitudine, modifica.indirizzo, modifica.descrizione,
+         modifica.contatti, modifica.campi, id]);
+    const prima = await dbAll('SELECT * FROM posto_allegato WHERE rif_posto = ?', [id]);
+    const dopo = await dbAll('SELECT * FROM posto_allegato WHERE rif_posto = ?', [modifica.id]);
+    const tenuti = new Set(dopo.map(a => a.percorso));
+    const cerano = new Set(prima.map(a => a.percorso));
+    // Quelli tolti nella modifica escono dal posto; quelli aggiunti ci entrano.
+    for (const a of prima) if (!tenuti.has(a.percorso)) await dbRun('DELETE FROM posto_allegato WHERE id = ?', [a.id]);
+    for (const a of dopo) if (!cerano.has(a.percorso)) await dbRun('UPDATE posto_allegato SET rif_posto = ? WHERE id = ?', [id, a.id]);
+    await dbRun('DELETE FROM posto WHERE id = ?', [modifica.id]);
+    for (const a of prima) if (!tenuti.has(a.percorso)) await eliminaFilePostoSeLibero(a.percorso);
+    return id;
+}
+
+// Il sì (o il no) di un capo clan o di un capogruppo a un posto proposto da un ragazzo, o a una
+// modifica proposta a un posto già sulla mappa.
 app.put('/api/posti/:id/pubblica', verificaUtenteMappa, async (req, res) => {
     try {
         if (!(await permessiPosto(req)).approva)
@@ -2499,15 +2634,14 @@ app.put('/api/posti/:id/pubblica', verificaUtenteMappa, async (req, res) => {
         if (posto.in_attesa !== 1) return res.status(409).json({ error: "Questo posto è già stato deciso." });
 
         if (req.body?.approva === false) {
-            // Rifiutato: il posto e i suoi allegati se ne vanno.
-            const allegati = await dbAll('SELECT percorso FROM posto_allegato WHERE rif_posto = ?', [posto.id]);
-            await dbRun('DELETE FROM posto WHERE id = ? AND in_attesa = 1', [posto.id]);
-            for (const a of allegati) eliminaFile(CARTELLA_POSTI, a.percorso);
+            // Rifiutato: la proposta se ne va, con i file che aveva solo lei.
+            await eliminaPosto(posto.id);
             await avvisiDecisi('posto', posto.id);
-            return res.json({ message: "Proposta rifiutata." });
+            return res.json({ message: posto.rif_originale ? "Modifica rifiutata." : "Proposta rifiutata." });
         }
-        await dbRun('UPDATE posto SET in_attesa = 0 WHERE id = ?', [posto.id]);
         await avvisiDecisi('posto', posto.id);
+        if (posto.rif_originale) return inviaPosto(req, res, await applicaModifica(posto));
+        await dbRun('UPDATE posto SET in_attesa = 0 WHERE id = ?', [posto.id]);
         inviaPosto(req, res, posto.id);
     } catch (err) {
         erroreInterno(res, err);
@@ -2516,32 +2650,33 @@ app.put('/api/posti/:id/pubblica', verificaUtenteMappa, async (req, res) => {
 
 app.delete('/api/posti/:id', verificaUtenteMappa, async (req, res) => {
     try {
-        // Un ragazzo può ritirare la sua proposta finché è in attesa.
         const trovato = await postoModificabile(req, res);
         if (!trovato) return;
-        const { posto } = trovato;
+        const { posto, permessi } = trovato;
+        // Un ragazzo può ritirare solo una proposta (un posto nuovo o una modifica), non un posto vero.
+        if (!permessi.capo && (posto.in_attesa !== 1 || String(posto.id) !== String(req.params.id)))
+            return res.status(403).json({ error: "Puoi ritirare solo una proposta ancora in attesa." });
         if (posto.sede === 1) return res.status(403).json({ error: "La sede del gruppo non si può eliminare." });
-        const allegati = await dbAll('SELECT percorso FROM posto_allegato WHERE rif_posto = ?', [req.params.id]);
-        // Gli allegati spariscono dal database insieme al posto (ON DELETE CASCADE), poi dal disco.
-        const esito = await dbRun('DELETE FROM posto WHERE id = ? AND sede = 0', [req.params.id]);
-        if (esito.changes === 0) return res.status(404).json({ error: "Posto non trovato." });
-        for (const a of allegati) eliminaFile(CARTELLA_POSTI, a.percorso);
-        // Se era una proposta (ritirata dal ragazzo), il suo avviso ai capi non porta più a niente.
+        if (!(await eliminaPosto(posto.id))) return res.status(404).json({ error: "Posto non trovato." });
+        // Se era una proposta, il suo avviso ai capi non porta più a niente.
         await avvisiDecisi('posto', posto.id);
-        res.json({ message: "Posto eliminato." });
+        res.json({ message: posto.in_attesa === 1 ? "Proposta ritirata." : "Posto eliminato." });
     } catch (err) {
         erroreInterno(res, err);
     }
 });
 
-// Un allegato alla volta, inviato così com'è (niente base64): il nome originale arriva
+// Carica una foto o un file per un posto. Il file arriva così com'è (niente base64), col nome
 // nell'intestazione X-Nome-File, codificato con encodeURIComponent.
 app.post('/api/posti/:id/allegati', verificaUtenteMappa,
-    // I capi sempre; un ragazzo del clan solo sulla sua proposta ancora in attesa. Si controlla
-    // prima di leggere il file: chi non può non fa nemmeno arrivare i suoi 15 MB.
+    // I capi sempre; un ragazzo del clan sulla sua proposta, o sulla modifica proposta di un posto
+    // del clan. Si controlla prima di leggere il file: chi non può non fa arrivare i suoi 15 MB.
     async (req, res, next) => {
         try {
-            if (await postoModificabile(req, res)) next();
+            const trovato = await postoModificabile(req, res, { crea: true });
+            if (!trovato) return;
+            req.postoDestinazione = trovato.posto;
+            next();
         } catch (err) {
             erroreInterno(res, err);
         }
@@ -2566,8 +2701,7 @@ app.post('/api/posti/:id/allegati', verificaUtenteMappa,
             return res.status(400).json({ error: `"${nome}" non è una foto JPG, PNG o WebP valida.` });
 
         try {
-            const posto = await dbGet('SELECT id FROM posto WHERE id = ?', [req.params.id]);
-            if (!posto) return res.status(404).json({ error: "Posto non trovato." });
+            const posto = req.postoDestinazione;
             const { numero } = await dbGet('SELECT COUNT(*) AS numero FROM posto_allegato WHERE rif_posto = ?', [posto.id]);
             if (numero >= MAX_ALLEGATI_POSTO)
                 return res.status(400).json({ error: `Un posto può avere al massimo ${MAX_ALLEGATI_POSTO} tra foto e file.` });
@@ -2591,12 +2725,21 @@ app.post('/api/posti/:id/allegati', verificaUtenteMappa,
 
 app.delete('/api/posti/:id/allegati/:idAllegato', verificaUtenteMappa, async (req, res) => {
     try {
-        if (!(await postoModificabile(req, res))) return;
-        const allegato = await dbGet('SELECT * FROM posto_allegato WHERE id = ? AND rif_posto = ?',
-            [req.params.idAllegato, req.params.id]);
+        const trovato = await postoModificabile(req, res, { crea: true });
+        if (!trovato) return;
+        const { posto } = trovato;
+        let allegato = await dbGet('SELECT * FROM posto_allegato WHERE id = ? AND rif_posto = ?',
+            [req.params.idAllegato, posto.id]);
+        // In una modifica proposta il sito conosce le foto del posto vero: si toglie la loro copia.
+        if (!allegato && posto.rif_originale) {
+            const delVero = await dbGet('SELECT percorso FROM posto_allegato WHERE id = ? AND rif_posto = ?',
+                [req.params.idAllegato, posto.rif_originale]);
+            if (delVero) allegato = await dbGet('SELECT * FROM posto_allegato WHERE rif_posto = ? AND percorso = ?',
+                [posto.id, delVero.percorso]);
+        }
         if (!allegato) return res.status(404).json({ error: "Allegato non trovato." });
         await dbRun('DELETE FROM posto_allegato WHERE id = ?', [allegato.id]);
-        eliminaFile(CARTELLA_POSTI, allegato.percorso);
+        await eliminaFilePostoSeLibero(allegato.percorso);
         res.json({ message: "Allegato eliminato." });
     } catch (err) {
         erroreInterno(res, err);
@@ -6247,12 +6390,24 @@ app.delete('/api/peg/:id', verificaRuolo('capo', 'admin'), async (req, res) => {
 
 // ---------- Avvisi sui contenuti (per ora: i capi clan sui ragazzi del clan) ----------
 
-/** Segna che un ragazzo ha aggiunto o cambiato qualcosa: lo vedranno i capi della sua branca. */
+/**
+ * Segna che un ragazzo ha aggiunto o cambiato qualcosa: lo vedranno i capi della sua branca.
+ * Per la stessa cosa resta un avviso solo, l'ultimo: se il ragazzo corregge la sua proposta,
+ * l'avviso di prima si sostituisce (e una proposta nuova resta "proposta", non "modificata").
+ */
 async function segnalaContenuto(req, tipo, azione, titolo, idOggetto) {
     try {
         if (req.user?.ruolo !== 'ragazzo') return;
         const autore = await dbGet(`SELECT branca FROM utenti WHERE id = ?`, [req.user.id]);
         if (!autore?.branca) return;
+        if (idOggetto) {
+            const prima = await dbGet(`SELECT azione FROM notifica_contenuto WHERE tipo = ? AND rif_oggetto = ? AND letta = 0
+                                       ORDER BY id LIMIT 1`, [tipo, idOggetto]);
+            if (prima) {
+                azione = prima.azione;
+                await dbRun(`DELETE FROM notifica_contenuto WHERE tipo = ? AND rif_oggetto = ? AND letta = 0`, [tipo, idOggetto]);
+            }
+        }
         await dbRun(`INSERT INTO notifica_contenuto (tipo, azione, titolo, rif_oggetto, rif_autore, branca)
                      VALUES (?, ?, ?, ?, ?, ?)`,
             [tipo, azione, testo(titolo, 120) || 'Senza titolo', idOggetto ?? null, req.user.id, autore.branca]);

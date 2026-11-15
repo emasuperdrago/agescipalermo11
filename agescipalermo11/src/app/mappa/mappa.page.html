@@ -104,6 +104,8 @@
                     }
                     @if (p.in_attesa) {
                       <span class="posto__sede posto__sede--attesa">In attesa</span>
+                    } @else if (p.modifica_in_attesa) {
+                      <span class="posto__sede posto__sede--attesa">Modifica in attesa</span>
                     }
                   </strong>
                   <small>

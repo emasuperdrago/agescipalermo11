@@ -392,6 +392,14 @@ export interface Posto {
   puo_modificare?: boolean;
   /** Chi sta guardando può dire sì o no alla proposta. */
   puo_approvare?: boolean;
+  /** Chi sta guardando può toglierlo (i capi; un ragazzo solo una sua proposta). */
+  puo_eliminare?: boolean;
+  /** Una modifica proposta dai ragazzi del clan: il posto vero che cambierebbe… */
+  modifica_di?: { id: number; nome: string } | null;
+  /** …e cosa cambia (es. "descrizione", "foto e file"). */
+  cambiamenti?: string[] | null;
+  /** Un posto sulla mappa con una modifica proposta che aspetta: l'id della modifica. */
+  modifica_in_attesa?: number | null;
 }
 
 export type DatiPosto = Pick<Posto, 'nome' | 'branca' | 'latitudine' | 'longitudine' | 'indirizzo' | 'descrizione'

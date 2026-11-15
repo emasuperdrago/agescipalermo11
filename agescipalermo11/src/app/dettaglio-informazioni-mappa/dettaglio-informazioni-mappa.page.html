@@ -31,14 +31,24 @@
             <span class="badge">Sede del gruppo</span>
           }
           @if (posto.in_attesa) {
-            <span class="badge">In attesa di approvazione</span>
+            <span class="badge">{{ posto.modifica_di ? 'Modifica in attesa' : 'In attesa di approvazione' }}</span>
           }
           <h1>{{ posto.nome }}</h1>
           @if (posto.in_attesa) {
             <!-- Proposto da un ragazzo del clan: lo vedono solo lui e chi lo deve approvare. -->
             <div class="proposta" role="status">
               <p>
-                @if (posto.puo_approvare) {
+                @if (posto.modifica_di) {
+                  <!-- Una modifica proposta a un posto già sulla mappa. -->
+                  @if (posto.puo_approvare) {
+                    <strong>{{ posto.proposto_da || 'Un ragazzo del clan' }}</strong> propone di cambiare
+                  } @else {
+                    Modifica proposta ai capi clan per
+                  }
+                  <a [routerLink]="['/mappa', posto.modifica_di.id]">{{ posto.modifica_di.nome }}</a>@if (posto.cambiamenti?.length) {:
+                    {{ posto.cambiamenti!.join(', ') }}}@else { (per ora uguale al posto)}.
+                  @if (!posto.puo_approvare) { Il posto cambia appena la approvano; intanto potete ancora correggerla. }
+                } @else if (posto.puo_approvare) {
                   Proposto da <strong>{{ posto.proposto_da || 'un ragazzo del clan' }}</strong>: finché non lo approvi
                   non è sulla mappa.
                 } @else {
@@ -68,6 +78,14 @@
               <ion-icon [icon]="icone.campo" aria-hidden="true"></ion-icon>
               {{ posto.campi.length === 1 ? 'Campo' : 'Ultimo campo' }}: {{ dateCampo(posto.campi[0]) }}
             </p>
+          } @else if (posto.modifica_in_attesa) {
+            <!-- Il posto vero, con una modifica dei ragazzi che aspetta. -->
+            <div class="proposta" role="status">
+              <p>
+                C'è una modifica proposta dai ragazzi del clan.
+                <a [routerLink]="['/mappa', posto.modifica_in_attesa]">{{ eRagazzo ? 'Guardala' : 'Guardala e decidi' }}</a>
+              </p>
+            </div>
           }
           <div class="copertina__azioni">
             <a class="pulsante pulsante--chiaro" [href]="indicazioni" target="_blank" rel="noopener">
@@ -77,13 +95,13 @@
             @if (puoModificare) {
               <button type="button" class="pulsante pulsante--vetro" (click)="modifica()" [disabled]="eliminando">
                 <ion-icon [icon]="icone.modifica" aria-hidden="true"></ion-icon>
-                Modifica
+                {{ eRagazzo && !posto.in_attesa ? 'Proponi una modifica' : 'Modifica' }}
               </button>
-              <!-- La sede del gruppo non si elimina. -->
-              @if (!posto.sede) {
+              <!-- La sede del gruppo non si elimina; un ragazzo ritira solo una sua proposta. -->
+              @if (puoEliminare) {
                 <button type="button" class="pulsante pulsante--vetro" (click)="confermaElimina()" [disabled]="eliminando">
                   <ion-icon [icon]="icone.elimina" aria-hidden="true"></ion-icon>
-                  {{ eliminando ? 'Eliminazione…' : (propostaMia ? 'Ritira la proposta' : 'Elimina') }}
+                  {{ eliminando ? 'Eliminazione…' : (propostaMia ? (posto.modifica_di ? 'Ritira la modifica' : 'Ritira la proposta') : 'Elimina') }}
                 </button>
               }
             }

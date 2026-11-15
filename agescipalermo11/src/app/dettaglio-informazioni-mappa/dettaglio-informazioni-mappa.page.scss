@@ -724,6 +724,12 @@
     line-height: 1.4;
   }
 
+  a {
+    font-weight: 800;
+    color: inherit;
+    text-decoration: underline;
+  }
+
   &__azioni {
     display: flex;
     flex-wrap: wrap;

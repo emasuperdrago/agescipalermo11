@@ -309,6 +309,10 @@ const TABELLE = [
     // Un posto proposto da un ragazzo del clan: resta in attesa (lo vedono solo lui e chi lo
     // approva) finché un capo clan o un capogruppo non dice sì.
     `ALTER TABLE posto ADD COLUMN IF NOT EXISTS in_attesa SMALLINT NOT NULL DEFAULT 0`,
+    // Una modifica proposta dai ragazzi del clan a un posto già sulla mappa: una copia in attesa
+    // che punta al posto vero. Al massimo una per posto (la correggono tutti, al capo ne arriva una).
+    `ALTER TABLE posto ADD COLUMN IF NOT EXISTS rif_originale INTEGER REFERENCES posto(id) ON DELETE CASCADE`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS posto_modifica_unica ON posto (rif_originale) WHERE rif_originale IS NOT NULL`,
     // La sede del gruppo è una sola.
     `CREATE UNIQUE INDEX IF NOT EXISTS posto_sede_unica ON posto (sede) WHERE sede = 1`,
 

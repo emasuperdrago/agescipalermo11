@@ -1,3 +1,4 @@
+import { firstValueFrom } from 'rxjs';
 import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -103,9 +104,20 @@ export class DettaglioInformazioniMappaPage implements OnDestroy, OnInit {
     return ruolo === 'capo' || ruolo === 'admin';
   }
 
-  /** Chi guarda è il ragazzo che ha proposto il posto (non un capo). */
+  /** Chi guarda è un ragazzo del clan: le sue modifiche sono proposte per i capi. */
+  get eRagazzo(): boolean {
+    return this.auth.utente?.ruolo === 'ragazzo';
+  }
+
+  /** Chi guarda è il ragazzo che ha proposto (o sta correggendo) questa proposta. */
   get propostaMia(): boolean {
-    return !!this.posto?.in_attesa && this.puoModificare && this.auth.utente?.ruolo === 'ragazzo';
+    return !!this.posto?.in_attesa && this.puoModificare && this.eRagazzo;
+  }
+
+  /** I capi possono togliere il posto; un ragazzo solo ritirare una proposta. */
+  get puoEliminare(): boolean {
+    if (!this.posto || this.posto.sede) return false;
+    return this.posto.puo_eliminare ?? this.puoModificare;
   }
 
   decidendo = false;
@@ -128,11 +140,14 @@ export class DettaglioInformazioniMappaPage implements OnDestroy, OnInit {
       next: esito => {
         this.decidendo = false;
         if (approva && esito.posto) {
-          this.posto = esito.posto;
-          this.avvisa('Posto approvato: ora è sulla mappa per tutti.');
+          this.avvisa(posto.modifica_di ? 'Modifica approvata: il posto è aggiornato.' : 'Posto approvato: ora è sulla mappa per tutti.');
+          // Approvata una modifica, si torna al posto vero (la proposta non c'è più).
+          if (esito.posto.id !== posto.id) this.navCtrl.navigateRoot(['/mappa', esito.posto.id]);
+          else this.posto = esito.posto;
         } else {
-          this.avvisa('Proposta rifiutata.');
-          this.navCtrl.navigateBack('/mappa');
+          this.avvisa(posto.modifica_di ? 'Modifica rifiutata.' : 'Proposta rifiutata.');
+          if (posto.modifica_di) this.navCtrl.navigateRoot(['/mappa', posto.modifica_di.id]);
+          else this.navCtrl.navigateBack('/mappa');
         }
       },
       error: (err: HttpErrorResponse) => {
@@ -251,13 +266,27 @@ export class DettaglioInformazioniMappaPage implements OnDestroy, OnInit {
 
   async modifica() {
     if (!this.posto) return;
+    // Un ragazzo del clan su un posto che ha già una modifica proposta riparte da quella:
+    // così le correzioni si sommano e al capo arriva una richiesta sola.
+    let daModificare = this.posto;
+    if (this.eRagazzo && this.posto.modifica_in_attesa) {
+      try {
+        daModificare = await firstValueFrom(this.postiService.dettaglio(this.posto.modifica_in_attesa));
+      } catch { /* la modifica è stata appena decisa: si parte dal posto */ }
+    }
     const modale = await this.modalCtrl.create({
       component: PostoEditorComponent,
-      componentProps: { posto: this.posto, proposta: this.propostaMia },
+      componentProps: { posto: daModificare, proposta: this.eRagazzo },
     });
     await modale.present();
     const { data, role } = await modale.onDidDismiss<EsitoPostoEditor>();
     if (role !== 'salvato' || !data) return;
+    // La modifica di un ragazzo a un posto già sulla mappa è una proposta: si va a guardare quella.
+    if (data.posto.id !== this.posto.id) {
+      this.avvisa('Modifica mandata ai capi clan: il posto cambia appena la approvano.');
+      this.navCtrl.navigateForward(['/mappa', data.posto.id]);
+      return;
+    }
     this.posto = data.posto;
     this.fotoAperta = null;
     this.aggiornaMiniMappa();
@@ -276,12 +305,16 @@ export class DettaglioInformazioniMappaPage implements OnDestroy, OnInit {
   async confermaElimina() {
     if (!this.posto || this.posto.sede) return;
     const posto = this.posto;
+    const ritiro = this.propostaMia;
     const alert = await this.alertCtrl.create({
-      header: 'Eliminare il posto?',
-      message: `"${posto.nome}" verrà tolto dalla mappa insieme a tutte le sue foto e i suoi file. Non si può annullare.`,
+      header: ritiro ? (posto.modifica_di ? 'Ritirare la modifica?' : 'Ritirare la proposta?') : 'Eliminare il posto?',
+      message: ritiro
+        ? (posto.modifica_di ? `Il posto resta com'è adesso e la modifica sparisce anche per gli altri ragazzi del clan.`
+          : `"${posto.nome}" sparisce insieme alle foto e ai file che ci avevi messo.`)
+        : `"${posto.nome}" verrà tolto dalla mappa insieme a tutte le sue foto e i suoi file. Non si può annullare.`,
       buttons: [
         { text: 'Annulla', role: 'cancel' },
-        { text: 'Elimina', role: 'destructive' },
+        { text: ritiro ? 'Ritira' : 'Elimina', role: 'destructive' },
       ],
     });
     await alert.present();
@@ -295,8 +328,10 @@ export class DettaglioInformazioniMappaPage implements OnDestroy, OnInit {
     this.eliminando = true;
     this.postiService.elimina(posto.id).subscribe({
       next: () => {
-        this.avvisa('Posto eliminato.');
-        this.navCtrl.navigateBack('/mappa');
+        this.avvisa(posto.in_attesa ? 'Proposta ritirata.' : 'Posto eliminato.');
+        // Ritirata una modifica, si torna al posto (che resta com'era).
+        if (posto.modifica_di) this.navCtrl.navigateRoot(['/mappa', posto.modifica_di.id]);
+        else this.navCtrl.navigateBack('/mappa');
       },
       error: (err: HttpErrorResponse) => {
         this.eliminando = false;

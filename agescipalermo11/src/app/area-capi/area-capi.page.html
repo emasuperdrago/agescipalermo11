@@ -168,7 +168,7 @@
                 } @else {
                   <strong>{{ n.titolo }}</strong>
                 }
-                <small>{{ n.autore }} ha {{ n.azione === 'creato' ? 'proposto' : 'modificato' }} un {{ n.tipo }}</small>
+                <small>{{ n.autore }} ha {{ n.azione === 'creato' ? 'proposto un ' + n.tipo : 'proposto una modifica a un ' + n.tipo }}</small>
               </div>
               <button type="button" class="azione" (click)="segnaContenutoLetto(n)">Visto</button>
             </li>
