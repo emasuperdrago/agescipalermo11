@@ -6422,15 +6422,31 @@ function avvisiDecisi(tipo, idOggetto) {
         .catch(err => console.error('Avvisi non chiusi:', err.message));
 }
 
+/**
+ * Gli avvisi che riguardano questo capo: quelli della sua branca e, per i capigruppo, anche le
+ * proposte del clan (post e posti), che tocca a loro approvare come ai capi clan.
+ */
+function avvisiDelCapo(req, branca) {
+    const capogruppo = req.user.ruolo === 'admin';
+    const condizioni = [];
+    const parametri = [];
+    if (branca) {
+        condizioni.push('n.branca = ?');
+        parametri.push(branca);
+    }
+    if (capogruppo) condizioni.push(`(n.branca = 'clan' AND n.tipo IN ('post', 'posto'))`);
+    return { sql: condizioni.length ? `(${condizioni.join(' OR ')})` : 'FALSE', parametri };
+}
+
 app.get('/api/notifiche-contenuti', verificaRuolo('capo', 'admin'), async (req, res) => {
     try {
         const branca = await brancaDelCapo(req.user.id);
-        if (!branca) return res.json({ branca: null, notifiche: [] });
+        const dove = avvisiDelCapo(req, branca);
         const conLette = String(req.query.lette ?? '') === '1';
         const righe = await dbAll(`SELECT n.*, u.nome AS autore_nome, u.cognome AS autore_cognome
                                    FROM notifica_contenuto n LEFT JOIN utenti u ON u.id = n.rif_autore
-                                   WHERE n.branca = ? ${conLette ? '' : 'AND n.letta = 0'}
-                                   ORDER BY n.data_creazione DESC LIMIT 100`, [branca]);
+                                   WHERE ${dove.sql} ${conLette ? '' : 'AND n.letta = 0'}
+                                   ORDER BY n.data_creazione DESC LIMIT 100`, dove.parametri);
         res.json({
             branca,
             notifiche: righe.map(n => ({
@@ -6447,10 +6463,10 @@ app.get('/api/notifiche-contenuti', verificaRuolo('capo', 'admin'), async (req, 
 app.put('/api/notifiche-contenuti/:id/letta', verificaRuolo('capo', 'admin'), async (req, res) => {
     try {
         const branca = await brancaDelCapo(req.user.id);
-        const riga = await dbGet(`SELECT * FROM notifica_contenuto WHERE id = ?`, [req.params.id]);
+        const dove = avvisiDelCapo(req, branca);
+        const riga = await dbGet(`SELECT n.* FROM notifica_contenuto n WHERE n.id = ? AND ${dove.sql}`,
+            [req.params.id, ...dove.parametri]);
         if (!riga) return res.status(404).json({ error: "Avviso non trovato." });
-        if (!branca || riga.branca !== branca)
-            return res.status(403).json({ error: "Questo avviso è di un'altra branca." });
         const letta = req.body?.letta === false ? 0 : 1;
         await dbRun(`UPDATE notifica_contenuto SET letta = ? WHERE id = ?`, [letta, riga.id]);
         res.json({ id: riga.id, letta: letta === 1 });
