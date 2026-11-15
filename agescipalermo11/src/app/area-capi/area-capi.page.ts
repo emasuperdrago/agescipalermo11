@@ -197,6 +197,12 @@ export class AreaCapiPage implements OnInit {
     });
   }
 
+  /** Dove si guarda quello che il ragazzo ha proposto (i canti non hanno proposte). */
+  linkContenuto(n: NotificaContenuto): (string | number)[] | null {
+    if (!n.rif_oggetto) return null;
+    return n.tipo === 'post' ? ['/dettaglio-post', n.rif_oggetto] : n.tipo === 'posto' ? ['/mappa', n.rif_oggetto] : null;
+  }
+
   iconaContenuto(tipo: NotificaContenuto['tipo']): string {
     return tipo === 'posto' ? this.icone.posto : tipo === 'canto' ? this.icone.canto : this.icone.post;
   }

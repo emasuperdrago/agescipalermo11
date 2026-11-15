@@ -1,6 +1,6 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>{{ modifica ? 'Modifica posto' : 'Nuovo posto' }}</ion-title>
+    <ion-title>{{ proposta ? (modifica ? 'Correggi la proposta' : 'Proponi un posto') : (modifica ? 'Modifica posto' : 'Nuovo posto') }}</ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="chiudi()" aria-label="Chiudi" [disabled]="salvando">
         <ion-icon slot="icon-only" [icon]="icone.chiudi"></ion-icon>
@@ -12,12 +12,19 @@
 <ion-content class="posto-editor">
   <form class="modulo" (ngSubmit)="salva()">
     <p class="obbligatori">I campi con <strong>*</strong> sono obbligatori.</p>
+    @if (proposta) {
+      <p class="suggerimento">
+        Proponi un posto per il <strong>clan</strong>: i capi clan lo guardano e, se va bene, lo mettono sulla mappa.
+        Finché aspetta lo vedi solo tu e puoi ancora correggerlo.
+      </p>
+    }
 
     <label class="campo">
       <span class="etichetta">Nome del posto *</span>
       <input name="nome" [(ngModel)]="nome" maxlength="100" placeholder="Es. Base scout di Piano Zucchi" />
     </label>
 
+    @if (!proposta) {
     <fieldset class="campo" [disabled]="eSede">
       <legend class="etichetta">Branca *</legend>
       <div class="scelte">
@@ -34,6 +41,7 @@
         <p class="suggerimento">Questa è la sede del gruppo: la bandierina resta viola. Puoi spostarla e cambiarne i dati.</p>
       }
     </fieldset>
+    }
 
     <!-- Campi fatti nel posto: uno per riga (la sede non ne ha) -->
     @if (!eSede) {
@@ -200,7 +208,7 @@
       @if (salvando) {
         {{ avanzamento || 'Salvataggio in corso…' }}
       } @else {
-        {{ modifica ? 'Salva modifiche' : 'Aggiungi alla mappa' }}
+        {{ modifica ? 'Salva modifiche' : (proposta ? 'Manda la proposta ai capi' : 'Aggiungi alla mappa') }}
       }
     </button>
   </form>

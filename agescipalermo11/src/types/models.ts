@@ -384,9 +384,18 @@ export interface Posto {
   allegati: AllegatoPosto[];
   data_creazione: string;
   data_modifica: string;
+  /** Proposto da un ragazzo del clan: aspetta il sì di un capo clan o di un capogruppo. */
+  in_attesa?: boolean;
+  /** Chi l'ha proposto (solo finché è in attesa). */
+  proposto_da?: string | null;
+  /** Chi sta guardando può cambiarlo o toglierlo (i capi; un ragazzo solo la sua proposta in attesa). */
+  puo_modificare?: boolean;
+  /** Chi sta guardando può dire sì o no alla proposta. */
+  puo_approvare?: boolean;
 }
 
-export type DatiPosto = Omit<Posto, 'id' | 'sede' | 'allegati' | 'data_creazione' | 'data_modifica'>;
+export type DatiPosto = Pick<Posto, 'nome' | 'branca' | 'latitudine' | 'longitudine' | 'indirizzo' | 'descrizione'
+  | 'contatti' | 'campi'>;
 
 /** Sezione del canzoniere. */
 export type SezioneCanto = 'preghiere' | 'branco' | 'reparto' | 'clan' | 'liturgici' | 'fuoco';

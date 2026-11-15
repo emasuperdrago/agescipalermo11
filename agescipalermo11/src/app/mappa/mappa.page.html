@@ -43,10 +43,10 @@
         }
       </div>
 
-      @if (puoModificare) {
+      @if (puoModificare || puoProporre) {
         <button type="button" class="nuovo-posto" (click)="aggiungiPosto()">
           <ion-icon [icon]="icone.aggiungi" aria-hidden="true"></ion-icon>
-          Aggiungi posto
+          {{ puoModificare ? 'Aggiungi posto' : 'Proponi un posto' }}
         </button>
       }
     </section>
@@ -101,6 +101,9 @@
                     {{ p.nome }}
                     @if (p.sede) {
                       <span class="posto__sede">Sede</span>
+                    }
+                    @if (p.in_attesa) {
+                      <span class="posto__sede posto__sede--attesa">In attesa</span>
                     }
                   </strong>
                   <small>

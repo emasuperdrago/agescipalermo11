@@ -96,9 +96,50 @@ export class DettaglioInformazioniMappaPage implements OnDestroy, OnInit {
     this.miniMappa?.remove();
   }
 
+  /** I capi sempre; un ragazzo del clan solo sulla sua proposta ancora in attesa (lo dice il server). */
   get puoModificare(): boolean {
+    if (this.posto?.puo_modificare !== undefined) return this.posto.puo_modificare;
     const ruolo = this.auth.utente?.ruolo;
     return ruolo === 'capo' || ruolo === 'admin';
+  }
+
+  /** Chi guarda è il ragazzo che ha proposto il posto (non un capo). */
+  get propostaMia(): boolean {
+    return !!this.posto?.in_attesa && this.puoModificare && this.auth.utente?.ruolo === 'ragazzo';
+  }
+
+  decidendo = false;
+
+  /** Il sì o il no di un capo clan o di un capogruppo a un posto proposto. */
+  async decidi(approva: boolean) {
+    const posto = this.posto;
+    if (!posto || this.decidendo) return;
+    if (!approva) {
+      const alert = await this.alertCtrl.create({
+        header: 'Rifiutare la proposta?',
+        message: `"${posto.nome}" verrà tolto insieme alle sue foto e ai suoi file. Non si può annullare.`,
+        buttons: [{ text: 'Annulla', role: 'cancel' }, { text: 'Rifiuta', role: 'destructive' }],
+      });
+      await alert.present();
+      if ((await alert.onDidDismiss()).role !== 'destructive') return;
+    }
+    this.decidendo = true;
+    this.postiService.pubblica(posto.id, approva).subscribe({
+      next: esito => {
+        this.decidendo = false;
+        if (approva && esito.posto) {
+          this.posto = esito.posto;
+          this.avvisa('Posto approvato: ora è sulla mappa per tutti.');
+        } else {
+          this.avvisa('Proposta rifiutata.');
+          this.navCtrl.navigateBack('/mappa');
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.decidendo = false;
+        this.avvisa(err.error?.error ?? 'Non sono riuscito a salvare la decisione.');
+      },
+    });
   }
 
   /** Colori della branca per il CSS (colore, scritta sopra, colore forte su bianco). */
@@ -212,7 +253,7 @@ export class DettaglioInformazioniMappaPage implements OnDestroy, OnInit {
     if (!this.posto) return;
     const modale = await this.modalCtrl.create({
       component: PostoEditorComponent,
-      componentProps: { posto: this.posto },
+      componentProps: { posto: this.posto, proposta: this.propostaMia },
     });
     await modale.present();
     const { data, role } = await modale.onDidDismiss<EsitoPostoEditor>();

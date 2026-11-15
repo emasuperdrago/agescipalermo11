@@ -162,6 +162,12 @@ export class MappaPage implements AfterViewInit, OnDestroy, OnInit {
     return ruolo === 'capo' || ruolo === 'admin';
   }
 
+  /**
+   * Rover e scolte possono proporre un posto del clan: resta in attesa finché un capo clan
+   * o un capogruppo non lo approva. Lo dice il server insieme all'elenco.
+   */
+  puoProporre = false;
+
   /** La sede del gruppo (il backend la crea sempre). */
   get sede(): Posto | undefined {
     return this.posti.find(p => p.sede);
@@ -211,8 +217,9 @@ export class MappaPage implements AfterViewInit, OnDestroy, OnInit {
   caricaPosti() {
     this.errore = '';
     this.postiService.elenco().subscribe({
-      next: posti => {
-        this.posti = posti;
+      next: dati => {
+        this.posti = dati.posti;
+        this.puoProporre = !!dati.puoProporre;
         this.caricamento = false;
         this.disegnaBandierine();
       },
@@ -378,6 +385,7 @@ export class MappaPage implements AfterViewInit, OnDestroy, OnInit {
       component: PostoEditorComponent,
       componentProps: {
         centroIniziale: centro ? { latitudine: centro.lat, longitudine: centro.lng, zoom: this.mappa!.getZoom() } : undefined,
+        proposta: !this.puoModificare,
       },
     });
     await modale.present();
@@ -396,7 +404,8 @@ export class MappaPage implements AfterViewInit, OnDestroy, OnInit {
     this.mappa?.setView([posto.latitudine, posto.longitudine], Math.max(this.mappa.getZoom(), 14));
 
     if (avvisi.length) await this.mostraAvvisi(avvisi);
-    else this.avvisa('Posto aggiunto alla mappa.');
+    else this.avvisa(posto.in_attesa ? 'Proposta mandata ai capi clan: sarà sulla mappa appena la approvano.'
+      : 'Posto aggiunto alla mappa.');
   }
 
   private async mostraAvvisi(avvisi: string[]) {

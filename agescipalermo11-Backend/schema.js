@@ -235,6 +235,16 @@ const TABELLE = [
         data_creazione BIGINT NOT NULL DEFAULT ${SECONDI}
     )`,
 
+    // I tentativi di accesso andati male (e le richieste del modulo pubblico), per il limite:
+    // stanno nel database e non nella memoria del server, perché online il server gira in più
+    // copie e ognuna conterebbe per sé. `chiave` è un'impronta: niente indirizzi o codici in chiaro.
+    `CREATE TABLE IF NOT EXISTS tentativo_accesso (
+        id BIGSERIAL PRIMARY KEY,
+        chiave TEXT NOT NULL,
+        quando BIGINT NOT NULL
+    )`,
+    `CREATE INDEX IF NOT EXISTS tentativo_accesso_chiave ON tentativo_accesso (chiave, quando)`,
+
     `CREATE TABLE IF NOT EXISTS notifica_contenuto (
         id SERIAL PRIMARY KEY,
         tipo TEXT NOT NULL CHECK (tipo IN ('posto', 'canto', 'post')),
@@ -296,6 +306,9 @@ const TABELLE = [
         sede SMALLINT NOT NULL DEFAULT 0,
         campi TEXT NOT NULL DEFAULT '[]'
     )`,
+    // Un posto proposto da un ragazzo del clan: resta in attesa (lo vedono solo lui e chi lo
+    // approva) finché un capo clan o un capogruppo non dice sì.
+    `ALTER TABLE posto ADD COLUMN IF NOT EXISTS in_attesa SMALLINT NOT NULL DEFAULT 0`,
     // La sede del gruppo è una sola.
     `CREATE UNIQUE INDEX IF NOT EXISTS posto_sede_unica ON posto (sede) WHERE sede = 1`,
 

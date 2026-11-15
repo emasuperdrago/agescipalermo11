@@ -132,8 +132,14 @@ export class PostiService {
 
   constructor(private http: HttpClient) { }
 
+  /** I posti che si possono vedere, e cosa può fare chi guarda: aggiungere (i capi) o proporre (il clan). */
   elenco() {
-    return this.http.get<{ posti: Posto[] }>(`${apiUrl()}/posti`).pipe(map(r => r.posti));
+    return this.http.get<{ posti: Posto[]; puoAggiungere?: boolean; puoProporre?: boolean }>(`${apiUrl()}/posti`);
+  }
+
+  /** Il sì (o il no) a un posto proposto da un ragazzo del clan. */
+  pubblica(id: number, approva: boolean) {
+    return this.http.put<{ posto?: Posto; message?: string }>(`${apiUrl()}/posti/${id}/pubblica`, { approva });
   }
 
   dettaglio(id: number) {

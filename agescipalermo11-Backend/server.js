@@ -703,7 +703,24 @@ app.get('/', (req, res) => {
 const FINESTRA_TENTATIVI = 15 * 60 * 1000;
 const MAX_TENTATIVI_CODICE = 5;
 const MAX_TENTATIVI_INDIRIZZO = 30;
-const tentativiFalliti = new Map();
+
+// I conti stanno nel database (tabella tentativo_accesso): online il server gira in più copie
+// che si spengono e si riaccendono, e un conto tenuto in memoria varrebbe solo per una copia.
+// Nel database non vanno indirizzi, codici o email: solo la loro impronta.
+function improntaTentativo(chiave) {
+    return crypto.createHmac('sha256', SECRET_KEY).update(`tentativi|${chiave}`).digest('hex').slice(0, 40);
+}
+
+/** Quanti tentativi ha questa chiave nella finestra, e quando è stato il più vecchio. */
+async function tentativiRecenti(chiave, finestra = FINESTRA_TENTATIVI) {
+    const riga = await dbGet(`SELECT COUNT(*)::int AS quanti, MIN(quando) AS primo FROM tentativo_accesso
+                              WHERE chiave = ? AND quando > ?`, [improntaTentativo(chiave), Date.now() - finestra]);
+    return { quanti: riga?.quanti ?? 0, primo: Number(riga?.primo ?? 0) };
+}
+
+function segnaTentativo(chiave) {
+    return dbRun(`INSERT INTO tentativo_accesso (chiave, quando) VALUES (?, ?)`, [improntaTentativo(chiave), Date.now()]);
+}
 
 function chiaviTentativo(req, codice) {
     const chiavi = [`ip:${req.ip || 'sconosciuto'}`];
@@ -711,40 +728,31 @@ function chiaviTentativo(req, codice) {
     return chiavi;
 }
 
-function recenti(chiave, adesso) {
-    return (tentativiFalliti.get(chiave) || []).filter(t => adesso - t < FINESTRA_TENTATIVI);
-}
-
 /** Millisecondi da aspettare prima di poter riprovare; 0 se la strada è libera. */
-function attesaPrimaDiRiprovare(req, codice) {
+async function attesaPrimaDiRiprovare(req, codice) {
     const adesso = Date.now();
     let attesa = 0;
     for (const chiave of chiaviTentativo(req, codice)) {
         const massimo = chiave.startsWith('codice:') ? MAX_TENTATIVI_CODICE : MAX_TENTATIVI_INDIRIZZO;
-        const prove = recenti(chiave, adesso);
-        if (prove.length) tentativiFalliti.set(chiave, prove); else tentativiFalliti.delete(chiave);
+        const { quanti, primo } = await tentativiRecenti(chiave);
         // Si riapre quando il più vecchio dei tentativi esce dalla finestra dei 15 minuti.
-        if (prove.length >= massimo) attesa = Math.max(attesa, FINESTRA_TENTATIVI - (adesso - prove[0]));
+        if (quanti >= massimo) attesa = Math.max(attesa, FINESTRA_TENTATIVI - (adesso - primo));
     }
     return attesa;
 }
 
-function segnaTentativoFallito(req, codice) {
-    const adesso = Date.now();
-    for (const chiave of chiaviTentativo(req, codice)) {
-        const prove = recenti(chiave, adesso);
-        prove.push(adesso);
-        tentativiFalliti.set(chiave, prove);
-    }
-    // Ogni tanto si buttano via i conti vecchi, così la mappa non cresce all'infinito.
-    if (tentativiFalliti.size > 2000)
-        for (const [chiave, prove] of tentativiFalliti)
-            if (!prove.some(t => adesso - t < FINESTRA_TENTATIVI)) tentativiFalliti.delete(chiave);
+async function segnaTentativoFallito(req, codice) {
+    for (const chiave of chiaviTentativo(req, codice)) await segnaTentativo(chiave);
 }
 
-function azzeraTentativi(req, codice) {
-    for (const chiave of chiaviTentativo(req, codice)) tentativiFalliti.delete(chiave);
+async function azzeraTentativi(req, codice) {
+    await dbRun(`DELETE FROM tentativo_accesso WHERE chiave IN (${chiaviTentativo(req, codice).map(() => '?').join(', ')})`,
+        chiaviTentativo(req, codice).map(improntaTentativo));
 }
+
+// Una volta al giorno si buttano via i conti vecchi (il più lungo dura un'ora).
+ogniGiorno(() => dbRun(`DELETE FROM tentativo_accesso WHERE quando < ?`, [Date.now() - 24 * 60 * 60 * 1000])
+    .catch(err => console.error('Pulizia dei tentativi:', err.message)), 20000);
 
 /** Risposta unica per chi ha esagerato: dice anche quanto manca. */
 function rispostaTroppiTentativi(res, attesa) {
@@ -760,14 +768,14 @@ function rispostaTroppiTentativi(res, attesa) {
 // "password sbagliata" e dai tempi non si capisce quali codici censimento esistono.
 const HASH_FINTO = bcrypt.hashSync(crypto.randomBytes(24).toString('hex'), 10);
 
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
     const body = req.body || {};
     const codice = leggiCodiceCensimento(body.codice_censimento);
     const { password } = body;
     if (!codice || typeof password !== 'string' || !password)
         return res.status(400).json({ error: "Codice censimento e password sono obbligatori." });
 
-    const attesa = attesaPrimaDiRiprovare(req, codice);
+    const attesa = await attesaPrimaDiRiprovare(req, codice);
     if (attesa) return rispostaTroppiTentativi(res, attesa);
 
     db.get('SELECT * FROM utenti WHERE codice_impronta = ?', [improntaCodice(codice)], async (err, utente) => {
@@ -777,11 +785,11 @@ app.post('/api/login', (req, res) => {
         // Il confronto si fa sempre, anche se il codice non esiste: vedi HASH_FINTO.
         const passwordGiusta = await bcrypt.compare(password, utente?.password || HASH_FINTO);
         if (!utente || !passwordGiusta) {
-            segnaTentativoFallito(req, codice);
+            await segnaTentativoFallito(req, codice);
             return res.status(401).json({ error: "Codice censimento o password non corretti." });
         }
 
-        azzeraTentativi(req, codice);
+        await azzeraTentativi(req, codice);
         // Password giusta ma email mai confermata: si entra solo dopo aver aperto il link.
         if (utente.email_confermata !== 1)
             return res.status(403).json({
@@ -842,7 +850,7 @@ function emailMascherata(email) {
 // Se il codice è di un capo con l'email del censimento, deve essere quella: così chi conosce
 // solo il codice di un capo non può prendersi il suo account.
 // Finché l'email non è confermata ci si può registrare di nuovo (per esempio se era sbagliata).
-app.post('/api/primo-accesso', (req, res) => {
+app.post('/api/primo-accesso', async (req, res) => {
     const body = req.body || {};
     const codice = leggiCodiceCensimento(body.codice_censimento);
     const email = leggiEmailImport(body.email);
@@ -856,13 +864,13 @@ app.post('/api/primo-accesso', (req, res) => {
 
     // Stesso limite dell'accesso: qui non si indovina una password, ma senza limite si
     // potrebbe provare un codice dopo l'altro per scoprire quali esistono.
-    const attesaPrimo = attesaPrimaDiRiprovare(req, codice);
+    const attesaPrimo = await attesaPrimaDiRiprovare(req, codice);
     if (attesaPrimo) return rispostaTroppiTentativi(res, attesaPrimo);
 
     db.get('SELECT * FROM utenti WHERE codice_impronta = ?', [improntaCodice(codice)], async (err, utente) => {
         if (err) return erroreInterno(res, err);
         if (!utente) {
-            segnaTentativoFallito(req, codice);
+            await segnaTentativoFallito(req, codice);
             return res.status(404).json({ error: "Codice censimento non trovato. Chiedi ai tuoi capi di caricarlo." });
         }
         if (utente.password && utente.email_confermata === 1)
@@ -871,7 +879,7 @@ app.post('/api/primo-accesso', (req, res) => {
         // Per un capo l'email giusta è sempre quella del censimento (anche rifacendo la
         // registrazione): un tentativo non confermato non può spostarla altrove.
         if (eCapo && utente.email && utente.email.toLowerCase() !== email) {
-            segnaTentativoFallito(req, codice);
+            await segnaTentativoFallito(req, codice);
             return res.status(403).json({
                 error: "Per i capi serve l'email del censimento. Se è cambiata, chiedi ai capigruppo di aggiornarla.",
             });
@@ -880,7 +888,7 @@ app.post('/api/primo-accesso', (req, res) => {
         try {
             const giaUsata = await dbGet('SELECT id FROM utenti WHERE email_impronta = ? AND id <> ?', [improntaEmail(email), utente.id]);
             if (giaUsata) {
-                segnaTentativoFallito(req, codice);
+                await segnaTentativoFallito(req, codice);
                 return res.status(409).json({ error: "Questa email è già usata da un altro account: scegline un'altra." });
             }
             const hashedPassword = await bcrypt.hash(password, 12);
@@ -891,7 +899,7 @@ app.post('/api/primo-accesso', (req, res) => {
                 [hashedPassword, nuova.email, nuova.impronta, utente.id]);
             if (esito.changes === 0)
                 return res.status(409).json({ error: "Ti sei già registrato: accedi normalmente." });
-            azzeraTentativi(req, codice);
+            await azzeraTentativi(req, codice);
             let inviata;
             try {
                 inviata = await mandaConferma(utente, email);
@@ -918,20 +926,20 @@ app.post('/api/primo-accesso', (req, res) => {
 
 // Rimanda l'email di conferma. Servono codice e password, così nessuno può riempire di
 // email la casella di un altro conoscendo solo il suo codice.
-app.post('/api/conferma-email/reinvia', (req, res) => {
+app.post('/api/conferma-email/reinvia', async (req, res) => {
     const body = req.body || {};
     const codice = leggiCodiceCensimento(body.codice_censimento);
     const { password } = body;
     if (!codice || typeof password !== 'string' || !password)
         return res.status(400).json({ error: "Servono codice censimento e password." });
-    const attesa = attesaPrimaDiRiprovare(req, codice);
+    const attesa = await attesaPrimaDiRiprovare(req, codice);
     if (attesa) return rispostaTroppiTentativi(res, attesa);
 
     db.get('SELECT * FROM utenti WHERE codice_impronta = ?', [improntaCodice(codice)], async (err, utente) => {
         if (err) return erroreInterno(res, err);
         const passwordGiusta = await bcrypt.compare(password, utente?.password || HASH_FINTO);
         if (!utente || !utente.password || !passwordGiusta) {
-            segnaTentativoFallito(req, codice);
+            await segnaTentativoFallito(req, codice);
             return res.status(401).json({ error: "Codice censimento o password non corretti." });
         }
         if (utente.email_confermata === 1)
@@ -960,14 +968,14 @@ app.post('/api/conferma-email', async (req, res) => {
     const token = String(req.body?.token ?? '');
     if (!/^[A-Za-z0-9_-]{40,60}$/.test(token))
         return res.status(400).json({ error: "Il link non è valido. Copialo per intero dall'email." });
-    const attesa = attesaPrimaDiRiprovare(req, null);
+    const attesa = await attesaPrimaDiRiprovare(req, null);
     if (attesa) return rispostaTroppiTentativi(res, attesa);
     try {
         const adesso = Math.floor(Date.now() / 1000);
         const link = await dbGet(`SELECT * FROM link_email WHERE impronta = ? AND tipo = 'conferma'`, [improntaLink(token)]);
         const utente = link ? await dbGet('SELECT * FROM utenti WHERE id = ?', [link.rif_utente]) : null;
         if (!link || !utente) {
-            segnaTentativoFallito(req, null);
+            await segnaTentativoFallito(req, null);
             return res.status(404).json({ error: "Questo link non è valido. Rifai la registrazione o chiedi un'altra email." });
         }
         if (utente.email_confermata === 1 && link.usato === 1)
@@ -997,9 +1005,9 @@ app.post('/api/password-dimenticata', async (req, res) => {
     if (!email) return res.status(400).json({ error: "Scrivi un indirizzo email valido." });
     // Ogni richiesta conta come un tentativo: niente raffiche, né per email né da uno stesso indirizzo.
     const chiave = `email:${email}`;
-    const attesa = attesaPrimaDiRiprovare(req, chiave);
+    const attesa = await attesaPrimaDiRiprovare(req, chiave);
     if (attesa) return rispostaTroppiTentativi(res, attesa);
-    segnaTentativoFallito(req, chiave);
+    await segnaTentativoFallito(req, chiave);
 
     const risposta = {
         message: "Se c'è un account confermato con questa email, ti abbiamo mandato un link per scegliere una nuova password. Guarda anche nello spam.",
@@ -1043,14 +1051,14 @@ app.post('/api/password-dimenticata/nuova', async (req, res) => {
         return res.status(400).json({ error: "La password deve essere di almeno 8 caratteri." });
     if (password.length > 72)
         return res.status(400).json({ error: "La password può avere al massimo 72 caratteri." });
-    const attesa = attesaPrimaDiRiprovare(req, null);
+    const attesa = await attesaPrimaDiRiprovare(req, null);
     if (attesa) return rispostaTroppiTentativi(res, attesa);
     try {
         const adesso = Math.floor(Date.now() / 1000);
         const link = await dbGet(`SELECT * FROM link_email WHERE impronta = ? AND tipo = 'password'`, [improntaLink(token)]);
         const utente = link ? await dbGet('SELECT * FROM utenti WHERE id = ?', [link.rif_utente]) : null;
         if (!link || !utente) {
-            segnaTentativoFallito(req, null);
+            await segnaTentativoFallito(req, null);
             return res.status(404).json({ error: "Questo link non è valido. Chiedine un altro da «Password dimenticata»." });
         }
         if (link.usato === 1 || link.scadenza < adesso || String(link.email).toLowerCase() !== String(utente.email).toLowerCase())
@@ -1064,7 +1072,7 @@ app.post('/api/password-dimenticata/nuova', async (req, res) => {
         await dbRun(`UPDATE utenti SET password = ?, sessioni_valide_da = extract(epoch from now())::bigint
                      WHERE id = ?`, [impronta, utente.id]);
         await dbRun(`UPDATE link_email SET usato = 1 WHERE rif_utente = ? AND tipo = 'password'`, [utente.id]);
-        azzeraTentativi(req, utente.codice_censimento);
+        await azzeraTentativi(req, utente.codice_censimento);
         const aggiornato = await dbGet('SELECT * FROM utenti WHERE id = ?', [utente.id]);
         res.json({ message: "Password cambiata!", token: tokenUtente(aggiornato), utente: utenteProprio(aggiornato) });
     } catch (err) {
@@ -1176,10 +1184,10 @@ app.post('/api/utenti/me/email', verificaUtenteCensito, async (req, res) => {
         if (!email) return res.status(400).json({ error: "Scrivi un indirizzo email valido." });
         if (typeof password !== 'string' || !password)
             return res.status(400).json({ error: "Per sicurezza serve la tua password attuale." });
-        const attesa = attesaPrimaDiRiprovare(req, utente.codice_censimento);
+        const attesa = await attesaPrimaDiRiprovare(req, utente.codice_censimento);
         if (attesa) return rispostaTroppiTentativi(res, attesa);
         if (!utente.password || !(await bcrypt.compare(password, utente.password))) {
-            segnaTentativoFallito(req, utente.codice_censimento);
+            await segnaTentativoFallito(req, utente.codice_censimento);
             return res.status(401).json({ error: "La password non è giusta." });
         }
         if (utente.email && utente.email.toLowerCase() === email)
@@ -1220,14 +1228,14 @@ app.post('/api/utenti/me/email/conferma', async (req, res) => {
     const token = String(req.body?.token ?? '');
     if (!/^[A-Za-z0-9_-]{40,60}$/.test(token))
         return res.status(400).json({ error: "Il link non è valido. Copialo per intero dall'email." });
-    const attesa = attesaPrimaDiRiprovare(req, null);
+    const attesa = await attesaPrimaDiRiprovare(req, null);
     if (attesa) return rispostaTroppiTentativi(res, attesa);
     try {
         const adesso = Math.floor(Date.now() / 1000);
         const link = await dbGet(`SELECT * FROM link_email WHERE impronta = ? AND tipo = 'cambio-email'`, [improntaLink(token)]);
         const utente = link ? await dbGet('SELECT * FROM utenti WHERE id = ?', [link.rif_utente]) : null;
         if (!link || !utente) {
-            segnaTentativoFallito(req, null);
+            await segnaTentativoFallito(req, null);
             return res.status(404).json({ error: "Questo link non è valido. Rifai il cambio dal profilo." });
         }
         if (link.usato === 1 || link.scadenza < adesso)
@@ -1779,10 +1787,12 @@ app.put('/api/post/:id/pubblica', verificaUtenteCensito, async (req, res) => {
             await dbRun('DELETE FROM post WHERE id = ?', [post.id]);
             fotoDelPost(post).forEach(eliminaFotoPost);
             eliminaVideoDelPost(video);
+            await avvisiDecisi('post', post.id);
             return res.json({ message: "Post rifiutato." });
         }
 
         await dbRun('UPDATE post SET in_attesa = 0 WHERE id = ?', [post.id]);
+        await avvisiDecisi('post', post.id);
         // Col post nuovo la home potrebbe superare i 50: i più vecchi vanno in archivio.
         sistemaArchivioPost(() => inviaPost(res, post.id));
     } catch (err) {
@@ -1916,7 +1926,11 @@ app.post('/api/post', verificaUtenteCensito, async (req, res) => {
              dati.videoLink?.length ? JSON.stringify(dati.videoLink) : null, req.user.id, permessi.subito ? 0 : 1,
              dati.hashtag?.length ? JSON.stringify(dati.hashtag) : null]);
         // Un post in attesa non entra ancora nella home: l'archivio si sistema all'approvazione.
-        if (!permessi.subito) return inviaPost(res, esito.lastID, 201);
+        // I capi clan lo trovano fra gli avvisi "Dai ragazzi".
+        if (!permessi.subito) {
+            await segnalaContenuto(req, 'post', 'creato', dati.didascalia, esito.lastID);
+            return inviaPost(res, esito.lastID, 201);
+        }
         // Col post nuovo la home potrebbe superare i 50: i più vecchi vanno in archivio.
         sistemaArchivioPost(() => inviaPost(res, esito.lastID, 201));
     } catch (err) {
@@ -1980,6 +1994,7 @@ app.put('/api/post/:id', verificaUtenteCensito, async (req, res) => {
     }
     // Le foto tolte dal post non servono più.
     prima.filter(p => !percorsi.includes(p)).forEach(eliminaFotoPost);
+    await segnalaContenuto(req, 'post', 'modificato', dati.didascalia, esistente.id);
     inviaPost(res, esistente.id);
 });
 
@@ -1993,6 +2008,8 @@ app.delete('/api/post/:id', verificaUtenteCensito, async (req, res) => {
             if (delErr) return erroreInterno(res, delErr);
             fotoDelPost(post).forEach(eliminaFotoPost);
             eliminaVideoDelPost(video);
+            // Se era una proposta, il suo avviso ai capi non porta più a niente.
+            avvisiDecisi('post', Number(req.params.id));
             res.json({ message: "Post eliminato." });
         });
     });
@@ -2251,9 +2268,45 @@ function leggiElenco(testoJson) {
     }
 }
 
-function postoPubblico(p, allegati = []) {
-    const contatti = leggiElenco(p.contatti);
+/**
+ * Chi può fare cosa sulla mappa. Capi e capigruppo aggiungono e cambiano i posti direttamente.
+ * Rover e scolte possono proporre un posto del clan: resta in attesa finché un capo clan o un
+ * capogruppo non lo approva (come per i post).
+ */
+async function permessiPosto(req) {
+    const utente = await dbGet('SELECT ruolo, branca FROM utenti WHERE id = ?', [req.user.id]);
+    const capo = utente?.ruolo === 'capo' || utente?.ruolo === 'admin';
     return {
+        id: req.user.id,
+        capo,
+        propone: utente?.ruolo === 'ragazzo' && utente.branca === 'clan',
+        approva: utente?.ruolo === 'admin' || (capo && utente.branca === 'clan'),
+    };
+}
+
+/** Un posto in attesa lo vedono solo chi l'ha proposto e chi lo deve approvare. */
+function postoVisibile(p, permessi) {
+    return p.in_attesa !== 1 || permessi.approva || p.rif_autore === permessi.id;
+}
+
+/** Il posto è una proposta ancora in attesa di chi sta chiedendo (un ragazzo del clan)? */
+function propostaMia(p, permessi) {
+    return permessi.propone && p.in_attesa === 1 && p.rif_autore === permessi.id;
+}
+
+const SELEZIONE_POSTO = `SELECT p.*, u.nome AS autore_nome, u.cognome AS autore_cognome
+                         FROM posto p LEFT JOIN utenti u ON u.id = p.rif_autore`;
+
+function postoPubblico(p, allegati = [], permessi = null) {
+    const contatti = leggiElenco(p.contatti);
+    const inAttesa = p.in_attesa === 1;
+    return {
+        // In attesa del sì di un capo clan o di un capogruppo, e chi l'ha proposto.
+        in_attesa: inAttesa,
+        proposto_da: inAttesa && p.autore_nome ? `${p.autore_nome} ${p.autore_cognome}` : null,
+        // Cosa può farci chi sta chiedendo.
+        puo_modificare: !!permessi && (permessi.capo || propostaMia(p, permessi)),
+        puo_approvare: !!permessi && inAttesa && permessi.approva,
         id: p.id,
         nome: p.nome,
         branca: p.branca,
@@ -2332,12 +2385,14 @@ function validaPosto(body) {
     };
 }
 
-async function inviaPosto(res, id, stato = 200) {
+async function inviaPosto(req, res, id, stato = 200) {
     try {
-        const posto = await dbGet('SELECT * FROM posto WHERE id = ?', [id]);
-        if (!posto) return res.status(404).json({ error: "Posto non trovato." });
+        const posto = await dbGet(`${SELEZIONE_POSTO} WHERE p.id = ?`, [id]);
+        const permessi = await permessiPosto(req);
+        // Una proposta di un altro, per chi non la deve approvare, è come se non ci fosse.
+        if (!posto || !postoVisibile(posto, permessi)) return res.status(404).json({ error: "Posto non trovato." });
         const allegati = await dbAll('SELECT * FROM posto_allegato WHERE rif_posto = ? ORDER BY id', [posto.id]);
-        res.status(stato).json({ posto: postoPubblico(posto, allegati) });
+        res.status(stato).json({ posto: postoPubblico(posto, allegati, permessi) });
     } catch (err) {
         erroreInterno(res, err);
     }
@@ -2357,64 +2412,122 @@ app.get('/api/sede', async (req, res) => {
 
 app.get('/api/posti', verificaUtenteMappa, async (req, res) => {
     try {
-        const posti = await dbAll('SELECT * FROM posto ORDER BY lower(nome), id');
+        const permessi = await permessiPosto(req);
+        const posti = (await dbAll(`${SELEZIONE_POSTO} ORDER BY lower(p.nome), p.id`)).filter(p => postoVisibile(p, permessi));
         const allegati = await dbAll('SELECT * FROM posto_allegato ORDER BY id');
         const perPosto = new Map();
         for (const a of allegati) perPosto.set(a.rif_posto, [...(perPosto.get(a.rif_posto) ?? []), a]);
-        res.json({ posti: posti.map(p => postoPubblico(p, perPosto.get(p.id))) });
+        res.json({
+            posti: posti.map(p => postoPubblico(p, perPosto.get(p.id), permessi)),
+            // Per la pagina: chi aggiunge direttamente e chi può solo proporre (un posto del clan).
+            puoAggiungere: permessi.capo, puoProporre: permessi.propone,
+        });
     } catch (err) {
         erroreInterno(res, err);
     }
 });
 
-app.get('/api/posti/:id', verificaUtenteMappa, (req, res) => inviaPosto(res, req.params.id));
+app.get('/api/posti/:id', verificaUtenteMappa, (req, res) => inviaPosto(req, res, req.params.id));
 
-app.post('/api/posti', verificaRuolo('capo', 'admin'), async (req, res) => {
-    const { errore, dati } = validaPosto(req.body || {});
-    if (errore) return res.status(400).json({ error: errore });
+app.post('/api/posti', verificaUtenteMappa, async (req, res) => {
     try {
+        const permessi = await permessiPosto(req);
+        if (!permessi.capo && !permessi.propone)
+            return res.status(403).json({ error: "I posti li aggiungono i capi; rover e scolte possono proporne per il clan." });
+        // Un ragazzo propone solo posti del clan, qualunque cosa arrivi nella richiesta.
+        const { errore, dati } = validaPosto({ ...(req.body || {}), ...(permessi.capo ? {} : { branca: 'clan' }) });
+        if (errore) return res.status(400).json({ error: errore });
         // I posti nuovi non sono mai la sede: quella c'è già.
         const esito = await dbRun(`INSERT INTO posto (nome, branca, latitudine, longitudine, indirizzo, descrizione, contatti,
-                                   campi, rif_autore)
-                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                                   campi, rif_autore, in_attesa)
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             // I contatti (custodi, gestori: nomi, telefoni, email) si salvano cifrati.
             [dati.nome, dati.branca, dati.latitudine, dati.longitudine, dati.indirizzo, dati.descrizione, cripta(dati.contatti),
-             dati.campi, req.user.id]);
-        inviaPosto(res, esito.lastID, 201);
+             dati.campi, req.user.id, permessi.capo ? 0 : 1]);
+        // I capi clan lo trovano fra gli avvisi "Dai ragazzi".
+        if (!permessi.capo) await segnalaContenuto(req, 'posto', 'creato', dati.nome, esito.lastID);
+        inviaPosto(req, res, esito.lastID, 201);
     } catch (err) {
         erroreInterno(res, err);
     }
 });
+
+/**
+ * Il posto, se chi chiede può metterci le mani: i capi sempre, un ragazzo del clan solo sulla
+ * propria proposta finché è in attesa. Risponde già lei in caso di no.
+ */
+async function postoModificabile(req, res) {
+    const posto = await dbGet('SELECT * FROM posto WHERE id = ?', [req.params.id]);
+    const permessi = await permessiPosto(req);
+    if (!posto || !postoVisibile(posto, permessi)) {
+        res.status(404).json({ error: "Posto non trovato." });
+        return null;
+    }
+    if (permessi.capo || propostaMia(posto, permessi)) return { posto, permessi };
+    res.status(403).json({ error: "I posti li cambiano i capi; tu puoi cambiare solo una tua proposta ancora in attesa." });
+    return null;
+}
 
 // La sede resta sempre del gruppo: della sede si cambiano posizione e dati, non la bandierina.
-app.put('/api/posti/:id', verificaRuolo('capo', 'admin'), async (req, res) => {
-    const { errore, dati } = validaPosto(req.body || {});
-    if (errore) return res.status(400).json({ error: errore });
+app.put('/api/posti/:id', verificaUtenteMappa, async (req, res) => {
     try {
-        const esito = await dbRun(`UPDATE posto SET nome = ?, branca = CASE WHEN sede = 1 THEN 'gruppo' ELSE ? END,
-                                   latitudine = ?, longitudine = ?, indirizzo = ?, descrizione = ?, contatti = ?,
-                                   campi = ?,
-                                   data_modifica = to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
-                                   WHERE id = ?`,
+        const trovato = await postoModificabile(req, res);
+        if (!trovato) return;
+        const { errore, dati } = validaPosto({ ...(req.body || {}), ...(trovato.permessi.capo ? {} : { branca: 'clan' }) });
+        if (errore) return res.status(400).json({ error: errore });
+        await dbRun(`UPDATE posto SET nome = ?, branca = CASE WHEN sede = 1 THEN 'gruppo' ELSE ? END,
+                     latitudine = ?, longitudine = ?, indirizzo = ?, descrizione = ?, contatti = ?,
+                     campi = ?,
+                     data_modifica = to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+                     WHERE id = ?`,
             [dati.nome, dati.branca, dati.latitudine, dati.longitudine, dati.indirizzo, dati.descrizione, cripta(dati.contatti),
-             dati.campi, req.params.id]);
-        if (esito.changes === 0) return res.status(404).json({ error: "Posto non trovato." });
-        inviaPosto(res, req.params.id);
+             dati.campi, trovato.posto.id]);
+        if (!trovato.permessi.capo) await segnalaContenuto(req, 'posto', 'modificato', dati.nome, trovato.posto.id);
+        inviaPosto(req, res, trovato.posto.id);
     } catch (err) {
         erroreInterno(res, err);
     }
 });
 
-app.delete('/api/posti/:id', verificaRuolo('capo', 'admin'), async (req, res) => {
+// Il sì (o il no) di un capo clan o di un capogruppo a un posto proposto da un ragazzo.
+app.put('/api/posti/:id/pubblica', verificaUtenteMappa, async (req, res) => {
     try {
-        const posto = await dbGet('SELECT sede FROM posto WHERE id = ?', [req.params.id]);
+        if (!(await permessiPosto(req)).approva)
+            return res.status(403).json({ error: "I posti proposti dai ragazzi li approvano i capi clan e i capigruppo." });
+        const posto = await dbGet('SELECT * FROM posto WHERE id = ?', [req.params.id]);
         if (!posto) return res.status(404).json({ error: "Posto non trovato." });
+        if (posto.in_attesa !== 1) return res.status(409).json({ error: "Questo posto è già stato deciso." });
+
+        if (req.body?.approva === false) {
+            // Rifiutato: il posto e i suoi allegati se ne vanno.
+            const allegati = await dbAll('SELECT percorso FROM posto_allegato WHERE rif_posto = ?', [posto.id]);
+            await dbRun('DELETE FROM posto WHERE id = ? AND in_attesa = 1', [posto.id]);
+            for (const a of allegati) eliminaFile(CARTELLA_POSTI, a.percorso);
+            await avvisiDecisi('posto', posto.id);
+            return res.json({ message: "Proposta rifiutata." });
+        }
+        await dbRun('UPDATE posto SET in_attesa = 0 WHERE id = ?', [posto.id]);
+        await avvisiDecisi('posto', posto.id);
+        inviaPosto(req, res, posto.id);
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+app.delete('/api/posti/:id', verificaUtenteMappa, async (req, res) => {
+    try {
+        // Un ragazzo può ritirare la sua proposta finché è in attesa.
+        const trovato = await postoModificabile(req, res);
+        if (!trovato) return;
+        const { posto } = trovato;
         if (posto.sede === 1) return res.status(403).json({ error: "La sede del gruppo non si può eliminare." });
         const allegati = await dbAll('SELECT percorso FROM posto_allegato WHERE rif_posto = ?', [req.params.id]);
         // Gli allegati spariscono dal database insieme al posto (ON DELETE CASCADE), poi dal disco.
         const esito = await dbRun('DELETE FROM posto WHERE id = ? AND sede = 0', [req.params.id]);
         if (esito.changes === 0) return res.status(404).json({ error: "Posto non trovato." });
         for (const a of allegati) eliminaFile(CARTELLA_POSTI, a.percorso);
+        // Se era una proposta (ritirata dal ragazzo), il suo avviso ai capi non porta più a niente.
+        await avvisiDecisi('posto', posto.id);
         res.json({ message: "Posto eliminato." });
     } catch (err) {
         erroreInterno(res, err);
@@ -2423,7 +2536,16 @@ app.delete('/api/posti/:id', verificaRuolo('capo', 'admin'), async (req, res) =>
 
 // Un allegato alla volta, inviato così com'è (niente base64): il nome originale arriva
 // nell'intestazione X-Nome-File, codificato con encodeURIComponent.
-app.post('/api/posti/:id/allegati', verificaRuolo('capo', 'admin'),
+app.post('/api/posti/:id/allegati', verificaUtenteMappa,
+    // I capi sempre; un ragazzo del clan solo sulla sua proposta ancora in attesa. Si controlla
+    // prima di leggere il file: chi non può non fa nemmeno arrivare i suoi 15 MB.
+    async (req, res, next) => {
+        try {
+            if (await postoModificabile(req, res)) next();
+        } catch (err) {
+            erroreInterno(res, err);
+        }
+    },
     express.raw({ type: () => true, limit: MAX_BYTE_ALLEGATO, inflate: false }),
     async (req, res) => {
         let nome;
@@ -2467,8 +2589,9 @@ app.post('/api/posti/:id/allegati', verificaRuolo('capo', 'admin'),
         }
     });
 
-app.delete('/api/posti/:id/allegati/:idAllegato', verificaRuolo('capo', 'admin'), async (req, res) => {
+app.delete('/api/posti/:id/allegati/:idAllegato', verificaUtenteMappa, async (req, res) => {
     try {
+        if (!(await postoModificabile(req, res))) return;
         const allegato = await dbGet('SELECT * FROM posto_allegato WHERE id = ? AND rif_posto = ?',
             [req.params.idAllegato, req.params.id]);
         if (!allegato) return res.status(404).json({ error: "Allegato non trovato." });
@@ -3499,17 +3622,10 @@ const MAX_COMUNE = 80;
 // Il modulo è aperto a tutti: si accettano al massimo 5 richieste all'ora dallo stesso indirizzo,
 // così una pagina pubblica non può riempire il database.
 const MAX_RICHIESTE_ORA = 5;
-const inviiRecenti = new Map();
-function troppeRichieste(req) {
-    const ora = Date.now();
-    const chiave = req.ip || 'sconosciuto';
-    const recenti = (inviiRecenti.get(chiave) || []).filter(t => ora - t < 60 * 60 * 1000);
-    if (recenti.length >= MAX_RICHIESTE_ORA) return true;
-    recenti.push(ora);
-    inviiRecenti.set(chiave, recenti);
-    // Ogni tanto si ripulisce la mappa dagli indirizzi vecchi.
-    if (inviiRecenti.size > 500) for (const [k, v] of inviiRecenti)
-        if (!v.some(t => ora - t < 60 * 60 * 1000)) inviiRecenti.delete(k);
+async function troppeRichieste(req) {
+    const chiave = `modulo:${req.ip || 'sconosciuto'}`;
+    if ((await tentativiRecenti(chiave, 60 * 60 * 1000)).quanti >= MAX_RICHIESTE_ORA) return true;
+    await segnaTentativo(chiave);
     return false;
 }
 
@@ -3642,7 +3758,7 @@ async function avvisaCapiNuovaRichiesta(branca) {
 }
 
 app.post('/api/richieste-iscrizione', async (req, res) => {
-    if (troppeRichieste(req))
+    if (await troppeRichieste(req))
         return res.status(429).json({ error: "Hai già mandato diverse richieste: riprova più tardi." });
     const { errore, dati } = validaRichiestaIscrizione(req.body || {});
     if (errore) return res.status(400).json({ error: errore });
@@ -6145,6 +6261,12 @@ async function segnalaContenuto(req, tipo, azione, titolo, idOggetto) {
     } catch (err) {
         console.error('Avviso contenuto non salvato:', err.message);
     }
+}
+
+/** Deciso (sì o no) un post o un posto proposto: i suoi avvisi non servono più a nessuno. */
+function avvisiDecisi(tipo, idOggetto) {
+    return dbRun(`UPDATE notifica_contenuto SET letta = 1 WHERE tipo = ? AND rif_oggetto = ? AND letta = 0`, [tipo, idOggetto])
+        .catch(err => console.error('Avvisi non chiusi:', err.message));
 }
 
 app.get('/api/notifiche-contenuti', verificaRuolo('capo', 'admin'), async (req, res) => {

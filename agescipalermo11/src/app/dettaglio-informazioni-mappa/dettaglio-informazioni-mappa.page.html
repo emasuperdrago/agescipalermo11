@@ -30,7 +30,33 @@
           @if (posto.sede) {
             <span class="badge">Sede del gruppo</span>
           }
+          @if (posto.in_attesa) {
+            <span class="badge">In attesa di approvazione</span>
+          }
           <h1>{{ posto.nome }}</h1>
+          @if (posto.in_attesa) {
+            <!-- Proposto da un ragazzo del clan: lo vedono solo lui e chi lo deve approvare. -->
+            <div class="proposta" role="status">
+              <p>
+                @if (posto.puo_approvare) {
+                  Proposto da <strong>{{ posto.proposto_da || 'un ragazzo del clan' }}</strong>: finché non lo approvi
+                  non è sulla mappa.
+                } @else {
+                  La tua proposta è dai capi clan: sarà sulla mappa appena la approvano. Intanto puoi correggerla.
+                }
+              </p>
+              @if (posto.puo_approvare) {
+                <div class="proposta__azioni">
+                  <button type="button" class="pulsante pulsante--chiaro" (click)="decidi(true)" [disabled]="decidendo">
+                    Approva
+                  </button>
+                  <button type="button" class="pulsante pulsante--vetro" (click)="decidi(false)" [disabled]="decidendo">
+                    Rifiuta
+                  </button>
+                </div>
+              }
+            </div>
+          }
           @if (posto.indirizzo) {
             <p class="copertina__indirizzo">
               <ion-icon [icon]="icone.luogo" aria-hidden="true"></ion-icon>
@@ -57,7 +83,7 @@
               @if (!posto.sede) {
                 <button type="button" class="pulsante pulsante--vetro" (click)="confermaElimina()" [disabled]="eliminando">
                   <ion-icon [icon]="icone.elimina" aria-hidden="true"></ion-icon>
-                  {{ eliminando ? 'Eliminazione…' : 'Elimina' }}
+                  {{ eliminando ? 'Eliminazione…' : (propostaMia ? 'Ritira la proposta' : 'Elimina') }}
                 </button>
               }
             }

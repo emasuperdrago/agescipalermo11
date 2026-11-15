@@ -50,6 +50,11 @@ export interface EsitoPostoEditor {
 })
 export class PostoEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() posto?: Posto;
+  /**
+   * Un ragazzo del clan che propone un posto (o corregge la sua proposta): la branca è il clan
+   * e non si sceglie; il posto va sulla mappa quando un capo lo approva.
+   */
+  @Input() proposta = false;
   /** Dove aprire la mappa per un posto nuovo (di solito la zona che si stava guardando). */
   @Input() centroIniziale?: { latitudine: number; longitudine: number; zoom: number };
 
@@ -106,6 +111,7 @@ export class PostoEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit() {
     const p = this.posto;
+    if (this.proposta) this.branca = 'clan';
     if (!p) {
       this.contatti = [{ nome: '', telefono: '', email: '' }];
       this.campi = [this.rigaCampo()];

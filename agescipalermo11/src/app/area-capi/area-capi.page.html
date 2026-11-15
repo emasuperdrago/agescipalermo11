@@ -162,8 +162,13 @@
                 <ion-icon [icon]="iconaContenuto(n.tipo)"></ion-icon>
               </span>
               <div class="avviso-riga__testo">
-                <strong>{{ n.titolo }}</strong>
-                <small>{{ n.autore }} ha {{ n.azione }} un {{ n.tipo }}</small>
+                <!-- Il titolo porta al post o al posto, per guardarlo e dire sì o no. -->
+                @if (linkContenuto(n); as link) {
+                  <a [routerLink]="link"><strong>{{ n.titolo }}</strong></a>
+                } @else {
+                  <strong>{{ n.titolo }}</strong>
+                }
+                <small>{{ n.autore }} ha {{ n.azione === 'creato' ? 'proposto' : 'modificato' }} un {{ n.tipo }}</small>
               </div>
               <button type="button" class="azione" (click)="segnaContenutoLetto(n)">Visto</button>
             </li>
