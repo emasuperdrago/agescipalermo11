@@ -3030,10 +3030,6 @@ const COLORI_SEZIONE = {
 const COLORI_LIBRETTO = {
     messa: '#1D5FA8', branco: '#B98A00', reparto: '#5A9E2A', clan: '#D8392F', gruppo: VIOLA,
 };
-const NOMI_SEZIONE = {
-    preghiere: 'Preghiere', branco: 'Branco', reparto: 'Reparto',
-    clan: 'Clan', liturgici: 'Liturgici', fuoco: 'Al fuoco',
-};
 const MARGINE = 42;
 // Stesso carattere e stessa dimensione per tutti i canti, così due canti stampati insieme
 // si leggono uguali. Courier: ogni lettera è larga 0,6 volte la dimensione.
@@ -3163,7 +3159,7 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, tonalita =
         }
     }
 
-    // Indice, quando i canti sono parecchi: titolo (e la parte della messa) a sinistra, sezione a destra.
+    // Indice, quando i canti sono parecchi: titolo (e la parte della messa), col pallino del colore della sezione.
     // Nei libretti no: si parte subito coi canti.
     if (!libretto && voci.length >= 4) {
         doc.font('Helvetica-Bold').fontSize(16).fillColor(VIOLA).text('Indice', MARGINE, doc.y + 6, { lineBreak: false });
@@ -3177,9 +3173,7 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, tonalita =
             doc.circle(MARGINE + 3, y + 5, 3).fill(colore);
             const nome = titoletto ? `${titoletto} · ${c.titolo}` : c.titolo;
             doc.font(titoletto ? 'Helvetica-Bold' : 'Helvetica').fontSize(10).fillColor('#0F172A')
-                .text(nome, MARGINE + 14, y, { width: larghezza - 110, lineBreak: false, ellipsis: true });
-            doc.font('Helvetica').fontSize(9).fillColor(GRIGIO)
-                .text(NOMI_SEZIONE[c.sezione] ?? '', MARGINE, y + 1, { width: larghezza, align: 'right', lineBreak: false });
+                .text(nome, MARGINE + 14, y, { width: larghezza - 14, lineBreak: false, ellipsis: true });
             y += 17;
         }
         doc.addPage();
