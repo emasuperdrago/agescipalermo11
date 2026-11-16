@@ -20,6 +20,13 @@
     <nav id="menu-fisso" class="pannello-fisso" [class.pannello-fisso--aperto]="menuFissoAperto"
          aria-label="Sezioni del gruppo">
       <ng-container *ngTemplateOutlet="vociMenu; context: { $implicit: false }" />
+      <!-- Modalità notte: la luna la accende, il sole la spegne (vedi services/tema.ts). -->
+      <button type="button" class="social social--tema" (click)="tema.alterna()"
+            [attr.aria-label]="tema.notte() ? 'Torna alla modalità giorno' : 'Passa alla modalità notte'"
+            [title]="tema.notte() ? 'Modalità giorno' : 'Modalità notte'">
+        <ion-icon [icon]="tema.notte() ? icone.giorno : icone.notte" aria-hidden="true"></ion-icon>
+        <span class="social__testo">{{ tema.notte() ? 'Modalità giorno' : 'Modalità notte' }}</span>
+      </button>
       <!-- I capi entrano nel profilo, dove c'è il pulsante per uscire; gli altri escono da qui. -->
       @if (eCapo) {
         <a class="esci esci--profilo" routerLink="/profilo" (click)="chiudiMenu()">
@@ -75,6 +82,13 @@
           <ion-icon [icon]="icone.facebook" aria-hidden="true"></ion-icon>
           <span class="social__testo">Facebook</span>
         </a>
+        <!-- Modalità notte: la luna la accende, il sole la spegne (vedi services/tema.ts). -->
+        <button type="button" class="social social--tema" (click)="tema.alterna()"
+                [attr.aria-label]="tema.notte() ? 'Torna alla modalità giorno' : 'Passa alla modalità notte'"
+                [title]="tema.notte() ? 'Modalità giorno' : 'Modalità notte'">
+          <ion-icon [icon]="tema.notte() ? icone.giorno : icone.notte" aria-hidden="true"></ion-icon>
+          <span class="social__testo">{{ tema.notte() ? 'Modalità giorno' : 'Modalità notte' }}</span>
+        </button>
         <!-- I capi entrano nel profilo, dove c'è il pulsante per uscire; gli altri escono da qui. -->
         @if (eCapo) {
           <a class="esci esci--profilo" routerLink="/profilo" (click)="chiudiMenu()">

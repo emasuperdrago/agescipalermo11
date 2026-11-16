@@ -1489,3 +1489,14 @@ $colori-etichetta: (
     font-size: .64rem;
   }
 }
+
+// La luna (o il sole) della modalità notte: stessa forma dei social, senza il colore del marchio.
+.social--tema {
+  border: none;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.pannello-fisso .social--tema,
+.menu-principale--aperto .social--tema { color: $dark; }

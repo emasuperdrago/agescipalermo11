@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -8,9 +8,11 @@ import {
 import {
   addOutline, archiveOutline, chevronDownOutline, chevronForwardOutline, closeOutline, flag, flagOutline,
   funnelOutline, imagesOutline, videocamOutline,
-  logoFacebook, logoInstagram, menuOutline, pencilOutline, personAddOutline, personCircleOutline, trashOutline
+  logoFacebook, logoInstagram, menuOutline, pencilOutline, personAddOutline, personCircleOutline, trashOutline,
+  moonOutline, sunnyOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../services/auth';
+import { TemaService } from '../services/tema';
 import { SfondiService } from '../services/sfondi';
 import { ETICHETTE_POST, PostService, etichetteDi, nomeEtichetta, nomiEtichette } from '../services/post';
 import { NuovoPostComponent } from '../components/nuovo-post/nuovo-post.component';
@@ -142,6 +144,9 @@ export class HomePage implements OnDestroy, OnInit {
   sfondoAttuale = 0;
   private giostra?: ReturnType<typeof setInterval>;
 
+  /** La modalità notte: la luna nel menu la accende e la spegne. */
+  readonly tema = inject(TemaService);
+
   readonly icone = {
     menu: menuOutline,
     chiudi: closeOutline,
@@ -155,6 +160,8 @@ export class HomePage implements OnDestroy, OnInit {
     instagram: logoInstagram,
     facebook: logoFacebook,
     profilo: personCircleOutline,
+    notte: moonOutline,
+    giorno: sunnyOutline,
     iscriviti: personAddOutline,
     apri: chevronForwardOutline,
     archivia: archiveOutline,

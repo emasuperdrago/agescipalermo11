@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   AlertController, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonRouterLink, IonRouterLinkWithHref,
@@ -6,9 +6,10 @@ import {
 } from '@ionic/angular/standalone';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
-  arrowBackOutline, idCardOutline, logOutOutline, mailOutline, pencilOutline, person, personOutline,
-  pricetagOutline, shieldCheckmarkOutline
+  arrowBackOutline, idCardOutline, logOutOutline, mailOutline, moonOutline, pencilOutline, person, personOutline,
+  phonePortraitOutline, pricetagOutline, shieldCheckmarkOutline, sunnyOutline
 } from 'ionicons/icons';
+import { Tema, TemaService } from '../services/tema';
 import { AuthService } from '../services/auth';
 import { ModificaProfiloComponent } from '../components/modifica-profilo/modifica-profilo.component';
 import { BarraInferioreComponent } from '../components/barra-inferiore/barra-inferiore.component';
@@ -40,6 +41,14 @@ interface CampoProfilo {
 })
 export class ProfiloPage implements OnInit {
   readonly icone = { indietro: arrowBackOutline, avatar: person, modifica: pencilOutline, esci: logOutOutline };
+
+  /** La modalità notte: giorno, notte o come il telefono. */
+  readonly aspetto = inject(TemaService);
+  readonly temi: { valore: Tema; nome: string; icona: string }[] = [
+    { valore: 'chiaro', nome: 'Giorno', icona: sunnyOutline },
+    { valore: 'scuro', nome: 'Notte', icona: moonOutline },
+    { valore: 'auto', nome: 'Come il telefono', icona: phonePortraitOutline },
+  ];
 
   utente: Utente | null = null;
 

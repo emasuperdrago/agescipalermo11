@@ -79,6 +79,7 @@ declare module 'ionicons/icons' {
   export const logoInstagram: string;
   export const megaphoneOutline: string;
   export const menuOutline: string;
+  export const moonOutline: string;
   export const musicalNotesOutline: string;
   export const newspaperOutline: string;
   export const navigateOutline: string;
@@ -87,6 +88,7 @@ declare module 'ionicons/icons' {
   export const notificationsOutline: string;
   export const pawOutline: string;
   export const pencilOutline: string;
+  export const phonePortraitOutline: string;
   export const people: string;
   export const peopleCircleOutline: string;
   export const peopleOutline: string;
@@ -117,6 +119,7 @@ declare module 'ionicons/icons' {
   export const star: string;
   export const starOutline: string;
   export const stopCircleOutline: string;
+  export const sunnyOutline: string;
   export const swapHorizontalOutline: string;
   export const timeOutline: string;
   export const todayOutline: string;

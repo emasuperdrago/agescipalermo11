@@ -4,6 +4,7 @@ import { SorpreseComponent } from './components/sorprese/sorprese.component';
 import { NavigationHistoryService } from './services/navigation-history';
 import { InattivitaService } from './services/inattivita';
 import { SorpreseService } from './services/sorprese';
+import { TemaService } from './services/tema';
 
 // Safari può mostrare ancora l'icona di PeekBox (stesso indirizzo localhost:8100):
 // togliere e rimettere i link alle icone lo costringe ad aggiornare quella della scheda.
@@ -23,8 +24,11 @@ function aggiornaIconaScheda(): void {
   imports: [IonApp, IonRouterOutlet, SorpreseComponent],
 })
 export class AppComponent {
-  constructor(private navHistory: NavigationHistoryService, inattivita: InattivitaService, sorprese: SorpreseService) {
+  constructor(private navHistory: NavigationHistoryService, inattivita: InattivitaService, sorprese: SorpreseService,
+              tema: TemaService) {
     aggiornaIconaScheda();
+    // Modalità notte, se scelta (o se lo chiede il telefono con "Come il telefono").
+    tema.avvia();
     // Dopo 15 minuti senza usare il sito si esce da soli.
     inattivita.avvia();
     // Gli easter egg: parole segrete, tocchi sul logo, giorni speciali.

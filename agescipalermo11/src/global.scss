@@ -784,3 +784,43 @@ body.anni-80 {
     background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .14) 0 2px, transparent 2px 4px);
   }
 }
+
+// ---------- Modalità notte (vedi services/tema.ts) ----------
+// Il browser rovescia i colori di tutta l'app: il bianco diventa nero, il testo scuro chiaro, e
+// "hue-rotate" rimette le tinte quasi com'erano (il viola resta viola). Quello che non deve
+// diventare un negativo (foto, video, PDF, il gioco del lupetto, le testate colorate delle
+// pagine, la foto della home) si rovescia una seconda volta, e torna com'è di giorno.
+$rovescia: invert(1) hue-rotate(180deg);
+
+html.notte {
+  // I campi e le tendine del browser restano "chiari": rovesciati diventano scuri come il resto.
+  color-scheme: light;
+  // Il velo dietro ai pop-up: bianco qui, rovesciato diventa scuro come di giorno.
+  --ion-backdrop-color: #FFFFFF;
+  background: #0E0B14;
+
+  body { background: #0E0B14; }
+
+  ion-app { filter: $rovescia; }
+
+  // Rimesse come di giorno.
+  img, video, iframe, canvas, picture,
+  .copertina, .eroe, .foto, .eroe__scatto,
+  .leaflet-marker-pane, .leaflet-popup-pane {
+    filter: $rovescia;
+  }
+
+  // Dentro a quelle rimesse come di giorno, le foto sono già dritte: non vanno girate di nuovo.
+  :is(.copertina, .eroe) :is(img, video, iframe, canvas, picture, .eroe__scatto, .foto),
+  .leaflet-marker-pane img, .leaflet-popup-pane img {
+    filter: none;
+  }
+
+  // La mappa resta rovesciata: diventa una cartina scura, più riposante al buio.
+  .leaflet-tile { filter: none; }
+
+  // Gli anni '80 hanno già il loro filtro su tutta l'app: si sommano.
+  body.anni-80 ion-app {
+    filter: $rovescia saturate(1.9) contrast(1.15) hue-rotate(-18deg);
+  }
+}

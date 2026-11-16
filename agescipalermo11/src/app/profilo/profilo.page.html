@@ -79,6 +79,20 @@
       </ul>
     }
 
+    <!-- Aspetto del sito: la modalità notte (vedi services/tema.ts). Vale per questo browser. -->
+    <div class="aspetto" role="radiogroup" aria-label="Aspetto del sito">
+      <span class="aspetto__titolo">Aspetto</span>
+      <div class="aspetto__scelte">
+        @for (t of temi; track t.valore) {
+          <button type="button" class="aspetto__scelta" role="radio" [attr.aria-checked]="aspetto.scelta() === t.valore"
+                  [class.aspetto__scelta--scelta]="aspetto.scelta() === t.valore" (click)="aspetto.scegli(t.valore)">
+            <ion-icon [icon]="t.icona" aria-hidden="true"></ion-icon>
+            {{ t.nome }}
+          </button>
+        }
+      </div>
+    </div>
+
     @if (provaSorprese) {
       <app-prova-sorprese />
     }
