@@ -77,6 +77,10 @@ export class SfogliaPdfComponent implements OnChanges, OnDestroy {
   private motore: Motore | null = null;
   /** Il disegno in corso: se ne parte un altro, questo va fermato. */
   private disegno: { cancel(): void } | null = null;
+  /** Finisce quando il disegno in corso è davvero fermo: la tela non regge due disegni insieme. */
+  private finito: Promise<unknown> = Promise.resolve();
+  /** Il numero del disegno chiesto per ultimo: quelli superati non partono nemmeno. */
+  private turno = 0;
   /** Il numero di richiesta: risposte vecchie che arrivano in ritardo si buttano. */
   private richiesta = 0;
   private osservatore?: ResizeObserver;
@@ -163,11 +167,18 @@ export class SfogliaPdfComponent implements OnChanges, OnDestroy {
     const cornice = this.cornice?.nativeElement;
     if (!documento || !tela || !cornice) return;
 
+    // Cambiando pagina in fretta (o se il riquadro cambia misura mentre disegna) il disegno
+    // di prima si ferma, e il nuovo parte solo quando quello ha lasciato libera la tela:
+    // due disegni insieme sulla stessa tela fanno fallire il secondo.
+    const turno = ++this.turno;
     this.disegno?.cancel();
+    await this.finito.catch(() => undefined);
+    if (turno !== this.turno) return;
+    this.errore = '';
     const mia = this.richiesta;
     try {
       const pagina = await documento.getPage(this.pagina);
-      if (mia !== this.richiesta) return;
+      if (mia !== this.richiesta || turno !== this.turno) return;
 
       // La pagina intera deve stare nel riquadro: si sceglie la riduzione più stretta
       // fra larghezza e altezza, così non resta niente fuori da scorrere.
@@ -189,11 +200,13 @@ export class SfogliaPdfComponent implements OnChanges, OnDestroy {
       if (!contesto) return;
       const compito = pagina.render({ canvasContext: contesto, viewport: vista });
       this.disegno = compito;
+      this.finito = compito.promise;
       await compito.promise;
-      this.disegno = null;
+      if (this.disegno === compito) this.disegno = null;
     } catch (e) {
       // Un disegno interrotto perché se n'è chiesto un altro non è un errore da mostrare.
-      if ((e as { name?: string })?.name !== 'RenderingCancelledException' && mia === this.richiesta)
+      if ((e as { name?: string })?.name !== 'RenderingCancelledException' && mia === this.richiesta
+          && turno === this.turno)
         this.errore = 'Questa pagina non si riesce a disegnare.';
     }
   }

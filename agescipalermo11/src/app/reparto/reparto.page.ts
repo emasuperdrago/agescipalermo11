@@ -8,12 +8,13 @@ import {
 } from '@ionic/angular/standalone';
 import { FormsModule } from '@angular/forms';
 import {
-  addOutline, arrowBackOutline, arrowUpCircleOutline, boatOutline, bonfireOutline, businessOutline,
+  addOutline, arrowBackOutline, arrowUpCircleOutline, boatOutline, bookOutline, downloadOutline, bonfireOutline, businessOutline,
   cameraOutline, chevronDownOutline, colorPaletteOutline, compassOutline, constructOutline, flagOutline,
   globeOutline, hammerOutline, leafOutline, medalOutline, medkitOutline, newspaperOutline, peopleOutline, ribbonOutline,
   timeOutline, trailSignOutline, trashOutline, triangleOutline, trophyOutline
 } from 'ionicons/icons';
 import { BarraInferioreComponent } from '../components/barra-inferiore/barra-inferiore.component';
+import { SfogliaPdfComponent } from '../components/sfoglia-pdf/sfoglia-pdf.component';
 import { ElencoDistintiviComponent } from '../components/elenco-distintivi/elenco-distintivi.component';
 import { BREVETTI_REPARTO, SPECIALITA_REPARTO } from './specialita-reparto';
 import { SquadriglieService } from '../services/squadriglie';
@@ -60,7 +61,7 @@ interface Palmares {
   standalone: true,
   imports: [
     RouterLink, FormsModule, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, IonRouterLink,
-    IonRouterLinkWithHref, IonContent, BarraInferioreComponent, ElencoDistintiviComponent,
+    IonRouterLinkWithHref, IonContent, BarraInferioreComponent, ElencoDistintiviComponent, SfogliaPdfComponent,
   ],
 })
 export class RepartoPage implements OnInit, OnDestroy {
@@ -70,8 +71,11 @@ export class RepartoPage implements OnInit, OnDestroy {
     sentiero: trailSignOutline, apri: chevronDownOutline, storiche: timeOutline,
     aggiungi: addOutline, chiudi: timeOutline, riapri: arrowUpCircleOutline,
     foto: cameraOutline, elimina: trashOutline, guidoncini: triangleOutline,
-    specialita: medalOutline,
+    specialita: medalOutline, quaderno: bookOutline, scarica: downloadOutline,
   };
+
+  /** Il Quaderno del Capo Squadriglia (AGESCI, ed. 2022), già diviso pagina per pagina. */
+  readonly quaderno = 'assets/documenti/quaderno-capo-squadriglia.pdf';
 
   /** La fascia in alto: una voce per parte, con la sua icona. */
   readonly sezioni = [

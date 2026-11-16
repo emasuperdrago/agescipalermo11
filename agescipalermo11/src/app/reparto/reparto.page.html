@@ -188,6 +188,23 @@
         }
 
       </section>
+
+      <!-- Il quaderno dei capi squadriglia: si sfoglia qui o si scarica per stamparlo. -->
+      <section class="scheda quaderno" aria-labelledby="titolo-quaderno">
+        <h2 id="titolo-quaderno">
+          <ion-icon [icon]="icone.quaderno" aria-hidden="true"></ion-icon>
+          Il Quaderno del Capo Squadriglia
+        </h2>
+        <p class="testo">
+          Otto chiacchierate per accompagnare il capo squadriglia durante l'anno: dall'accoglienza dei
+          nuovi alla vita di squadriglia, dall'impresa al campo estivo, fino al passaggio in noviziato.
+        </p>
+        <app-sfoglia-pdf [src]="quaderno" />
+        <a class="quaderno__scarica" [href]="quaderno" download="Il Quaderno del Capo Squadriglia.pdf">
+          <ion-icon [icon]="icone.scarica" aria-hidden="true"></ion-icon>
+          Scarica il PDF
+        </a>
+      </section>
     }
 
     <!-- ---------- Guidoncini in vetta ---------- -->

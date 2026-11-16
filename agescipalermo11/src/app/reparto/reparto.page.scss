@@ -1385,3 +1385,23 @@
     }
   }
 }
+
+// ---------- Il Quaderno del Capo Squadriglia ----------
+.quaderno__scarica {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 8px 14px;
+  border: 1.5px solid rgba($viola-m, .4);
+  border-radius: 999px;
+  background: $white;
+  font-size: .82rem;
+  font-weight: 700;
+  color: $viola;
+  text-decoration: none;
+
+  ion-icon { font-size: 1.05rem; }
+
+  &:hover { background: rgba($viola-l, .12); }
+}

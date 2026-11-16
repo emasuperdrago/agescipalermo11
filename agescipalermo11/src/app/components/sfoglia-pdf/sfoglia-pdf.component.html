@@ -11,7 +11,8 @@
             [attr.aria-label]="'Pagina ' + pagina + ' di ' + pagine"></canvas>
   </div>
 
-  @if (pagine > 0 && !errore) {
+  <!-- Le frecce restano anche se una pagina non si disegna: si può passare alle altre. -->
+  @if (pagine > 0) {
     <div class="sfoglia__comandi">
       <button type="button" class="sfoglia__freccia" (click)="precedente()" [disabled]="pagina <= 1"
               aria-label="Pagina precedente" title="Pagina precedente">
