@@ -1,3 +1,4 @@
+@use 'sass:string';
 @use './theme/variables' as *;
 @import 'leaflet/dist/leaflet.css';
 
@@ -786,41 +787,72 @@ body.anni-80 {
 }
 
 // ---------- Modalità notte (vedi services/tema.ts) ----------
-// Il browser rovescia i colori di tutta l'app: il bianco diventa nero, il testo scuro chiaro, e
-// "hue-rotate" rimette le tinte quasi com'erano (il viola resta viola). Quello che non deve
-// diventare un negativo (foto, video, PDF, il gioco del lupetto, le testate colorate delle
-// pagine, la foto della home) si rovescia una seconda volta, e torna com'è di giorno.
-$rovescia: invert(1) hue-rotate(180deg);
+// Il browser rovescia i colori di tutta l'app: il bianco diventa scuro, il testo scuro chiaro, e
+// "hue-rotate" rimette le tinte quasi com'erano (il viola resta viola). "contrast" smorza gli
+// estremi: niente nero pieno e niente bianco che abbaglia. Quello che non deve diventare un
+// negativo (foto, video, PDF, il gioco del lupetto, le testate colorate, la foto della home) ha
+// il filtro opposto, e torna com'è di giorno.
+$notte: invert(1) hue-rotate(180deg) contrast(.85);
+// L'inverso esatto di $notte (si applica prima lui, poi quello della pagina).
+$giorno: contrast(1.176) hue-rotate(180deg) invert(1);
+
+// I riquadri: un velo scuro qui diventa, rovesciato, un grigio più chiaro dello sfondo; e un filo
+// scuro diventa un bordo chiaro. Così le forme si staccano dallo sfondo anche al buio.
+$riquadri: '.scheda, .riquadro, .campo, .post, .posto, .richiesta, .elenco, .canto, .iscriviti__scheda, .vuoto, .dove__voce, .riepilogo__voce, .aspetto, .guidoncino, .storia, .quota, .scheda-calendario, .tendina__pannello, .contatto, .allegato, .anteprima, .libretto, .bozze, .visitatore, .scorciatoia, .sezione, .risultati, .prossimo, .vetta__voce, .tesoriere, .griglia-giorni, .filtro__menu, .foglio__riquadro, .tonalita, .vecchia__riga, .scheda-profilo, .modifica-pagina, .modifica-storia, .segna';
+$controlli: '.aggiungi-capo, .altra, .anno, .aspetto__scelta, .azione, .barra-selezione__annulla, .bozza__apri, .bozza__elimina, .campo__azione, .cerca, .cerca__campo, .chip, .codice__ascolta, .colore, .colore-libretto__voce, .comandi__tasto, .contatto__link, .conteggio--liberi, .esporta, .evidenza, .file__icona, .filtro, .filtro__pulsante, .fine__ancora, .hashtag, .icona, .logout, .mappa-scelta__gps, .mostra-tutti, .pasticca, .proposta__modifica, .proposta__no, .prova, .pulsante, .pulsante--chiaro, .pulsante--no, .pulsante--secondario, .pulsante-foto, .quaderno__scarica, .rimuovi-foto, .ruolo, .scarica, .scelta, .scelta-branca, .scelta-etichetta, .scelta-sezione, .secondario, .spunta__casella, .squadriglia__tasto, .stato, .strumento, .tag, .tasto, .tipo, .tondo, .torna, .vedi-altro, .verso-archivio, .viste';
 
 html.notte {
   // I campi e le tendine del browser restano "chiari": rovesciati diventano scuri come il resto.
   color-scheme: light;
   // Il velo dietro ai pop-up: bianco qui, rovesciato diventa scuro come di giorno.
   --ion-backdrop-color: #FFFFFF;
-  background: #0E0B14;
+  background: #131316;
 
-  body { background: #0E0B14; }
+  body { background: #131316; }
 
-  ion-app { filter: $rovescia; }
+  ion-app { filter: $notte; }
+
+  // Lo sfondo delle pagine tutto uguale (bianco qui, il grigio più scuro al buio): i riquadri,
+  // più chiari, ci si staccano sopra.
+  ion-content { --background: #FFFFFF !important; }
+
+  :is(#{string.unquote($riquadri)}) {
+    box-shadow: inset 0 0 0 1px rgba(#000, .2), inset 0 0 0 999px rgba(#000, .09) !important;
+  }
+
+  :is(#{string.unquote($controlli)}) {
+    box-shadow: inset 0 0 0 1px rgba(#000, .24) !important;
+  }
 
   // Rimesse come di giorno.
   img, video, iframe, canvas, picture,
   .copertina, .eroe, .foto, .eroe__scatto,
   .leaflet-marker-pane, .leaflet-popup-pane {
-    filter: $rovescia;
+    filter: $giorno;
   }
 
-  // Dentro a quelle rimesse come di giorno, le foto sono già dritte: non vanno girate di nuovo.
+  // Dentro a quelle rimesse come di giorno, le foto sono già dritte e i pulsanti restano come di giorno.
   :is(.copertina, .eroe) :is(img, video, iframe, canvas, picture, .eroe__scatto, .foto),
   .leaflet-marker-pane img, .leaflet-popup-pane img {
     filter: none;
   }
+
+  :is(.copertina, .eroe) :is(#{string.unquote($riquadri)}, #{string.unquote($controlli)}) { box-shadow: none !important; }
+  // Il filtro che rimette la testata come di giorno la fa disegnare sopra a quello che le si
+  // appoggia (ricerca, riquadri, foto profilo): quello che viene dopo va riportato davanti.
+  .copertina ~ :is(.corpo, .foglio, .intestazione, .articolo__figura) {
+    position: relative;
+    z-index: 1;
+  }
+
+  // Nella home "filtro" è il contenitore squadrato del pulsante: il bordo va solo al pulsante.
+  .home .filtro { box-shadow: none !important; }
 
   // La mappa resta rovesciata: diventa una cartina scura, più riposante al buio.
   .leaflet-tile { filter: none; }
 
   // Gli anni '80 hanno già il loro filtro su tutta l'app: si sommano.
   body.anni-80 ion-app {
-    filter: $rovescia saturate(1.9) contrast(1.15) hue-rotate(-18deg);
+    filter: $notte saturate(1.9) contrast(1.15) hue-rotate(-18deg);
   }
 }
