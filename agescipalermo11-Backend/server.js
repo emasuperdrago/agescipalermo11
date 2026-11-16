@@ -3159,7 +3159,7 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, tonalita =
         }
     }
 
-    // Indice, quando i canti sono parecchi: titolo (e la parte della messa), col pallino del colore della sezione.
+    // Indice, quando i canti sono parecchi: solo il titolo (e la parte della messa).
     // Nei libretti no: si parte subito coi canti.
     if (!libretto && voci.length >= 4) {
         doc.font('Helvetica-Bold').fontSize(16).fillColor(VIOLA).text('Indice', MARGINE, doc.y + 6, { lineBreak: false });
@@ -3169,11 +3169,9 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, tonalita =
                 doc.addPage();
                 y = doc.y;
             }
-            const colore = COLORI_SEZIONE[c.sezione] ?? VIOLA;
-            doc.circle(MARGINE + 3, y + 5, 3).fill(colore);
             const nome = titoletto ? `${titoletto} · ${c.titolo}` : c.titolo;
             doc.font(titoletto ? 'Helvetica-Bold' : 'Helvetica').fontSize(10).fillColor('#0F172A')
-                .text(nome, MARGINE + 14, y, { width: larghezza - 14, lineBreak: false, ellipsis: true });
+                .text(nome, MARGINE, y, { width: larghezza, lineBreak: false, ellipsis: true });
             y += 17;
         }
         doc.addPage();
