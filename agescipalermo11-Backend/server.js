@@ -3233,8 +3233,11 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, tonalita =
             altezza += doc.heightOfString(titoletto.toUpperCase(), { width: larghezza, characterSpacing: 1.2 });
             altezza += doc.currentLineHeight(true) * 0.25;
         }
-        doc.font('Helvetica-Bold').fontSize(8);
-        altezza += doc.heightOfString((NOMI_SEZIONE[c.sezione] ?? '').toUpperCase() || ' ', { width: larghezza, characterSpacing: 0.8 });
+        // Nei libretti niente sezione sopra il titolo (liturgici, branco…): non serve a chi canta.
+        if (!libretto) {
+            doc.font('Helvetica-Bold').fontSize(8);
+            altezza += doc.heightOfString((NOMI_SEZIONE[c.sezione] ?? '').toUpperCase() || ' ', { width: larghezza, characterSpacing: 0.8 });
+        }
         doc.font('Helvetica-Bold').fontSize(grande ? 16 : 14);
         altezza += 1 + doc.heightOfString(c.titolo, { width: larghezza });
         if (tono) {
@@ -3306,8 +3309,10 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, tonalita =
                 .text(titoletto.toUpperCase(), x(), doc.y, { width: larghezza, characterSpacing: 1.2 });
             doc.moveDown(0.25);
         }
-        doc.font('Helvetica-Bold').fontSize(8).fillColor(colore)
-            .text((NOMI_SEZIONE[c.sezione] ?? '').toUpperCase(), x(), doc.y, { width: larghezza, characterSpacing: 0.8 });
+        if (!libretto) {
+            doc.font('Helvetica-Bold').fontSize(8).fillColor(colore)
+                .text((NOMI_SEZIONE[c.sezione] ?? '').toUpperCase(), x(), doc.y, { width: larghezza, characterSpacing: 0.8 });
+        }
         // Nel libretto anche il titolo prende il colore unico.
         doc.font('Helvetica-Bold').fontSize(grande ? 16 : 14).fillColor(coloreUnico ?? '#0F172A').text(c.titolo, x(), doc.y + 1, { width: larghezza });
         if (tono) doc.font('Helvetica').fontSize(8.5).fillColor(GRIGIO).text(tono, x(), doc.y + 1, { width: larghezza });
