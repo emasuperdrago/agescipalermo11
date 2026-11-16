@@ -80,174 +80,180 @@ ion-content {
   box-sizing: border-box;
 }
 
-ion-alert {
+// ---------- Pop-up (ion-alert) con i colori del sito ----------
+// Viola del Palermo 11, Poppins, pulsanti a pillola: lo stesso aspetto delle pagine.
+// (".md, .ios": le misure di Ionic stanno su una classe e scavalcherebbero il solo "ion-alert".)
+ion-alert.md, ion-alert.ios {
   --background: #{$white};
-  --border-radius: 24px;
-  --box-shadow: 0 32px 80px rgba($dark, .2);
-  --backdrop-opacity: 0.6;
-  --min-width: 380px;
+  --border-radius: 22px;
+  --box-shadow: 0 28px 70px rgba($viola-d, .28);
+  --backdrop-opacity: .45;
+  --min-width: 340px;
+  font-family: 'Poppins', sans-serif;
 }
 
 ion-alert .alert-wrapper {
   background: #{$white} !important;
   border: none !important;
-  border-radius: 24px !important;
+  border-radius: 22px !important;
   overflow: hidden !important;
-  box-shadow: 0 0 0 1px rgba($green, .08), 0 32px 80px rgba($dark, .18) !important;
+  box-shadow: 0 28px 70px rgba($viola-d, .28) !important;
 }
 
 ion-alert .alert-head {
-  background: linear-gradient(135deg, rgba($green, .04) 0%, rgba($blue, .04) 100%) !important;
-  padding: 28px 28px 10px !important;
-  position: relative;
-  &::after {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, $green, $blue);
-  }
+  padding: 24px 24px 6px !important;
+  text-align: left;
 }
 
 ion-alert .alert-title {
-  color: #{$dark} !important;
-  font-family: 'Outfit', sans-serif !important;
-  font-size: 1.35rem !important;
-  font-weight: 900 !important;
-  letter-spacing: -0.4px !important;
+  color: #{$viola-d} !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 1.2rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -.2px !important;
+}
+
+ion-alert .alert-sub-title {
+  color: #{$slate} !important;
+  font-family: 'Poppins', sans-serif !important;
 }
 
 ion-alert .alert-message {
-  color: #{$mid} !important;
-  font-family: 'DM Sans', sans-serif !important;
-  font-size: .95rem !important;
-  line-height: 1.6 !important;
-  padding: 8px 28px 22px !important;
+  color: #{$slate-600} !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: .9rem !important;
+  line-height: 1.55 !important;
+  padding: 6px 24px 18px !important;
   background: #{$white} !important;
 }
 
 ion-alert .alert-input-group {
   background: #{$white} !important;
-  padding: 0 22px 16px !important;
+  padding: 0 20px 14px !important;
 }
 
 ion-alert .alert-input {
-  background: rgba($dark, .03) !important;
+  background: #{$white} !important;
   color: #{$dark} !important;
-  border: 1.5px solid #{$brd-light} !important;
+  border: 1.5px solid #{$slate-200} !important;
   border-radius: 14px !important;
-  padding: 13px 16px !important;
-  font-family: 'DM Sans', sans-serif !important;
-  font-size: .95rem !important;
+  padding: 12px 14px !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: .9rem !important;
   margin: 0 !important;
-  caret-color: #{$blue} !important;
+  caret-color: #{$viola-m} !important;
+
+  &:focus { border-color: #{$viola-m} !important; outline: none; }
 }
 
 ion-alert .alert-input::placeholder {
-  color: rgba($dark, .35) !important;
+  color: #{$slate-400} !important;
 }
 
+// Scelte (es. quale bilancio salvare): il pallino e il testo scelto nel viola del sito.
+ion-alert .alert-radio-group,
+ion-alert .alert-checkbox-group {
+  border-color: #{$slate-200} !important;
+}
+
+ion-alert .alert-radio-label,
+ion-alert .alert-checkbox-label {
+  text-align: left;
+  color: #{$dark} !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: .9rem !important;
+}
+
+ion-alert [aria-checked=true] .alert-radio-label { color: #{$viola} !important; font-weight: 700; }
+ion-alert [aria-checked=true] .alert-radio-icon { border-color: #{$viola-m} !important; }
+ion-alert .alert-radio-inner { background-color: #{$viola-m} !important; }
+ion-alert [aria-checked=true] .alert-checkbox-icon { background: #{$viola-m} !important; border-color: #{$viola-m} !important; }
+
 ion-alert .alert-button-group {
-  background: #{$page} !important;
-  border-top: 1px solid #{$brd-light} !important;
-  padding: 14px 16px 16px !important;
+  background: #{$white} !important;
+  border-top: none !important;
+  padding: 4px 20px 20px !important;
   display: flex !important;
   gap: 10px !important;
   flex-wrap: nowrap !important;
 }
 
 ion-alert .alert-button {
-  background: rgba($dark, .04) !important;
-  color: #{$mid} !important;
-  font-family: 'Outfit', sans-serif !important;
-  font-size: .95rem !important;
+  background: #{$slate-100} !important;
+  color: #{$slate-600} !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: .9rem !important;
   font-weight: 700 !important;
-  border-radius: 14px !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  border-radius: 999px !important;
   flex: 1 !important;
-  min-height: 48px !important;
+  min-height: 46px !important;
+  margin: 0 !important;
   border: none !important;
-  letter-spacing: 0.2px;
+  transition: transform .2s, box-shadow .2s;
+
+  &:active { transform: scale(.97); }
 }
 
 ion-alert .alert-button .alert-button-inner {
-  color: #{$mid} !important;
-  font-family: 'Outfit', sans-serif !important;
+  color: inherit !important;
+  font-family: 'Poppins', sans-serif !important;
   font-weight: 700 !important;
   justify-content: center !important;
 }
 
+// Dopo un elenco di scelte, un po' d'aria prima dei pulsanti.
+ion-alert .alert-radio-group + .alert-button-group,
+ion-alert .alert-checkbox-group + .alert-button-group {
+  padding-top: 14px !important;
+}
+
+// Annulla: grigio chiaro, discreto.
 ion-alert .alert-button.alert-button-role-cancel,
 ion-alert .alert-button[data-role="cancel"] {
-  background: rgba($dark, .02) !important;
-  color: rgba($dark, .5) !important;
+  background: #{$slate-100} !important;
+  color: #{$slate-600} !important;
 }
 
-ion-alert .alert-button.alert-button-role-cancel .alert-button-inner {
-  color: rgba($dark, .5) !important;
-}
-
+// Il pulsante che conferma: la sfumatura viola dei pulsanti principali del sito.
 ion-alert .alert-button:not(.alert-button-role-cancel):not(.alert-button-role-destructive) {
   background: #{$sfumatura-viola} !important;
-  box-shadow: 0 6px 20px rgba($viola, .28) !important;
-  transition: transform .2s, box-shadow .2s;
-}
-
-ion-alert .alert-button:not(.alert-button-role-cancel):not(.alert-button-role-destructive):active {
-  transform: scale(.97);
-}
-
-ion-alert .alert-button:not(.alert-button-role-cancel):not(.alert-button-role-destructive) .alert-button-inner {
   color: #{$white} !important;
+  box-shadow: 0 8px 20px rgba($viola, .28) !important;
 }
 
+// Elimina, esci, rifiuta: rosso pieno.
 ion-alert .alert-button.alert-button-role-destructive {
-  background: rgba(220,60,60,.08) !important;
-  border: 1px solid rgba(220,60,60,.15) !important;
+  background: linear-gradient(135deg, #F87171 0%, #DC2626 100%) !important;
+  color: #{$white} !important;
+  box-shadow: 0 8px 20px rgba($red, .25) !important;
 }
 
-ion-alert .alert-button.alert-button-role-destructive .alert-button-inner {
-  color: #f87171 !important;
+// Pop-up piccoli (es. un solo campo da scrivere).
+ion-alert.peekbox-alert--slim.md, ion-alert.peekbox-alert--slim.ios {
+  --min-width: 300px;
 }
 
 ion-alert.peekbox-alert--slim {
-  --min-width: 320px;
 
-  .alert-wrapper {
-    border-radius: 18px !important;
-  }
+  .alert-wrapper { border-radius: 18px !important; }
+  .alert-head { padding: 18px 20px 4px !important; }
+  .alert-title { font-size: 1.05rem !important; }
+  .alert-message { padding: 4px 20px 12px !important; font-size: .85rem !important; }
+  .alert-input-group { padding: 0 16px 12px !important; }
+  .alert-input { padding: 10px 14px !important; font-size: .85rem !important; }
+  .alert-button-group { padding: 4px 16px 16px !important; gap: 8px !important; }
+  .alert-button { min-height: 38px !important; padding: 4px 14px !important; font-size: .82rem !important; }
+}
 
-  .alert-head {
-    padding: 18px 20px 6px !important;
-
-    &::after { height: 2px; }
-  }
-
-  .alert-title {
-    font-size: 1.1rem !important;
-  }
-
-  .alert-message {
-    padding: 4px 20px 12px !important;
-    font-size: .85rem !important;
-  }
-
-  .alert-input-group {
-    padding: 0 16px 12px !important;
-  }
-
-  .alert-input {
-    padding: 10px 14px !important;
-    font-size: .85rem !important;
-  }
-
-  .alert-button-group {
-    padding: 10px 14px 12px !important;
-    gap: 8px !important;
-  }
-
-  .alert-button {
-    min-height: 32px !important;
-    padding: 4px 14px !important;
-    font-size: .8rem !important;
-    border-radius: 10px !important;
-  }
+@media (max-width: 599px) {
+  ion-alert.md, ion-alert.ios { --width: calc(100vw - 40px); --min-width: 0; --max-width: 380px; }
+  ion-alert .alert-head { padding: 20px 20px 4px !important; }
+  ion-alert .alert-title { font-size: 1.08rem !important; }
+  ion-alert .alert-message { padding: 4px 20px 16px !important; font-size: .86rem !important; }
+  ion-alert .alert-button-group { padding: 2px 16px 16px !important; }
+  ion-alert .alert-button { min-height: 42px !important; font-size: .86rem !important; }
 }
 
 ion-toast {
@@ -255,20 +261,21 @@ ion-toast {
   --color: #{$dark};
   --border-radius: 14px;
   --box-shadow: 0 8px 32px rgba($dark, .08);
-  --border: 1px solid #{$brd-light};
-  font-family: 'Outfit', sans-serif;
+  --border: 1px solid #{$slate-200};
+  font-family: 'Poppins', sans-serif;
   font-weight: 600;
 }
 
 ion-toast::part(message) {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 0.88rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.86rem;
+  font-weight: 600;
   line-height: 1.5;
-  color: $mid;
+  color: $dark;
 }
 
 ion-toast::part(header) {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-weight: 800;
   font-size: 0.92rem;
   color: $dark;
