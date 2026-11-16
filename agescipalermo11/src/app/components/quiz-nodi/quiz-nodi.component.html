@@ -1,0 +1,67 @@
+<div class="quiz" role="dialog" aria-labelledby="titolo-quiz">
+  <div class="scheda">
+    <button type="button" class="chiudi" (click)="chiudi()" aria-label="Chiudi il gioco">✕</button>
+    <h2 id="titolo-quiz">🪢 Nodi e morse</h2>
+
+    @if (stato() === 'fine') {
+      <div class="fine">
+        <p class="fine__punti">{{ punti() }} <small>punti</small></p>
+        <p class="fine__giuste">{{ giuste() }} su {{ totale }} giuste</p>
+        <p class="fine__giudizio">{{ giudizio }}</p>
+        <p class="fine__record">
+          @if (nuovoRecord()) { <span>Nuovo record!</span> } @else { Il tuo record: {{ record() }} punti }
+        </p>
+        <div class="azioni">
+          <button type="button" class="principale" (click)="ricomincia()">Gioca ancora</button>
+          <button type="button" class="secondario" (click)="chiudi()">Chiudi</button>
+        </div>
+      </div>
+    } @else if (domanda(); as d) {
+      <p class="conta">
+        <span>Domanda {{ numero() }} di {{ totale }} · {{ d.tipo === 'nodo' ? 'Nodi' : 'Morse' }}</span>
+        <span>{{ punti() }} punti</span>
+      </p>
+      <div class="tempo" aria-hidden="true">
+        <span [style.width.%]="restano() / secondi * 100" [class.tempo--poco]="restano() < 5"></span>
+      </div>
+
+      <p class="domanda">{{ d.testo }}</p>
+      @if (d.codice) {
+        <div class="codice">
+          <span class="codice__segni" role="img" [attr.aria-label]="aVoce(d.codice)">
+            @for (s of segniDi(d.codice); track $index) { <i [class]="'segno segno--' + s"></i> }
+          </span>
+          <button type="button" class="codice__ascolta" (click)="ascolta()">🔊 Ascolta</button>
+        </div>
+      }
+
+      <div class="scelte" [class.scelte--morse]="d.tipo === 'morse'">
+        @for (s of d.scelte; track $index; let i = $index) {
+          <button type="button" class="scelta" [class.scelta--segni]="d.sceltePunti"
+                  [class.scelta--giusta]="stato() === 'risposta' && i === d.giusta"
+                  [class.scelta--sbagliata]="stato() === 'risposta' && scelta() === i && i !== d.giusta"
+                  [disabled]="stato() !== 'gioca'" (click)="rispondi(i)"
+                  [attr.aria-label]="d.sceltePunti ? aVoce(s) : null">
+            @if (d.sceltePunti) {
+              @for (g of segniDi(s); track $index) { <i [class]="'segno segno--' + g"></i> }
+            } @else {
+              {{ s }}
+            }
+          </button>
+        }
+      </div>
+
+      @if (stato() === 'risposta') {
+        <p class="esito" [class.esito--si]="scelta() === d.giusta">
+          @if (scelta() === -1) { ⏰ Tempo scaduto! }
+          @else if (scelta() === d.giusta) { ✅ Giusto! }
+          @else { ❌ Sbagliato. }
+          {{ d.spiega }}
+        </p>
+        <button type="button" class="principale avanti" (click)="avanti()">
+          {{ numero() < totale ? 'Avanti' : 'Vedi il risultato' }}
+        </button>
+      }
+    }
+  </div>
+</div>

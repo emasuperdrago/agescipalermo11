@@ -7,6 +7,7 @@ import { DragoComponent } from '../drago/drago.component';
 import { LupettoComponent } from '../lupetto/lupetto.component';
 import { IndovinaCantoComponent } from '../indovina-canto/indovina-canto.component';
 import { TendaComponent } from '../tenda/tenda.component';
+import { QuizNodiComponent } from '../quiz-nodi/quiz-nodi.component';
 
 /** Un punto a caso dello schermo (in percentuale), con un ritardo per l'animazione. */
 interface Punto { x: number; y: number; ritardo: number; misura: number }
@@ -30,7 +31,7 @@ function puntiACaso(quanti: number, altezzaMassima = 100): Punto[] {
   templateUrl: './sorprese.component.html',
   styleUrls: ['./sorprese.component.scss'],
   standalone: true,
-  imports: [DragoComponent, LupettoComponent, IndovinaCantoComponent, TendaComponent],
+  imports: [DragoComponent, LupettoComponent, IndovinaCantoComponent, TendaComponent, QuizNodiComponent],
 })
 export class SorpreseComponent {
   readonly sorprese = inject(SorpreseService);

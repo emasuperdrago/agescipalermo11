@@ -78,6 +78,8 @@ export class SorpreseService {
   /** I minigiochi "Indovina il canto" e "Monta la tenda". */
   readonly indovina = signal(false);
   readonly tenda = signal(false);
+  /** Il quiz "Nodi e morse" (dalla parte Specialità del Reparto). */
+  readonly quiz = signal(false);
   /** Il telefono è senza connessione adesso. */
   readonly offline = signal(typeof navigator !== 'undefined' && navigator.onLine === false);
   /** Il morse: il punto acceso o spento, e il codice scritto sotto. */
@@ -134,10 +136,11 @@ export class SorpreseService {
    * Per chi gestisce il sito: fa partire subito una sorpresa, anche quelle dei giorni speciali
    * (che si vedono nella home: ci si va prima). Vedi la pagina del profilo.
    */
-  async prova(nome: Scena | 'drago' | 'lupetto' | 'indovina' | 'tenda') {
+  async prova(nome: Scena | 'drago' | 'lupetto' | 'indovina' | 'tenda' | 'quiz') {
     if (nome === 'lupetto') return this.lupetto.set(true);
     if (nome === 'indovina') return this.indovina.set(true);
     if (nome === 'tenda') return this.tenda.set(true);
+    if (nome === 'quiz') return this.quiz.set(true);
     if (nome === 'morse') return this.segnaleMorse();
     if (nome === 'canto') return this.cantoASorpresa();
     if (nome === 'compleanno' || nome === 'thinking' || nome === 'drago') {

@@ -18,6 +18,7 @@ import { SfogliaPdfComponent } from '../components/sfoglia-pdf/sfoglia-pdf.compo
 import { ElencoDistintiviComponent } from '../components/elenco-distintivi/elenco-distintivi.component';
 import { BREVETTI_REPARTO, SPECIALITA_REPARTO } from './specialita-reparto';
 import { SquadriglieService } from '../services/squadriglie';
+import { SorpreseService } from '../services/sorprese';
 import { GuidonciniService, nomeAnnoScout } from '../services/guidoncini';
 import { preparaImmagine } from '../services/immagini';
 import { Guidoncino, SpecialitaSquadriglia, Squadriglia } from '../../types/models';
@@ -65,6 +66,9 @@ interface Palmares {
   ],
 })
 export class RepartoPage implements OnInit, OnDestroy {
+  /** Per aprire il quiz "Nodi e morse". */
+  readonly sorprese = inject(SorpreseService);
+
   readonly icone = {
     indietro: arrowBackOutline, squadriglie: flagOutline, promessa: ribbonOutline,
     avventura: compassOutline, squadriglia: peopleOutline, impresa: constructOutline,

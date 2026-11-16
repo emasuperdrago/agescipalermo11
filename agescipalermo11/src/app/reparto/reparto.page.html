@@ -456,6 +456,11 @@
           <app-elenco-distintivi [voci]="brevetti" cartella="assets/brevetti-reparto"
                                  forma="quadrato" singolare="brevetto" plurale="brevetti" />
         }
+      
+        <!-- Il quiz "Nodi e morse": si gioca sopra la pagina (vedi components/quiz-nodi). -->
+        <button type="button" class="sfida-quiz" (click)="sorprese.quiz.set(true)">
+          🪢 <strong>Mettiti alla prova:</strong> quiz su nodi, legature e morse
+        </button>
       </section>
     }
 
