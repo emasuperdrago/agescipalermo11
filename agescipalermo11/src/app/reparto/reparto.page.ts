@@ -74,7 +74,7 @@ export class RepartoPage implements OnInit, OnDestroy {
     specialita: medalOutline, quaderno: bookOutline, scarica: downloadOutline,
   };
 
-  /** Il Quaderno del Capo Squadriglia (AGESCI, ed. 2022), già diviso pagina per pagina. */
+  /** Il Quaderno del Capo Squadriglia (AGESCI, ed. 2022), a colori, una pagina A5 per pagina. */
   readonly quaderno = 'assets/documenti/quaderno-capo-squadriglia.pdf';
 
   /** La fascia in alto: una voce per parte, con la sua icona. */
