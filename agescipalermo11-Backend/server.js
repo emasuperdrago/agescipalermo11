@@ -3225,18 +3225,13 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, tonalita =
             .filter(Boolean).join(' · ');
     };
 
-    /** Quanto spazio prende la testa del canto (titoletto, sezione, titolo, tonalità), misurata davvero. */
+    /** Quanto spazio prende la testa del canto (titoletto, titolo, tonalità), misurata davvero. */
     const altezzaIntestazione = (c, titoletto, tono, larghezza) => {
         let altezza = 0;
         if (titoletto) {
             doc.font('Helvetica-Bold').fontSize(11);
             altezza += doc.heightOfString(titoletto.toUpperCase(), { width: larghezza, characterSpacing: 1.2 });
             altezza += doc.currentLineHeight(true) * 0.25;
-        }
-        // Nei libretti niente sezione sopra il titolo (liturgici, branco…): non serve a chi canta.
-        if (!libretto) {
-            doc.font('Helvetica-Bold').fontSize(8);
-            altezza += doc.heightOfString((NOMI_SEZIONE[c.sezione] ?? '').toUpperCase() || ' ', { width: larghezza, characterSpacing: 0.8 });
         }
         doc.font('Helvetica-Bold').fontSize(grande ? 16 : 14);
         altezza += 1 + doc.heightOfString(c.titolo, { width: larghezza });
@@ -3301,17 +3296,12 @@ function creaPdfCanti(voci, res, { conAccordi = true, grande = false, tonalita =
         return { righe, altezza: misura(righe), entra: entraInLarghezza(righe) };
     };
 
-    /** Scrive la testa del canto (titoletto, sezione, titolo, tonalità) da qui in giù. */
+    /** Scrive la testa del canto (titoletto, titolo, tonalità) da qui in giù. */
     const scriviTesta = (c, titoletto, tono, larghezza, x) => {
-        const colore = coloreDi(c);
         if (titoletto) {
             doc.font('Helvetica-Bold').fontSize(11).fillColor(coloreUnico ?? VIOLA_CHIARO)
                 .text(titoletto.toUpperCase(), x(), doc.y, { width: larghezza, characterSpacing: 1.2 });
             doc.moveDown(0.25);
-        }
-        if (!libretto) {
-            doc.font('Helvetica-Bold').fontSize(8).fillColor(colore)
-                .text((NOMI_SEZIONE[c.sezione] ?? '').toUpperCase(), x(), doc.y, { width: larghezza, characterSpacing: 0.8 });
         }
         // Nel libretto anche il titolo prende il colore unico.
         doc.font('Helvetica-Bold').fontSize(grande ? 16 : 14).fillColor(coloreUnico ?? '#0F172A').text(c.titolo, x(), doc.y + 1, { width: larghezza });
