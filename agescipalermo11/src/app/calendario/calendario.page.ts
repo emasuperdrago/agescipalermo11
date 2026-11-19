@@ -185,7 +185,7 @@ export class CalendarioPage implements OnInit {
   scaricandoImpegni = false;
 
   /**
-   * I prossimi impegni in un PDF: da oggi fino al giorno scelto (di base tre mesi). Il server
+   * I prossimi impegni in PDF o in Excel: da oggi fino al giorno scelto (di base tre mesi). Il server
    * mette quelli della branca del capo e quelli di gruppo (ai capigruppo: gruppo e capi).
    */
   async scaricaImpegni() {
@@ -195,29 +195,32 @@ export class CalendarioPage implements OnInit {
     const traTreMesi = new Date(oggi.getFullYear(), oggi.getMonth() + 3, oggi.getDate());
     const alert = await this.alertCtrl.create({
       header: 'Scarica i prossimi impegni',
-      message: 'Da oggi fino al giorno che scegli, in un PDF.',
+      cssClass: 'pulsanti-in-fila',
+      message: 'Da oggi fino al giorno che scegli: in PDF (tabella da stampare) o in Excel.',
       inputs: [{ name: 'fino', type: 'date', value: iso(traTreMesi), min: iso(oggi) }],
       buttons: [
         { text: 'Annulla', role: 'cancel' },
-        { text: 'Scarica', role: 'confirm' },
+        { text: 'Excel', role: 'excel' },
+        { text: 'PDF', role: 'pdf' },
       ],
     });
     await alert.present();
     const { role, data } = await alert.onDidDismiss<{ values: { fino?: string } }>();
     const fino = data?.values?.fino;
-    if (role !== 'confirm') return;
+    if (role !== 'pdf' && role !== 'excel') return;
+    const formato = role;
     if (!fino || fino < iso(oggi)) {
       this.avvisa('Scegli un giorno da oggi in poi.');
       return;
     }
     this.scaricandoImpegni = true;
-    this.eventiService.impegniPdf(fino).subscribe({
+    this.eventiService.impegni(fino, formato).subscribe({
       next: file => {
         this.scaricandoImpegni = false;
         const indirizzo = URL.createObjectURL(file);
         const collegamento = document.createElement('a');
         collegamento.href = indirizzo;
-        collegamento.download = `impegni-fino-al-${fino}.pdf`;
+        collegamento.download = `impegni-fino-al-${fino}.${formato === 'pdf' ? 'pdf' : 'xlsx'}`;
         document.body.appendChild(collegamento);
         collegamento.click();
         collegamento.remove();
@@ -225,7 +228,7 @@ export class CalendarioPage implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.scaricandoImpegni = false;
-        this.avvisa(err.error?.error ?? 'Non sono riuscito a preparare il PDF.');
+        this.avvisa(err.error?.error ?? 'Non sono riuscito a preparare il file.');
       },
     });
   }

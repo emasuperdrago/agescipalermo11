@@ -118,11 +118,11 @@
       }
     </div>
 
-    <!-- Per i capi: i prossimi impegni della branca (e di gruppo) in un PDF, fino al giorno scelto. -->
+    <!-- Per i capi: i prossimi impegni della branca (e di gruppo) in PDF o Excel, fino al giorno scelto. -->
     @if (puoModificare) {
       <button type="button" class="impegni" (click)="scaricaImpegni()" [disabled]="scaricandoImpegni">
         <ion-icon [icon]="icone.scarica" aria-hidden="true"></ion-icon>
-        {{ scaricandoImpegni ? 'Preparo il PDF…' : 'Scarica i prossimi impegni' }}
+        {{ scaricandoImpegni ? 'Preparo il file…' : 'Scarica i prossimi impegni' }}
       </button>
     }
   </section>

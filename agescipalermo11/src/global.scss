@@ -231,6 +231,16 @@ ion-alert .alert-button.alert-button-role-destructive {
   box-shadow: 0 8px 20px rgba($red, .25) !important;
 }
 
+// Tre pulsanti corti (es. Annulla, Excel, PDF): in fila anche quando Ionic li metterebbe in colonna.
+ion-alert.pulsanti-in-fila .alert-button-group {
+  flex-direction: row !important;
+}
+
+ion-alert.pulsanti-in-fila .alert-button {
+  min-width: 0 !important;
+  padding: 0 8px !important;
+}
+
 // Pop-up piccoli (es. un solo campo da scrivere).
 ion-alert.peekbox-alert--slim.md, ion-alert.peekbox-alert--slim.ios {
   --min-width: 300px;

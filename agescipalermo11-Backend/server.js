@@ -3499,33 +3499,76 @@ function orarioEvento(e) {
 }
 
 /**
- * Gli impegni da oggi fino a ?fino=AAAA-MM-GG, in una tabella PDF divisa per mese. Solo per i capi.
+ * Gli impegni da oggi fino a ?fino=AAAA-MM-GG, per il PDF e per l'Excel (gli stessi in tutti e due).
  * Chi segue una branca: gli eventi della sua branca e quelli di gruppo. I capigruppo (e i capi
- * senza branca): gli eventi di gruppo e quelli dei capi.
+ * senza branca): gli eventi di gruppo e quelli dei capi. Torna { errore } oppure i dati.
  */
+async function impegniDelCapo(req) {
+    const oggi = oggiAPalermo();
+    const fino = String(req.query.fino ?? '');
+    if (!dataValida(fino)) return { errore: "Scegli fino a che giorno." };
+    if (fino < oggi) return { errore: "La data deve essere da oggi in poi." };
+    const [a, m, g] = oggi.split('-').map(Number);
+    const limite = new Date(Date.UTC(a + 2, m - 1, g)).toISOString().slice(0, 10);
+    if (fino > limite) return { errore: "Al massimo due anni da oggi." };
+
+    const branca = await brancaDelCapo(req.user.id);
+    const etichette = branca ? [branca, 'gruppo'] : ['gruppo', 'capi'];
+    const righe = await dbAll(`SELECT * FROM evento
+                               WHERE data_inizio <= ? AND COALESCE(data_fine, data_inizio) >= ?
+                               ORDER BY data_inizio, COALESCE(ora_inizio, '00:00'), id`, [fino, oggi]);
+    const chi = branca ? NOMI_ETICHETTA_EVENTO[branca] : 'Gruppo e capi';
+    // "dal 19 novembre 2026 al 31 gennaio 2027" (senza il giorno della settimana).
+    const senzaGiorno = (iso) => dataLunga(iso).replace(/^\S+ /, '');
+    return {
+        oggi, fino, branca, chi,
+        periodo: `dal ${senzaGiorno(oggi)} al ${senzaGiorno(fino)}`,
+        nomeFile: `impegni-${(branca || 'gruppo-capi')}-fino-al-${fino}`,
+        eventi: righe.filter(e => leggiElenco(e.etichette).some(t => etichette.includes(t))),
+    };
+}
+
+/** Gli stessi impegni in un file Excel: una riga per evento, con le date anche per esteso. */
+app.get('/api/eventi/excel', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        const impegni = await impegniDelCapo(req);
+        if (impegni.errore) return res.status(400).json({ error: impegni.errore });
+        const italiana = (iso) => iso ? iso.split('-').reverse().join('/') : '';
+        const ora = (o) => o ? o.slice(0, 5) : '';
+        const contenuto = [
+            [`Impegni · ${impegni.chi}`, impegni.periodo],
+            [],
+            ['Mese', 'Quando', 'Dal', 'Al', 'Ora inizio', 'Ora fine', 'Evento', 'Descrizione', 'Dove', 'Per', 'In evidenza'],
+            ...impegni.eventi.map(e => {
+                const [anno, mese] = (e.data_inizio < impegni.oggi ? impegni.oggi : e.data_inizio).split('-').map(Number);
+                return [
+                    `${MESI_LUNGHI[mese - 1]} ${anno}`, quandoEvento(e), italiana(e.data_inizio), italiana(e.data_fine || e.data_inizio),
+                    ora(e.ora_inizio), ora(e.ora_fine), e.titolo, (e.descrizione || '').replace(/\s+/g, ' ').trim(),
+                    e.luogo || '', leggiElenco(e.etichette).map(t => NOMI_ETICHETTA_EVENTO[t] ?? t).join(', '),
+                    e.in_evidenza === 1 ? 'sì' : '',
+                ];
+            }),
+        ];
+        if (!impegni.eventi.length) contenuto.push(['Nessun impegno in questo periodo.']);
+        const file = creaXlsx(contenuto, 'Impegni');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${impegni.nomeFile}.xlsx"`);
+        res.setHeader('Cache-Control', 'no-store');
+        res.send(file);
+    } catch (err) {
+        erroreInterno(res, err);
+    }
+});
+
+/** Gli impegni in una tabella PDF divisa per mese. Solo per i capi (vedi impegniDelCapo). */
 app.get('/api/eventi/pdf', verificaRuolo('capo', 'admin'), async (req, res) => {
     try {
-        const oggi = oggiAPalermo();
-        const fino = String(req.query.fino ?? '');
-        if (!dataValida(fino)) return res.status(400).json({ error: "Scegli fino a che giorno." });
-        if (fino < oggi) return res.status(400).json({ error: "La data deve essere da oggi in poi." });
-        const [a, m, g] = oggi.split('-').map(Number);
-        const limite = new Date(Date.UTC(a + 2, m - 1, g)).toISOString().slice(0, 10);
-        if (fino > limite) return res.status(400).json({ error: "Al massimo due anni da oggi." });
-
-        const branca = await brancaDelCapo(req.user.id);
-        const etichette = branca ? [branca, 'gruppo'] : ['gruppo', 'capi'];
-        const righe = await dbAll(`SELECT * FROM evento
-                                   WHERE data_inizio <= ? AND COALESCE(data_fine, data_inizio) >= ?
-                                   ORDER BY data_inizio, COALESCE(ora_inizio, '00:00'), id`, [fino, oggi]);
-        const eventi = righe.filter(e => leggiElenco(e.etichette).some(t => etichette.includes(t)));
+        const impegni = await impegniDelCapo(req);
+        if (impegni.errore) return res.status(400).json({ error: impegni.errore });
+        const { oggi, branca, chi, periodo, eventi } = impegni;
 
         const colore = COLORI_LIBRETTO[branca] ?? VIOLA;
-        const chi = branca ? NOMI_ETICHETTA_EVENTO[branca] : 'Gruppo e capi';
         const titolo = `Impegni · ${chi}`;
-        // "dal 19 novembre 2026 al 31 gennaio 2027" (senza il giorno della settimana).
-        const senzaGiorno = (iso) => dataLunga(iso).replace(/^\S+ /, '');
-        const periodo = `dal ${senzaGiorno(oggi)} al ${senzaGiorno(fino)}`;
         const doc = new PDFDocument({
             size: 'A4', autoFirstPage: false,
             margins: { top: MARGINE + ALTEZZA_TESTATA, bottom: MARGINE + 14, left: MARGINE, right: MARGINE },
@@ -3538,7 +3581,7 @@ app.get('/api/eventi/pdf', verificaRuolo('capo', 'admin'), async (req, res) => {
             piePagina(doc, pagina, `Impegni Palermo 11 · ${chi}`);
             doc.y = MARGINE + ALTEZZA_TESTATA;
         });
-        const nomeFile = `impegni-${(branca || 'gruppo-capi')}-fino-al-${fino}.pdf`;
+        const nomeFile = `${impegni.nomeFile}.pdf`;
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="${nomeFile}"`);
         res.setHeader('Cache-Control', 'no-store');
