@@ -3595,10 +3595,10 @@ app.get('/api/eventi/pdf', verificaRuolo('capo', 'admin'), async (req, res) => {
         doc.font('Helvetica').fontSize(10.5).fillColor(GRIGIO)
             .text(`${periodo.charAt(0).toUpperCase()}${periodo.slice(1)}`, MARGINE, doc.y + 2, { width: larghezza });
         doc.y += 16;
-        // Le colonne: quando, orario, evento (con la descrizione sotto), dove, per chi.
+        // Le colonne: quando, orario, evento (con la descrizione sotto), dove.
         const colonne = [
             { nome: 'Quando', largo: 80 }, { nome: 'Orario', largo: 76 }, { nome: 'Evento', largo: 0 },
-            { nome: 'Dove', largo: 104 }, { nome: 'Per', largo: 62 },
+            { nome: 'Dove', largo: 130 },
         ];
         colonne[2].largo = larghezza - colonne.reduce((s, c) => s + c.largo, 0);
         const SPAZIO = 6;
@@ -3629,10 +3629,7 @@ app.get('/api/eventi/pdf', verificaRuolo('capo', 'admin'), async (req, res) => {
             // Un evento cominciato prima di oggi sta nel mese di oggi.
             const inizio = e.data_inizio < oggi ? oggi : e.data_inizio;
             const meseEvento = inizio.slice(0, 7);
-            const celle = [
-                quandoEvento(e), orarioEvento(e) || '—', null,
-                e.luogo || '—', leggiElenco(e.etichette).map(t => NOMI_ETICHETTA_EVENTO[t] ?? t).join(', '),
-            ];
+            const celle = [quandoEvento(e), orarioEvento(e) || '—', null, e.luogo || '—'];
             const descrizione = (e.descrizione || '').replace(/\s+/g, ' ').trim();
             // Quanto è alta la riga: la cella più alta (l'evento con la sua descrizione, di solito).
             doc.font('Helvetica-Bold').fontSize(9.5);
