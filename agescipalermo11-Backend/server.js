@@ -3517,7 +3517,8 @@ async function impegniDelCapo(req) {
     const righe = await dbAll(`SELECT * FROM evento
                                WHERE data_inizio <= ? AND COALESCE(data_fine, data_inizio) >= ?
                                ORDER BY data_inizio, COALESCE(ora_inizio, '00:00'), id`, [fino, oggi]);
-    const chi = branca ? NOMI_ETICHETTA_EVENTO[branca] : 'Gruppo e capi';
+    // Per i capigruppo senza branca il file è "del gruppo" (con dentro anche gli eventi dei capi).
+    const chi = branca ? NOMI_ETICHETTA_EVENTO[branca] : 'Gruppo';
     // "dal 19 novembre 2026 al 31 gennaio 2027" (senza il giorno della settimana).
     const senzaGiorno = (iso) => dataLunga(iso).replace(/^\S+ /, '');
     return {
@@ -3536,7 +3537,7 @@ app.get('/api/eventi/excel', verificaRuolo('capo', 'admin'), async (req, res) =>
         const italiana = (iso) => iso ? iso.split('-').reverse().join('/') : '';
         const ora = (o) => o ? o.slice(0, 5) : '';
         const contenuto = [
-            [`Impegni · ${impegni.chi}`, impegni.periodo],
+            [`Prossimi impegni ${impegni.chi}`, impegni.periodo],
             [],
             ['Mese', 'Quando', 'Dal', 'Al', 'Ora inizio', 'Ora fine', 'Evento', 'Descrizione', 'Dove', 'Per', 'In evidenza'],
             ...impegni.eventi.map(e => {
@@ -3568,18 +3569,18 @@ app.get('/api/eventi/pdf', verificaRuolo('capo', 'admin'), async (req, res) => {
         const { oggi, branca, chi, periodo, eventi } = impegni;
 
         const colore = COLORI_LIBRETTO[branca] ?? VIOLA;
-        const titolo = `Impegni · ${chi}`;
+        const titolo = `Prossimi impegni ${chi}`;
+        // Niente barra in alto come nei canti: sulla prima pagina il titolo e il periodo, poi la tabella.
         const doc = new PDFDocument({
             size: 'A4', autoFirstPage: false,
-            margins: { top: MARGINE + ALTEZZA_TESTATA, bottom: MARGINE + 14, left: MARGINE, right: MARGINE },
+            margins: { top: MARGINE, bottom: MARGINE + 14, left: MARGINE, right: MARGINE },
             info: { Title: titolo, Author: 'Gruppo Scout AGESCI Palermo 11' },
         });
         let pagina = 0;
         doc.on('pageAdded', () => {
             pagina += 1;
-            testata(doc, titolo, periodo, colore);
-            piePagina(doc, pagina, `Impegni Palermo 11 · ${chi}`);
-            doc.y = MARGINE + ALTEZZA_TESTATA;
+            piePagina(doc, pagina, `${titolo} · Palermo 11`);
+            doc.y = MARGINE;
         });
         const nomeFile = `${impegni.nomeFile}.pdf`;
         res.setHeader('Content-Type', 'application/pdf');
@@ -3590,6 +3591,11 @@ app.get('/api/eventi/pdf', verificaRuolo('capo', 'admin'), async (req, res) => {
 
         const larghezza = doc.page.width - MARGINE * 2;
         const fondo = () => doc.page.height - MARGINE - 14;
+        doc.font('Helvetica-Bold').fontSize(22).fillColor(colore).text(titolo, MARGINE, doc.y, { width: larghezza });
+        doc.font('Helvetica').fontSize(10.5).fillColor(GRIGIO)
+            .text(`${periodo.charAt(0).toUpperCase()}${periodo.slice(1)} · Gruppo Scout AGESCI Palermo 11`,
+                MARGINE, doc.y + 2, { width: larghezza });
+        doc.y += 16;
         // Le colonne: quando, orario, evento (con la descrizione sotto), dove, per chi.
         const colonne = [
             { nome: 'Quando', largo: 80 }, { nome: 'Orario', largo: 76 }, { nome: 'Evento', largo: 0 },
