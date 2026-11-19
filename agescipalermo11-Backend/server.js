@@ -3593,8 +3593,7 @@ app.get('/api/eventi/pdf', verificaRuolo('capo', 'admin'), async (req, res) => {
         const fondo = () => doc.page.height - MARGINE - 14;
         doc.font('Helvetica-Bold').fontSize(22).fillColor(colore).text(titolo, MARGINE, doc.y, { width: larghezza });
         doc.font('Helvetica').fontSize(10.5).fillColor(GRIGIO)
-            .text(`${periodo.charAt(0).toUpperCase()}${periodo.slice(1)} · Gruppo Scout AGESCI Palermo 11`,
-                MARGINE, doc.y + 2, { width: larghezza });
+            .text(`${periodo.charAt(0).toUpperCase()}${periodo.slice(1)}`, MARGINE, doc.y + 2, { width: larghezza });
         doc.y += 16;
         // Le colonne: quando, orario, evento (con la descrizione sotto), dove, per chi.
         const colonne = [
