@@ -81,6 +81,22 @@ ion-content {
   box-sizing: border-box;
 }
 
+// Safari su iPhone dà ai campi di ora e data una larghezza minima tutta sua: due affiancati
+// (es. ora di inizio e di fine) escono dalla colonna e si sovrappongono. Senza l'aspetto
+// "di sistema" prendono la larghezza della loro colonna; il selettore del telefono si apre lo stesso.
+input[type="time"],
+input[type="date"] {
+  min-width: 0;
+  max-width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="time"]::-webkit-date-and-time-value,
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+}
+
 // ---------- Pop-up (ion-alert) con i colori del sito ----------
 // Viola del Palermo 11, Poppins, pulsanti a pillola: lo stesso aspetto delle pagine.
 // (".md, .ios": le misure di Ionic stanno su una classe e scavalcherebbero il solo "ion-alert".)
