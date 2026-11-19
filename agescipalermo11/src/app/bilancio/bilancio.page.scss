@@ -566,8 +566,17 @@
   }
 }
 
-// La data in tre tendine: le serve un po' più spazio degli altri campi della riga.
-.campo--data { min-width: 260px; }
+// La data in tre tendine sta su una riga tutta sua (giorno, mese e anno si leggono per intero);
+// sotto, la descrizione e gli euro. Su schermi larghi non si allarga più del necessario.
+.campo--data {
+  flex: 1 1 100%;
+  min-width: 0;
+
+  app-selettore-data {
+    display: block;
+    max-width: 420px;
+  }
+}
 
 // ---------- Telefono ----------
 @include zona-capi-telefono;
