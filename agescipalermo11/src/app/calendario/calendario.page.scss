@@ -1007,3 +1007,27 @@ $forti-branca: (
     }
   }
 }
+
+// Per i capi: i prossimi impegni in PDF, sotto al calendario.
+.impegni {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin: 12px 0 0;
+  padding: 11px 18px;
+  border: 1.5px solid rgba($viola-m, .4);
+  border-radius: 999px;
+  background: $white;
+  font-family: inherit;
+  font-size: .88rem;
+  font-weight: 700;
+  color: $viola;
+  cursor: pointer;
+
+  ion-icon { font-size: 1.1rem; }
+
+  &:hover:not(:disabled) { background: rgba($viola-l, .1); }
+  &:disabled { opacity: .6; cursor: default; }
+}

@@ -3462,6 +3462,185 @@ function dataLunga(data) {
     return testo.charAt(0).toUpperCase() + testo.slice(1);
 }
 
+// ---------- Impegni in PDF (dal calendario, per i capi) ----------
+
+const NOMI_ETICHETTA_EVENTO = { branco: 'Branco', reparto: 'Reparto', clan: 'Clan', gruppo: 'Gruppo', capi: 'Capi' };
+const MESI_BREVI = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
+const MESI_LUNGHI = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre',
+    'Ottobre', 'Novembre', 'Dicembre'];
+const GIORNI_BREVI = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+
+/** Oggi a Palermo, come "AAAA-MM-GG" (il server online gira in UTC). */
+function oggiAPalermo() {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit' })
+        .format(new Date());
+}
+
+/** "sab 22 nov", oppure "22–24 nov" / "30 nov – 2 dic" per gli eventi di più giorni. */
+function quandoEvento(e) {
+    const giorno = (iso) => {
+        const [a, m, g] = iso.split('-').map(Number);
+        return { a, m, g, settimana: new Date(Date.UTC(a, m - 1, g, 12)).getUTCDay() };
+    };
+    const da = giorno(e.data_inizio);
+    if (!e.data_fine || e.data_fine === e.data_inizio)
+        return `${GIORNI_BREVI[da.settimana]} ${da.g} ${MESI_BREVI[da.m - 1]}`;
+    const a = giorno(e.data_fine);
+    if (da.m === a.m && da.a === a.a) return `${da.g}–${a.g} ${MESI_BREVI[a.m - 1]}`;
+    return `${da.g} ${MESI_BREVI[da.m - 1]} – ${a.g} ${MESI_BREVI[a.m - 1]}`;
+}
+
+/** "9:30–12:00", "dalle 9:30" o vuoto (tutto il giorno). */
+function orarioEvento(e) {
+    const ora = (o) => o ? o.slice(0, 5).replace(/^0/, '') : '';
+    if (e.ora_inizio && e.ora_fine) return `${ora(e.ora_inizio)}–${ora(e.ora_fine)}`;
+    if (e.ora_inizio) return `dalle ${ora(e.ora_inizio)}`;
+    return '';
+}
+
+/**
+ * Gli impegni da oggi fino a ?fino=AAAA-MM-GG, in una tabella PDF divisa per mese. Solo per i capi.
+ * Chi segue una branca: gli eventi della sua branca e quelli di gruppo. I capigruppo (e i capi
+ * senza branca): gli eventi di gruppo e quelli dei capi.
+ */
+app.get('/api/eventi/pdf', verificaRuolo('capo', 'admin'), async (req, res) => {
+    try {
+        const oggi = oggiAPalermo();
+        const fino = String(req.query.fino ?? '');
+        if (!dataValida(fino)) return res.status(400).json({ error: "Scegli fino a che giorno." });
+        if (fino < oggi) return res.status(400).json({ error: "La data deve essere da oggi in poi." });
+        const [a, m, g] = oggi.split('-').map(Number);
+        const limite = new Date(Date.UTC(a + 2, m - 1, g)).toISOString().slice(0, 10);
+        if (fino > limite) return res.status(400).json({ error: "Al massimo due anni da oggi." });
+
+        const branca = await brancaDelCapo(req.user.id);
+        const etichette = branca ? [branca, 'gruppo'] : ['gruppo', 'capi'];
+        const righe = await dbAll(`SELECT * FROM evento
+                                   WHERE data_inizio <= ? AND COALESCE(data_fine, data_inizio) >= ?
+                                   ORDER BY data_inizio, COALESCE(ora_inizio, '00:00'), id`, [fino, oggi]);
+        const eventi = righe.filter(e => leggiElenco(e.etichette).some(t => etichette.includes(t)));
+
+        const colore = COLORI_LIBRETTO[branca] ?? VIOLA;
+        const chi = branca ? NOMI_ETICHETTA_EVENTO[branca] : 'Gruppo e capi';
+        const titolo = `Impegni · ${chi}`;
+        // "dal 19 novembre 2026 al 31 gennaio 2027" (senza il giorno della settimana).
+        const senzaGiorno = (iso) => dataLunga(iso).replace(/^\S+ /, '');
+        const periodo = `dal ${senzaGiorno(oggi)} al ${senzaGiorno(fino)}`;
+        const doc = new PDFDocument({
+            size: 'A4', autoFirstPage: false,
+            margins: { top: MARGINE + ALTEZZA_TESTATA, bottom: MARGINE + 14, left: MARGINE, right: MARGINE },
+            info: { Title: titolo, Author: 'Gruppo Scout AGESCI Palermo 11' },
+        });
+        let pagina = 0;
+        doc.on('pageAdded', () => {
+            pagina += 1;
+            testata(doc, titolo, periodo, colore);
+            piePagina(doc, pagina, `Impegni Palermo 11 · ${chi}`);
+            doc.y = MARGINE + ALTEZZA_TESTATA;
+        });
+        const nomeFile = `impegni-${(branca || 'gruppo-capi')}-fino-al-${fino}.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${nomeFile}"`);
+        res.setHeader('Cache-Control', 'no-store');
+        doc.pipe(res);
+        doc.addPage();
+
+        const larghezza = doc.page.width - MARGINE * 2;
+        const fondo = () => doc.page.height - MARGINE - 14;
+        // Le colonne: quando, orario, evento (con la descrizione sotto), dove, per chi.
+        const colonne = [
+            { nome: 'Quando', largo: 80 }, { nome: 'Orario', largo: 76 }, { nome: 'Evento', largo: 0 },
+            { nome: 'Dove', largo: 104 }, { nome: 'Per', largo: 62 },
+        ];
+        colonne[2].largo = larghezza - colonne.reduce((s, c) => s + c.largo, 0);
+        const SPAZIO = 6;
+
+        const intestazione = () => {
+            const y = doc.y;
+            doc.save().roundedRect(MARGINE, y, larghezza, 20, 6).fill(colore).restore();
+            let x = MARGINE;
+            for (const c of colonne) {
+                doc.font('Helvetica-Bold').fontSize(8.5).fillColor('#FFFFFF')
+                    .text(c.nome.toUpperCase(), x + SPAZIO, y + 6, { width: c.largo - SPAZIO * 2, characterSpacing: .6, lineBreak: false });
+                x += c.largo;
+            }
+            doc.y = y + 26;
+        };
+
+        if (!eventi.length) {
+            doc.font('Helvetica').fontSize(12).fillColor(GRIGIO)
+                .text('Nessun impegno in questo periodo.', MARGINE, doc.y + 20, { width: larghezza, align: 'center' });
+            doc.end();
+            return;
+        }
+
+        intestazione();
+        let mese = '';
+        let pari = false;
+        for (const e of eventi) {
+            // Un evento cominciato prima di oggi sta nel mese di oggi.
+            const inizio = e.data_inizio < oggi ? oggi : e.data_inizio;
+            const meseEvento = inizio.slice(0, 7);
+            const celle = [
+                quandoEvento(e), orarioEvento(e) || '—', null,
+                e.luogo || '—', leggiElenco(e.etichette).map(t => NOMI_ETICHETTA_EVENTO[t] ?? t).join(', '),
+            ];
+            const descrizione = (e.descrizione || '').replace(/\s+/g, ' ').trim();
+            // Quanto è alta la riga: la cella più alta (l'evento con la sua descrizione, di solito).
+            doc.font('Helvetica-Bold').fontSize(9.5);
+            let altoEvento = doc.heightOfString(e.titolo, { width: colonne[2].largo - SPAZIO * 2 });
+            if (descrizione) {
+                doc.font('Helvetica').fontSize(8);
+                altoEvento += 2 + Math.min(doc.heightOfString(descrizione, { width: colonne[2].largo - SPAZIO * 2 }), 34);
+            }
+            doc.font('Helvetica').fontSize(9);
+            const alti = celle.map((t, i) => t === null ? altoEvento
+                : doc.heightOfString(t, { width: colonne[i].largo - SPAZIO * 2 }));
+            const alta = Math.max(...alti) + 12;
+            const conMese = meseEvento !== mese;
+
+            if (doc.y + alta + (conMese ? 26 : 0) > fondo()) {
+                doc.addPage();
+                intestazione();
+                pari = false;
+            }
+            if (conMese) {
+                mese = meseEvento;
+                const [anno, numero] = mese.split('-').map(Number);
+                doc.font('Helvetica-Bold').fontSize(11).fillColor(colore)
+                    .text(`${MESI_LUNGHI[numero - 1]} ${anno}`, MARGINE + SPAZIO, doc.y + 4, { width: larghezza });
+                doc.y += 6;
+                pari = false;
+            }
+
+            const y = doc.y;
+            if (pari) doc.save().rect(MARGINE, y, larghezza, alta).fill('#F4F1F8').restore();
+            // In evidenza: una barretta del colore a sinistra.
+            if (e.in_evidenza === 1) doc.save().rect(MARGINE, y, 3, alta).fill(colore).restore();
+            let x = MARGINE;
+            celle.forEach((t, i) => {
+                const largo = colonne[i].largo - SPAZIO * 2;
+                if (t === null) {
+                    doc.font('Helvetica-Bold').fontSize(9.5).fillColor('#0F172A').text(e.titolo, x + SPAZIO, y + 6, { width: largo });
+                    if (descrizione) doc.font('Helvetica').fontSize(8).fillColor(GRIGIO)
+                        .text(descrizione, x + SPAZIO, doc.y + 2, { width: largo, height: 34, ellipsis: true });
+                } else {
+                    doc.font(i === 0 ? 'Helvetica-Bold' : 'Helvetica').fontSize(9).fillColor(i === 0 ? '#0F172A' : '#334155')
+                        .text(t, x + SPAZIO, y + 6, { width: largo });
+                }
+                x += colonne[i].largo;
+            });
+            doc.save().moveTo(MARGINE, y + alta).lineTo(MARGINE + larghezza, y + alta)
+                .lineWidth(.5).strokeColor('#E2E8F0').stroke().restore();
+            doc.y = y + alta;
+            pari = !pari;
+        }
+        doc.end();
+    } catch (err) {
+        if (!res.headersSent) erroreInterno(res, err);
+    }
+});
+
 /** Come prima: i canti scelti, in ordine alfabetico, senza copertina. */
 function creaPdfCanzoniere(canti, conAccordi, res, tonalita = null) {
     creaPdfCanti(canti.map(canto => ({ canto, titoletto: null })), res, { conAccordi, tonalita });

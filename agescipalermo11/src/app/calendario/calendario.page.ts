@@ -7,7 +7,8 @@ import {
 } from '@ionic/angular/standalone';
 import {
   addOutline, arrowBackOutline, calendarNumberOutline, chevronBackOutline, chevronForwardOutline, flag, flagOutline,
-  funnelOutline, locationOutline, pencilOutline, timeOutline, todayOutline, trashOutline
+  funnelOutline, locationOutline, pencilOutline, timeOutline, todayOutline, trashOutline,
+  downloadOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../services/auth';
 import {
@@ -85,7 +86,7 @@ export class CalendarioPage implements OnInit {
     indietro: arrowBackOutline, precedente: chevronBackOutline, successivo: chevronForwardOutline,
     oggi: todayOutline, aggiungi: addOutline, orario: timeOutline, luogo: locationOutline,
     evidenza: flag, evidenzaVuota: flagOutline, modifica: pencilOutline, elimina: trashOutline,
-    filtro: funnelOutline, esporta: calendarNumberOutline,
+    filtro: funnelOutline, esporta: calendarNumberOutline, scarica: downloadOutline,
   };
 
   /** Su Apple si scarica il file dell'evento, altrove si apre Google Calendar. */
@@ -179,6 +180,54 @@ export class CalendarioPage implements OnInit {
 
   get meseVisibile(): Mese {
     return this.mesi[this.indiceMese];
+  }
+
+  scaricandoImpegni = false;
+
+  /**
+   * I prossimi impegni in un PDF: da oggi fino al giorno scelto (di base tre mesi). Il server
+   * mette quelli della branca del capo e quelli di gruppo (ai capigruppo: gruppo e capi).
+   */
+  async scaricaImpegni() {
+    const due = (n: number) => String(n).padStart(2, '0');
+    const iso = (d: Date) => `${d.getFullYear()}-${due(d.getMonth() + 1)}-${due(d.getDate())}`;
+    const oggi = new Date();
+    const traTreMesi = new Date(oggi.getFullYear(), oggi.getMonth() + 3, oggi.getDate());
+    const alert = await this.alertCtrl.create({
+      header: 'Scarica i prossimi impegni',
+      message: 'Da oggi fino al giorno che scegli, in un PDF.',
+      inputs: [{ name: 'fino', type: 'date', value: iso(traTreMesi), min: iso(oggi) }],
+      buttons: [
+        { text: 'Annulla', role: 'cancel' },
+        { text: 'Scarica', role: 'confirm' },
+      ],
+    });
+    await alert.present();
+    const { role, data } = await alert.onDidDismiss<{ values: { fino?: string } }>();
+    const fino = data?.values?.fino;
+    if (role !== 'confirm') return;
+    if (!fino || fino < iso(oggi)) {
+      this.avvisa('Scegli un giorno da oggi in poi.');
+      return;
+    }
+    this.scaricandoImpegni = true;
+    this.eventiService.impegniPdf(fino).subscribe({
+      next: file => {
+        this.scaricandoImpegni = false;
+        const indirizzo = URL.createObjectURL(file);
+        const collegamento = document.createElement('a');
+        collegamento.href = indirizzo;
+        collegamento.download = `impegni-fino-al-${fino}.pdf`;
+        document.body.appendChild(collegamento);
+        collegamento.click();
+        collegamento.remove();
+        setTimeout(() => URL.revokeObjectURL(indirizzo), 2000);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.scaricandoImpegni = false;
+        this.avvisa(err.error?.error ?? 'Non sono riuscito a preparare il PDF.');
+      },
+    });
   }
 
   /** Capi e admin aggiungono e modificano eventi; gli altri li consultano. */

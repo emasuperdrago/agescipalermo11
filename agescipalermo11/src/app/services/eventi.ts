@@ -192,6 +192,11 @@ export class EventiService {
     return this.http.delete<{ message: string }>(`${apiUrl()}/eventi/${id}`);
   }
 
+  /** Il PDF con gli impegni da oggi fino a `fino` (solo per i capi: la branca la sa il server). */
+  impegniPdf(fino: string) {
+    return this.http.get(`${apiUrl()}/eventi/pdf`, { params: { fino }, responseType: 'blob' });
+  }
+
   impostaEvidenza(id: number, inEvidenza: boolean) {
     return this.http.patch<{ evento: Evento }>(`${apiUrl()}/eventi/${id}/evidenza`, { in_evidenza: inEvidenza })
       .pipe(map(r => r.evento));
