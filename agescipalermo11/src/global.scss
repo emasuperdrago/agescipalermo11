@@ -283,77 +283,67 @@ ion-alert.peekbox-alert--slim {
   ion-alert .alert-button { min-height: 42px !important; font-size: .86rem !important; }
 }
 
-ion-toast {
+// ---------- Messaggi brevi (ion-toast) con i colori del sito ----------
+// Gli stessi dei pop-up: una pillola bianca che galleggia sotto la barra in alto, testo viola
+// in Poppins e un pallino con la sfumatura viola; non più la striscia piatta da un bordo all'altro.
+ion-toast.md, ion-toast.ios {
   --background: #{$white};
-  --color: #{$dark};
-  --border-radius: 14px;
-  --box-shadow: 0 8px 32px rgba($dark, .08);
-  --border: 1px solid #{$slate-200};
+  --color: #{$viola-d};
+  --border-radius: 18px;
+  --box-shadow: 0 18px 44px #{rgba($viola-d, .22)}, 0 2px 8px #{rgba($viola-d, .08)};
+  --border-color: #{rgba($viola, .14)};
+  --border-style: solid;
+  --border-width: 1px;
+  --width: auto;
+  --min-width: 0;
+  --max-width: min(440px, calc(100vw - 32px));
+  --start: 16px;
+  --end: 16px;
   font-family: 'Poppins', sans-serif;
-  font-weight: 600;
 }
 
+ion-toast::part(container) {
+  gap: 4px;
+  padding: 2px 6px 2px 16px;
+}
+
+// Il pallino viola a sinistra del testo.
 ion-toast::part(message) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 10px 12px 0;
+  color: $viola-d;
   font-family: 'Poppins', sans-serif;
-  font-size: 0.86rem;
+  font-size: .88rem;
   font-weight: 600;
-  line-height: 1.5;
-  color: $dark;
+  line-height: 1.45;
+}
+
+ion-toast::part(message)::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: $sfumatura-viola;
+  box-shadow: 0 0 0 4px rgba($viola, .14);
 }
 
 ion-toast::part(header) {
+  color: $viola-d;
   font-family: 'Poppins', sans-serif;
   font-weight: 800;
-  font-size: 0.92rem;
-  color: $dark;
+  font-size: .92rem;
 }
 
-ion-toast[color="danger"] {
-  --color: #{$white};
-}
-ion-toast[color="danger"]::part(message) {
-  color: $white;
-}
-ion-toast[color="danger"]::part(header) {
-  color: $white;
-}
-ion-toast[color="warning"] {
-  --color: #{$white};
-}
-ion-toast[color="warning"]::part(message) {
-  color: $white;
-}
-ion-toast[color="warning"]::part(header) {
-  color: $white;
-}
-
-ion-toast.peekbox-toast {
-  --border: none;
-  --box-shadow: 0 12px 40px rgba($dark, 0.12);
-  padding-left: 0;
-  overflow: hidden;
-
-  &::part(container) {
-    border-left: 4px solid $mid;
-    border-radius: 14px;
-    padding-left: 14px;
-  }
-
-  &--success::part(container) {
-    border-left-color: $green;
-  }
-
-  &--danger::part(container) {
-    border-left-color: $red;
-  }
-
-  &--warning::part(container) {
-    border-left-color: $amber;
-  }
-
-  &--info::part(container) {
-    border-left-color: $blue;
-  }
+ion-toast::part(button) {
+  color: $viola;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  border-radius: 999px;
 }
 
 
@@ -645,9 +635,6 @@ ion-tab-button ion-label {
   }
   ion-modal {
     --border-radius: 16px;
-  }
-  ion-toast {
-    --min-width: 80vw;
   }
 }
 

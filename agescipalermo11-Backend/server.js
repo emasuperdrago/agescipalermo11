@@ -1820,14 +1820,18 @@ function sistemaArchivioPost(cb = () => {}) {
 }
 
 // Gli hashtag usati nei post pubblicati, dai più usati: per i filtri della home e dell'archivio.
-// ?archivio=1 conta quelli dell'archivio, se no quelli della home.
+// ?archivio=1 conta quelli dell'archivio, se no quelli della home; con ?etichetta=… solo quelli
+// dei post di quella categoria.
 app.get('/api/post/hashtag', async (req, res) => {
     try {
         const archiviato = req.query.archivio === '1' ? 1 : 0;
+        const etichetta = ETICHETTE_POST.includes(req.query.etichetta) ? req.query.etichetta : null;
+        const filtro = filtroPost(etichetta, []);
         const righe = await dbAll(`SELECT h AS hashtag, COUNT(*)::int AS quanti
                                    FROM post, jsonb_array_elements_text(post.hashtag::jsonb) AS h
                                    WHERE post.hashtag IS NOT NULL AND post.in_attesa = 0 AND post.archiviato = ?
-                                   GROUP BY h ORDER BY quanti DESC, h LIMIT 40`, [archiviato]);
+                                   ${filtro.sql}
+                                   GROUP BY h ORDER BY quanti DESC, h LIMIT 40`, [archiviato, ...filtro.parametri]);
         res.json({ hashtag: righe });
     } catch (err) {
         erroreInterno(res, err);

@@ -110,6 +110,7 @@ export class ArchivioPage implements OnInit {
   /** Sceglie la branca da vedere; ritoccando la stessa si torna a tutte. */
   filtra(etichetta: EtichettaPost | null) {
     this.etichetta = this.etichetta === etichetta ? null : etichetta;
+    this.contaHashtag();
     this.mostra();
   }
 
@@ -119,9 +120,11 @@ export class ArchivioPage implements OnInit {
     this.mostra();
   }
 
+  /** Gli hashtag da proporre: solo quelli dei post della categoria scelta (o di tutti). */
   private contaHashtag() {
     const conti = new Map<string, number>();
-    for (const p of this.tutti) for (const h of p.hashtag ?? []) conti.set(h, (conti.get(h) ?? 0) + 1);
+    const dellaCategoria = this.tutti.filter(p => !this.etichetta || etichetteDi(p).includes(this.etichetta));
+    for (const p of dellaCategoria) for (const h of p.hashtag ?? []) conti.set(h, (conti.get(h) ?? 0) + 1);
     this.hashtagUsati = [...conti].map(([hashtag, quanti]) => ({ hashtag, quanti }))
       .sort((a, b) => b.quanti - a.quanti || a.hashtag.localeCompare(b.hashtag, 'it')).slice(0, 40);
     if (this.hashtag && !conti.has(this.hashtag)) this.hashtag = null;

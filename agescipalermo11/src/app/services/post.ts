@@ -143,10 +143,15 @@ export class PostService {
     return this.http.get<{ post: Post[]; massimo: number }>(`${apiUrl()}/post/archivio`, { params });
   }
 
-  /** Gli hashtag usati, dai più usati: quelli della home o, con `archivio`, dell'archivio. */
-  hashtag(archivio = false) {
+  /**
+   * Gli hashtag usati, dai più usati: quelli della home o, con `archivio`, dell'archivio;
+   * con `etichetta` solo quelli dei post di quella categoria.
+   */
+  hashtag(archivio = false, etichetta: EtichettaPost | null = null) {
+    const params: Record<string, string> = archivio ? { archivio: '1' } : {};
+    if (etichetta) params['etichetta'] = etichetta;
     return this.http.get<{ hashtag: { hashtag: string; quanti: number }[] }>(`${apiUrl()}/post/hashtag`,
-      { params: archivio ? { archivio: '1' } : {} }).pipe(map(r => r.hashtag));
+      { params }).pipe(map(r => r.hashtag));
   }
 
   /**

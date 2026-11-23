@@ -305,8 +305,9 @@ export class HomePage implements OnDestroy, OnInit {
     this.caricaPost();
   }
 
+  /** Gli hashtag da proporre: solo quelli dei post della categoria scelta (o di tutti). */
   private caricaHashtag() {
-    this.posts.hashtag().subscribe({
+    this.posts.hashtag(false, this.filtroEtichetta).subscribe({
       next: elenco => this.hashtagPopolari = elenco,
       error: () => this.hashtagPopolari = [],
     });
@@ -317,6 +318,7 @@ export class HomePage implements OnDestroy, OnInit {
     if (etichetta === this.filtroEtichetta) return;
     this.filtroEtichetta = etichetta;
     this.caricaPost();
+    this.caricaHashtag();
   }
 
   /** Apre il pop-up per creare un post o, se riceve un post, per modificarlo. */
