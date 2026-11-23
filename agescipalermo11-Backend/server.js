@@ -2997,17 +2997,27 @@ app.get('/api/canti', async (req, res) => {
         condizioni.push('sezione = ?');
         parametri.push(sezione);
     }
+    // Prima i canti con le parole cercate nel titolo (più parole nel titolo, più in alto),
+    // poi quelli che le hanno solo nel testo; a parità, in ordine alfabetico.
+    let priorita = '';
+    const parametriOrdine = [];
     if (cerca) {
+        const parole = cerca.split(/\s+/).slice(0, 6);
         // Tutte le parole cercate devono comparire nel titolo o nel testo.
-        for (const parola of cerca.split(/\s+/).slice(0, 6)) {
+        for (const parola of parole) {
             // ILIKE: senza badare alle maiuscole, come prima.
             condizioni.push('(titolo ILIKE ? OR testo ILIKE ?)');
             parametri.push(`%${parola}%`, `%${parola}%`);
         }
+        priorita = parole.map(() => '(CASE WHEN titolo ILIKE ? THEN 1 ELSE 0 END)').join(' + ') + ' DESC, ';
+        parametriOrdine.push(...parole.map(parola => `%${parola}%`));
     }
     const dove = condizioni.length ? `WHERE ${condizioni.join(' AND ')}` : '';
     try {
-        const righe = await dbAll(`SELECT * FROM canto ${dove} ORDER BY lower(titolo)`, parametri);
+        const righe = await dbAll(
+            `SELECT * FROM canto ${dove} ORDER BY ${priorita}lower(titolo)`,
+            [...parametri, ...parametriOrdine],
+        );
         res.json({ canti: righe.map(c => cantoPubblico(c, false)) });
     } catch (err) {
         erroreInterno(res, err);
