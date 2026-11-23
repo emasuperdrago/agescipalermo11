@@ -402,3 +402,78 @@
   .fuoco { opacity: 1; transform: scale(2); }
   .coriandolo { display: none; }
 }
+
+// ---------- La canzone in sottofondo ----------
+// Un riquadro piccolo in basso a destra, sopra la barra di navigazione: la pagina resta usabile.
+.musica {
+  position: fixed;
+  right: 16px;
+  bottom: calc(96px + var(--ion-safe-area-bottom, 0px));
+  z-index: 29000;
+  width: 240px;
+  padding: 8px;
+  border-radius: 18px;
+  background: $white;
+  border: 1px solid rgba($viola, .14);
+  box-shadow: 0 18px 44px rgba($viola-d, .22), 0 2px 8px rgba($viola-d, .08);
+  font-family: 'Poppins', sans-serif;
+  animation: appare .35s ease-out;
+
+  &__testa {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 2px 8px 4px;
+  }
+
+  &__nota {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: $sfumatura-viola;
+    color: $white;
+    font-size: .9rem;
+    animation: musica-nota 1.2s ease-in-out infinite;
+  }
+
+  &__titolo {
+    flex: 1;
+    min-width: 0;
+    color: $viola-d;
+    font-size: .85rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__chiudi {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background: $slate-100;
+    color: $slate-600;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  &__video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 0;
+    border-radius: 12px;
+    background: $dark;
+  }
+}
+
+@keyframes musica-nota {
+  50% { transform: translateY(-3px) rotate(-8deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .musica__nota { animation: none; }
+}

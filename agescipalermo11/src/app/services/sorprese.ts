@@ -14,6 +14,8 @@ import { CantiService } from './canti';
  *  - 5 tocchi sul murales di Marco: l'orso con la sua frase;
  *  - nella home, certi giorni: 11 novembre (compleanno del gruppo), 22 febbraio (Thinking Day),
  *    23 aprile (San Giorgio: un drago che vola per lo schermo, da sconfiggere a colpi).
+ *  - nel canzoniere, cercando "Ottavio Parisi": parte la sua canzone in sottofondo (un piccolo
+ *    lettore di YouTube in basso, che si chiude con la ✕).
  * La pagina "non trovata" ha il suo minigioco (vedi components/sentiero-perso); quando cade la
  * connessione, invece di un errore c'è il lupetto che salta i tronchi (vedi components/lupetto);
  * in fondo al canzoniere si sfida "Indovina il canto" (components/indovina-canto); tenendo premuto
@@ -80,6 +82,8 @@ export class SorpreseService {
   readonly tenda = signal(false);
   /** Il quiz "Nodi e morse" (dalla parte Specialità del Reparto). */
   readonly quiz = signal(false);
+  /** La canzone in sottofondo (cercando "Ottavio Parisi" nel canzoniere). */
+  readonly musica = signal(false);
   /** Il telefono è senza connessione adesso. */
   readonly offline = signal(typeof navigator !== 'undefined' && navigator.onLine === false);
   /** Il morse: il punto acceso o spento, e il codice scritto sotto. */
@@ -185,6 +189,12 @@ export class SorpreseService {
     if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) return;
     if (target.type === 'password') return;
     const valore = this.normalizza(target.value);
+    // Nella ricerca del canzoniere, "Ottavio Parisi": la sua canzone in sottofondo. Si scrive
+    // tutto e si tocca un tasto, così il suono può partire (i browser lo vogliono così).
+    if (valore === 'ottavioparisi' && target.closest('app-canzoniere')) {
+      if (!this.musica()) this.zone.run(() => this.musica.set(true));
+      return;
+    }
     // "bp" solo se è tutto quello che c'è scritto (è corto: dentro una frase capita per caso).
     if (valore === 'bp') return this.mostra('bp');
     for (const [parola, scena] of Object.entries(PAROLE)) if (valore.endsWith(parola)) return this.mostra(scena);

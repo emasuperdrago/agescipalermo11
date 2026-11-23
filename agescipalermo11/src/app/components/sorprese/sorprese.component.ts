@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
+import { DomSanitizer } from '@angular/platform-browser';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs';
 import { SorpreseService } from '../../services/sorprese';
@@ -36,6 +37,10 @@ function puntiACaso(quanti: number, altezzaMassima = 100): Punto[] {
 export class SorpreseComponent {
   readonly sorprese = inject(SorpreseService);
   private router = inject(Router);
+
+  /** La canzone di "Ottavio Parisi": parte da sola e ricomincia quando finisce. */
+  readonly videoMusica = inject(DomSanitizer).bypassSecurityTrustResourceUrl(
+    'https://www.youtube-nocookie.com/embed/8kLBEO1Px3g?autoplay=1&loop=1&playlist=8kLBEO1Px3g&playsinline=1&rel=0');
 
   /** Il drago si vede solo nella home. */
   private url = toSignal(this.router.events.pipe(
