@@ -141,16 +141,16 @@
   <app-quiz-nodi />
 }
 
-<!-- Cercando "Ottavio Parisi" nel canzoniere: la sua canzone in sottofondo, finché non la si chiude. -->
+<!-- Cercando "Ottavio Parisi" nel canzoniere: la sua canzone in sottofondo, finché non la si chiude.
+     Il video c'è ma non si vede: resta solo la pillola con pausa/play e la ✕. -->
 @if (sorprese.musica()) {
   <div class="musica" role="region" aria-label="Canzone in sottofondo">
-    <div class="musica__testa">
-      <span class="musica__nota" aria-hidden="true">♪</span>
-      <span class="musica__titolo">Ottavio Parisi</span>
-      <button type="button" class="musica__chiudi" (click)="sorprese.musica.set(false)"
-              aria-label="Ferma la canzone">✕</button>
-    </div>
-    <iframe class="musica__video" [src]="videoMusica" title="Ottavio Parisi"
-            allow="autoplay; encrypted-media; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    <button type="button" class="musica__nota" [class.musica__nota--ferma]="!suona()" (click)="pausaOPlay()"
+            [attr.aria-label]="suona() ? 'Metti in pausa' : 'Fai suonare'">{{ suona() ? '♪' : '▶' }}</button>
+    <span class="musica__titolo">Ottavio Parisi</span>
+    <button type="button" class="musica__chiudi" (click)="fermaMusica()" aria-label="Ferma la canzone">✕</button>
+    <iframe #lettore class="musica__video" [src]="videoMusica" title="Ottavio Parisi" tabindex="-1" aria-hidden="true"
+            allow="autoplay; encrypted-media" (load)="lettorePronto()"
+            referrerpolicy="strict-origin-when-cross-origin"></iframe>
   </div>
 }

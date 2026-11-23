@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject } from '@angular/core';
+import { Component, ElementRef, HostListener, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { DomSanitizer } from '@angular/platform-browser';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -38,9 +38,51 @@ export class SorpreseComponent {
   readonly sorprese = inject(SorpreseService);
   private router = inject(Router);
 
-  /** La canzone di "Ottavio Parisi": parte da sola e ricomincia quando finisce. */
+  /**
+   * La canzone di "Ottavio Parisi": parte da sola e ricomincia quando finisce. Il video non si
+   * vede: resta solo una pillola con pausa/play e la ✕. Con enablejsapi il lettore riceve i
+   * comandi (playVideo, pauseVideo) e dice se sta suonando.
+   */
+  private static readonly VIDEO = '8kLBEO1Px3g';
+  private static readonly ORIGINE_VIDEO = 'https://www.youtube-nocookie.com';
   readonly videoMusica = inject(DomSanitizer).bypassSecurityTrustResourceUrl(
-    'https://www.youtube-nocookie.com/embed/8kLBEO1Px3g?autoplay=1&loop=1&playlist=8kLBEO1Px3g&playsinline=1&rel=0');
+    `${SorpreseComponent.ORIGINE_VIDEO}/embed/${SorpreseComponent.VIDEO}?autoplay=1&loop=1`
+    + `&playlist=${SorpreseComponent.VIDEO}&playsinline=1&rel=0&controls=0&enablejsapi=1`
+    + `&origin=${encodeURIComponent(location.origin)}`);
+  private lettore = viewChild<ElementRef<HTMLIFrameElement>>('lettore');
+  /** Il lettore sta suonando adesso (lo dice lui; finché non risponde si suppone di sì). */
+  readonly suona = signal(true);
+
+  /** Il lettore è pronto: gli si chiede di raccontare cosa fa (play, pausa…). */
+  lettorePronto() {
+    this.comando({ event: 'listening', id: 1, channel: 'widget' });
+  }
+
+  /** Pausa o play dalla pillola (il tocco fa partire il suono anche dove non partiva da solo). */
+  pausaOPlay() {
+    const suona = this.suona();
+    this.comando({ event: 'command', func: suona ? 'pauseVideo' : 'playVideo', args: [] });
+    this.suona.set(!suona);
+  }
+
+  fermaMusica() {
+    this.sorprese.musica.set(false);
+    this.suona.set(true);
+  }
+
+  private comando(messaggio: object) {
+    this.lettore()?.nativeElement.contentWindow?.postMessage(JSON.stringify(messaggio), SorpreseComponent.ORIGINE_VIDEO);
+  }
+
+  /** Le notizie del lettore: 1 = suona; 2 = in pausa; -1/5 = non è partito (il browser non l'ha lasciato). */
+  @HostListener('window:message', ['$event'])
+  notiziaDalLettore(e: MessageEvent) {
+    if (e.origin !== SorpreseComponent.ORIGINE_VIDEO || typeof e.data !== 'string') return;
+    try {
+      const stato = JSON.parse(e.data)?.info?.playerState;
+      if (typeof stato === 'number') this.suona.set(stato === 1 || stato === 3);
+    } catch { /* non è un messaggio del lettore */ }
+  }
 
   /** Il drago si vede solo nella home. */
   private url = toSignal(this.router.events.pipe(

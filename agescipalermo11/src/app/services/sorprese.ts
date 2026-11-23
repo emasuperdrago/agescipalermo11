@@ -14,8 +14,8 @@ import { CantiService } from './canti';
  *  - 5 tocchi sul murales di Marco: l'orso con la sua frase;
  *  - nella home, certi giorni: 11 novembre (compleanno del gruppo), 22 febbraio (Thinking Day),
  *    23 aprile (San Giorgio: un drago che vola per lo schermo, da sconfiggere a colpi).
- *  - nel canzoniere, cercando "Ottavio Parisi": parte la sua canzone in sottofondo (un piccolo
- *    lettore di YouTube in basso, che si chiude con la ✕).
+ *  - nel canzoniere, cercando "Ottavio Parisi": parte la sua canzone in sottofondo (il video non si
+ *    vede: in basso resta una pillola con pausa/play e la ✕).
  * La pagina "non trovata" ha il suo minigioco (vedi components/sentiero-perso); quando cade la
  * connessione, invece di un errore c'è il lupetto che salta i tronchi (vedi components/lupetto);
  * in fondo al canzoniere si sfida "Indovina il canto" (components/indovina-canto); tenendo premuto
@@ -140,7 +140,8 @@ export class SorpreseService {
    * Per chi gestisce il sito: fa partire subito una sorpresa, anche quelle dei giorni speciali
    * (che si vedono nella home: ci si va prima). Vedi la pagina del profilo.
    */
-  async prova(nome: Scena | 'drago' | 'lupetto' | 'indovina' | 'tenda' | 'quiz') {
+  async prova(nome: Scena | 'drago' | 'lupetto' | 'indovina' | 'tenda' | 'quiz' | 'musica') {
+    if (nome === 'musica') return this.musica.set(true);
     if (nome === 'lupetto') return this.lupetto.set(true);
     if (nome === 'indovina') return this.indovina.set(true);
     if (nome === 'tenda') return this.tenda.set(true);
